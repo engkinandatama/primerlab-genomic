@@ -106,3 +106,4 @@ $RECYCLE.BIN/
 *.fastq.tmp
 blast_db/
 primer3_output/
+evaluation.md
