@@ -1,0 +1,39 @@
+workflow: pcr
+
+input:
+  sequence: null
+  sequence_path: null
+
+parameters:
+  primer_size:
+    min: 18
+    opt: 20
+    max: 27
+
+  tm:
+    min: 57.0
+    opt: 60.0
+    max: 63.0
+
+  gc:
+    min: 30.0
+    max: 80.0
+
+qc:
+  hairpin_dg_min: -3.0
+  dimer_dg_min: -6.0
+  tm_diff_max: 3.0
+
+offtarget:
+  enabled: false
+  blast_path: "blastn"
+  database: null
+
+output:
+  directory: "primerlab_out"
+  report_format: "md"
+  save_intermediate: true
+
+advanced:
+  primer3_raw: false
+  debug: false

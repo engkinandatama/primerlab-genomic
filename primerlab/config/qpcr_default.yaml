@@ -1,0 +1,48 @@
+workflow: qpcr
+
+input:
+  sequence: null
+  sequence_path: null
+
+parameters:
+  # qPCR Primers (usually shorter amplicon)
+  primer_size:
+    min: 18
+    opt: 20
+    max: 24
+  
+  tm:
+    min: 58.0
+    opt: 60.0
+    max: 62.0
+  
+  gc:
+    min: 30.0
+    max: 80.0
+
+  # qPCR Probe (Hydrolysis/TaqMan)
+  probe:
+    size:
+      min: 18
+      opt: 24
+      max: 30
+    tm:
+      min: 68.0
+      opt: 70.0
+      max: 72.0
+    gc:
+      min: 30.0
+      max: 80.0
+
+qc:
+  tm_diff_max: 2.0 # Stricter for qPCR
+  hairpin_dg_min: -3.0
+  dimer_dg_min: -6.0
+  # Probe QC
+  probe_tm_min_diff: 8.0 # Probe Tm must be at least 8C higher than primers
+
+output:
+  directory: "primerlab_out"
+
+advanced:
+  debug: false
