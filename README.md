@@ -132,19 +132,6 @@ primerlab-genomic/
 │   │   └── qpcr/         # qPCR workflow
 │   └── config/           # Default configurations
 ├── Docs/                 # Comprehensive documentation
-│   ├── Development Rules/
-│   ├── High-Level Documentation/
-│   └── Manual Plan/
-└── tests/                # (Future) Test suite
-```
-
-**Architecture**: Clean 3-layer design (`CLI → Workflows → Core`)
-
----
-
-## 🎯 Development Status
-
-### ✅ Short-Term Milestones (Complete)
 
 - **v0.1** - Core foundation (config, logging, output system)
 - **v0.2** - PCR basic workflow (Primer3 integration)

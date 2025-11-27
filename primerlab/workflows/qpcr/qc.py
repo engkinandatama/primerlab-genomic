@@ -39,9 +39,13 @@ class qPCRQC(PCRQC):
         
         # 2. Probe Secondary Structure (using ViennaRNA)
         probe_fold = self.vienna.fold(probe.sequence)
-        probe_dg = probe_fold["mfe"]
+        probe_dg = probe_fold.get("mfe", 0.0)
         
-        probe_hairpin_ok = probe_dg >= self.hairpin_dg_min
+        if "error" in probe_fold:
+             warnings.append("Probe secondary structure QC skipped: ViennaRNA (RNAfold) not available or failed.")
+             probe_hairpin_ok = True
+        else:
+             probe_hairpin_ok = probe_dg >= self.hairpin_dg_min
         
         if not probe_hairpin_ok:
             warnings.append(f"Probe hairpin ΔG ({probe_dg:.2f}) too stable (threshold: {self.hairpin_dg_min})")

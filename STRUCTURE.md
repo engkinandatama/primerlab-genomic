@@ -1,18 +1,5 @@
 # PrimerLab Project Structure
 
-```
-primerlab-genomic/
-│
-├── primerlab/                      # Main package directory
-│   ├── __init__.py
-│   │
-│   ├── cli/                        # Command-line interface
-│   │   ├── __init__.py
-│   │   └── main.py                 # CLI entry point
-│   │
-│   ├── core/                       # Core utilities (workflow-agnostic)
-│   │   ├── __init__.py
-│   │   ├── config_loader.py        # Configuration loader & merger
 │   │   ├── exceptions.py           # Custom exceptions & error codes
 │   │   ├── logger.py               # Logging system
 │   │   ├── models.py               # Data models (Primer, Amplicon, etc.)

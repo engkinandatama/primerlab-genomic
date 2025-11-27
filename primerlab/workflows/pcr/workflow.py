@@ -77,9 +77,8 @@ def run_pcr_workflow(config: Dict[str, Any]) -> WorkflowResult:
             tm=rev_tm,
             gc=rev_gc,
             length=rev_len,
-            start=rev_start, # Note: Primer3 returns 3' end for reverse? Need to check docs. 
-                             # Usually it returns (start_index, length) relative to template.
-            end=rev_start - rev_len + 1, # Placeholder logic, need to verify P3 coordinate system
+            start=rev_start - rev_len + 1, # 5' end on template
+            end=rev_start, # 3' end on template (Primer3 returns this as index)
             hairpin_dg=raw_results.get('PRIMER_RIGHT_0_HAIRPIN_TH', 0.0),
             homodimer_dg=raw_results.get('PRIMER_RIGHT_0_HOMODIMER_TH', 0.0),
             raw={"p3_index": 0}
