@@ -271,6 +271,21 @@ If code changes affect:
 
 the relevant document in `/Docs` must be updated accordingly.
 
+### **9.3 Milestone Completion Documentation**
+
+**MANDATORY:** After completing each milestone, the following files **must** be updated:
+
+* **`README.md`**
+  - Update "Development Status" section
+  - Add new features to "Key Features" if applicable
+  - Update version badge if changed
+  - Verify all links work
+
+* **`STRUCTURE.md`**
+  - Update directory tree if structure changed
+  - Update file counts
+  - Add documentation for new directories/modules
+
 ---
 
 # **10. Versioning Rules**
