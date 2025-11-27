@@ -21,13 +21,18 @@ parameters:
     max: 80.0
 
   # qPCR Probe (Hydrolysis/TaqMan)
+  # IMPORTANT: Probe Tm should be 8-10°C HIGHER than primer Tm for proper annealing kinetics
+  # If you encounter "no primers found" errors, consider:
+  #   1. Using a longer/more suitable target sequence
+  #   2. Slightly relaxing constraints (e.g., min: 65.0 instead of 68.0)
+  #   3. Increasing timeout (advanced.timeout) for difficult sequences
   probe:
     size:
       min: 18
       opt: 24
       max: 30
     tm:
-      min: 68.0
+      min: 68.0  # Standard for TaqMan probes (primers are ~60°C, so probe should be ~68-72°C)
       opt: 70.0
       max: 72.0
     gc:
@@ -40,9 +45,13 @@ qc:
   dimer_dg_min: -6.0
   # Probe QC
   probe_tm_min_diff: 8.0 # Probe Tm must be at least 8C higher than primers
+  # Amplicon size validation (qPCR-optimal range)
+  amplicon_size_min: 70  # Minimum amplicon size for reliable qPCR
+  amplicon_size_max: 150 # Maximum for optimal efficiency
 
 output:
   directory: "primerlab_out"
 
 advanced:
   debug: false
+  timeout: 60  # Primer3 execution timeout in seconds (increase for difficult sequences)

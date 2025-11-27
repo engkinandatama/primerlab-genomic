@@ -1,11 +1,13 @@
 from typing import Dict, Any
 from datetime import datetime
-from primerlab.core.models import WorkflowResult, Primer, Amplicon, QCResult, RunMetadata
+from primerlab.core.models import WorkflowResult, Amplicon, RunMetadata
 from primerlab.core.tools.primer3_wrapper import Primer3Wrapper
 from primerlab.core.sequence import SequenceLoader
 from primerlab.core.logger import get_logger
 from primerlab.core.exceptions import WorkflowError
-from primerlab.workflows.pcr.qc import PCRQC
+from primerlab.workflows.qpcr.qc import qPCRQC
+from primerlab.workflows.qpcr.design import parse_primer3_output
+from primerlab.workflows.qpcr.report import qPCRReportGenerator
 
 logger = get_logger()
 
@@ -39,88 +41,64 @@ def run_qpcr_workflow(config: Dict[str, Any]) -> WorkflowResult:
     num_returned = raw_results.get('PRIMER_LEFT_NUM_RETURNED', 0)
     logger.info(f"Primer3 returned {num_returned} sets.")
 
-    # 3. Parse Results
-    primers = {}
-    amplicons = []
+    # 3. Parse Results using design module
+    primers = parse_primer3_output(raw_results)
     
-    if num_returned > 0:
-        # Forward
-        fwd_seq = raw_results.get('PRIMER_LEFT_0_SEQUENCE')
-        fwd_tm = raw_results.get('PRIMER_LEFT_0_TM')
-        fwd_gc = raw_results.get('PRIMER_LEFT_0_GC_PERCENT')
-        fwd_start, fwd_len = raw_results.get('PRIMER_LEFT_0')
-        
-        fwd_primer = Primer(
-            id="forward_0", sequence=fwd_seq, tm=fwd_tm, gc=fwd_gc, length=fwd_len,
-            start=fwd_start, end=fwd_start + fwd_len - 1,
-            hairpin_dg=raw_results.get('PRIMER_LEFT_0_HAIRPIN_TH', 0.0),
-            homodimer_dg=raw_results.get('PRIMER_LEFT_0_HOMODIMER_TH', 0.0)
-        )
-        primers["forward"] = fwd_primer
-
-        # Reverse
-        rev_seq = raw_results.get('PRIMER_RIGHT_0_SEQUENCE')
-        rev_tm = raw_results.get('PRIMER_RIGHT_0_TM')
-        rev_gc = raw_results.get('PRIMER_RIGHT_0_GC_PERCENT')
-        rev_start, rev_len = raw_results.get('PRIMER_RIGHT_0')
-        
-        rev_primer = Primer(
-            id="reverse_0", sequence=rev_seq, tm=rev_tm, gc=rev_gc, length=rev_len,
-            start=rev_start, end=rev_start - rev_len + 1,
-            hairpin_dg=raw_results.get('PRIMER_RIGHT_0_HAIRPIN_TH', 0.0),
-            homodimer_dg=raw_results.get('PRIMER_RIGHT_0_HOMODIMER_TH', 0.0)
-        )
-        primers["reverse"] = rev_primer
-
-        # Probe (Internal Oligo)
-        probe_seq = raw_results.get('PRIMER_INTERNAL_0_SEQUENCE')
-        if probe_seq:
-            probe_tm = raw_results.get('PRIMER_INTERNAL_0_TM')
-            probe_gc = raw_results.get('PRIMER_INTERNAL_0_GC_PERCENT')
-            probe_start, probe_len = raw_results.get('PRIMER_INTERNAL_0')
-            
-            probe_obj = Primer(
-                id="probe_0", sequence=probe_seq, tm=probe_tm, gc=probe_gc, length=probe_len,
-                start=probe_start, end=probe_start + probe_len - 1,
-                hairpin_dg=raw_results.get('PRIMER_INTERNAL_0_HAIRPIN_TH', 0.0),
-                homodimer_dg=raw_results.get('PRIMER_INTERNAL_0_HOMODIMER_TH', 0.0)
-            )
-            primers["probe"] = probe_obj
-        else:
-            logger.warning("No internal probe designed by Primer3!")
-
-        # Amplicon
+    # 4. Create Amplicon
+    amplicons = []
+    if primers and "forward" in primers and "reverse" in primers:
+        fwd = primers["forward"]
+        rev = primers["reverse"]
         product_size = raw_results.get('PRIMER_PAIR_0_PRODUCT_SIZE')
+        
         amplicon = Amplicon(
-            start=fwd_start, end=rev_start, length=product_size,
-            sequence="N/A", gc=0.0, tm_forward=fwd_tm, tm_reverse=rev_tm
+            start=fwd.start,
+            end=rev.start,
+            length=product_size,
+            sequence="N/A",
+            gc=0.0,
+            tm_forward=fwd.tm,
+            tm_reverse=rev.tm
         )
         amplicons.append(amplicon)
 
-    # 4. Run QC (Reuse PCRQC + Probe Logic)
-    # TODO: Implement specific qPCR QC (Probe Tm check)
-    qc_engine = PCRQC(config)
+    # 5. Run QC (using qPCRQC)
+    qc_engine = qPCRQC(config)
     qc_result = None
-    if primers:
-        qc_result = qc_engine.evaluate_pair(primers["forward"], primers["reverse"])
+    efficiency = None
+    
+    if primers and "forward" in primers and "reverse" in primers:
+        fwd = primers["forward"]
+        rev = primers["reverse"]
         
-        # Additional Probe QC
+        # Standard primer pair QC
+        qc_result = qc_engine.evaluate_pair(fwd, rev)
+        
+        # Probe-specific QC
         if "probe" in primers:
             probe = primers["probe"]
-            avg_primer_tm = (primers["forward"].tm + primers["reverse"].tm) / 2
-            tm_diff_probe = probe.tm - avg_primer_tm
+            probe_qc = qc_engine.evaluate_probe(probe, fwd, rev)
             
-            # Probe Tm must be higher
-            min_diff = config.get("qc", {}).get("probe_tm_min_diff", 5.0)
-            if tm_diff_probe < min_diff:
-                msg = f"Probe Tm ({probe.tm:.2f}) is not significantly higher than primers ({avg_primer_tm:.2f}). Diff: {tm_diff_probe:.2f} < {min_diff}"
-                qc_result.warnings.append(msg)
-                qc_result.tm_balance_ok = False # Flag as issue
-
+            # Merge probe warnings into main QC result
+            qc_result.warnings.extend(probe_qc["warnings"])
+            if not probe_qc["probe_tm_ok"]:
+                qc_result.tm_balance_ok = False
+        
+        # Amplicon size validation
+        if amplicons:
+            size_qc = qc_engine.validate_amplicon_size(amplicons[0].length)
+            if not size_qc["size_ok"]:
+                qc_result.warnings.extend(size_qc["warnings"])
+        
+        # Estimate efficiency
+        probe = primers.get("probe")
+        efficiency = qc_engine.estimate_efficiency(fwd, rev, probe)
+        logger.info(f"Estimated PCR efficiency: {efficiency}%")
+        
         if qc_result.warnings:
             logger.warning(f"QC Warnings: {qc_result.warnings}")
 
-    # 5. Metadata & Result
+    # 6. Metadata & Result
     metadata = RunMetadata(
         workflow="qpcr",
         timestamp=datetime.utcnow().isoformat(),
@@ -136,5 +114,8 @@ def run_qpcr_workflow(config: Dict[str, Any]) -> WorkflowResult:
         qc=qc_result,
         raw=raw_results
     )
+    
+    # Add efficiency as custom attribute
+    result.efficiency = efficiency
     
     return result

@@ -45,10 +45,17 @@ class Primer3Wrapper:
             # GC
             'PRIMER_MIN_GC': params.get('gc', {}).get('min', 20.0),
             'PRIMER_MAX_GC': params.get('gc', {}).get('max', 80.0),
-            
-            # Product Size Range (default if not specified)
-            'PRIMER_PRODUCT_SIZE_RANGE': [[75, 300]],
         }
+        
+        # Product Size Range - determine based on workflow type
+        workflow_type = config.get('workflow', 'pcr')
+        if workflow_type == 'qpcr':
+            default_range = [[70, 150]]  # qPCR-optimal range
+        else:
+            default_range = [[75, 300]]  # Standard PCR range
+        
+        size_range = params.get('product_size_range', default_range)
+        p3_settings['PRIMER_PRODUCT_SIZE_RANGE'] = size_range
 
         # Handle Probe Design (qPCR)
         probe_params = params.get('probe')
@@ -77,17 +84,60 @@ class Primer3Wrapper:
             del p3_settings['SEQUENCE_TEMPLATE']
 
         logger.info(f"Calling Primer3 binding with {len(p3_settings)} settings...")
-        # logger.debug(f"Settings: {p3_settings}")
+        
+        logger.info(f"Calling Primer3 binding with {len(p3_settings)} settings...")
+        
+        # Use multiprocessing to enforce timeout and allow killing stuck processes
+        import multiprocessing
+        
+        timeout_seconds = config.get("advanced", {}).get("timeout", 30)
+        
+        # Helper function for the worker process
+        def _run_p3(seq_args, global_args, queue):
+            try:
+                res = primer3.bindings.design_primers(
+                    seq_args=seq_args,
+                    global_args=global_args
+                )
+                queue.put({"success": True, "data": res})
+            except Exception as e:
+                queue.put({"success": False, "error": str(e)})
 
-        try:
-            # Use the new snake_case API as requested by the warning
-            results = primer3.bindings.design_primers(
-                seq_args=seq_args,
-                global_args=p3_settings
+        # Create a Queue to get results
+        queue = multiprocessing.Queue()
+        
+        # Create and start the process
+        p = multiprocessing.Process(
+            target=_run_p3, 
+            args=(seq_args, p3_settings, queue)
+        )
+        p.start()
+        
+        # Wait for the process with timeout
+        p.join(timeout_seconds)
+        
+        if p.is_alive():
+            # If still alive after timeout, kill it!
+            logger.error(f"Primer3 process timed out ({timeout_seconds}s). Terminating...")
+            p.terminate()
+            p.join() # Clean up
+            
+            raise ToolExecutionError(
+                f"Primer3 execution timed out after {timeout_seconds} seconds. "
+                "This usually means the constraint combination is too strict for your sequence. "
+                "Try: (1) Using a longer target sequence, (2) Relaxing probe Tm constraints "
+                "(e.g., min: 65.0 instead of 68.0), or (3) Increasing timeout in config (advanced.timeout).", 
+                "ERR_TOOL_P3_TIMEOUT"
             )
-            logger.info("Primer3 returned results.")
-            return results
-            return results
-        except Exception as e:
-            logger.error(f"Primer3 execution failed: {e}")
-            raise ToolExecutionError(f"Primer3 failed: {e}", "ERR_TOOL_P3_001")
+        
+        # Check result
+        if not queue.empty():
+            result_wrapper = queue.get()
+            if result_wrapper["success"]:
+                logger.info("Primer3 returned results.")
+                return result_wrapper["data"]
+            else:
+                raise ToolExecutionError(f"Primer3 failed: {result_wrapper['error']}", "ERR_TOOL_P3_001")
+        else:
+            # Should not happen if process exited cleanly without putting to queue
+            raise ToolExecutionError("Primer3 process exited without returning result.", "ERR_TOOL_P3_CRASH")

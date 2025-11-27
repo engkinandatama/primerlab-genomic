@@ -85,9 +85,15 @@ def main():
                 
                 output_mgr.save_json(result)
                 
+                
                 # 6. Generate Report
-                from primerlab.workflows.pcr.report import ReportGenerator
-                report_gen = ReportGenerator()
+                if args.workflow == "qpcr":
+                    from primerlab.workflows.qpcr.report import qPCRReportGenerator
+                    report_gen = qPCRReportGenerator()
+                else:
+                    from primerlab.workflows.pcr.report import ReportGenerator
+                    report_gen = ReportGenerator()
+                
                 report_content = report_gen.generate_report(result)
                 
                 # Save report
