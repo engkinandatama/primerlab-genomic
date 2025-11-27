@@ -55,8 +55,8 @@ def parse_primer3_output(raw_results: Dict[str, Any]) -> Dict[str, Primer]:
             tm=rev_tm,
             gc=rev_gc,
             length=rev_len,
-            start=rev_start,
-            end=rev_start - rev_len + 1,
+            start=rev_start - rev_len + 1, # 5' end on template
+            end=rev_start, # 3' end on template (Primer3 returns this as index)
             hairpin_dg=raw_results.get('PRIMER_RIGHT_0_HAIRPIN_TH', 0.0),
             homodimer_dg=raw_results.get('PRIMER_RIGHT_0_HOMODIMER_TH', 0.0)
         )

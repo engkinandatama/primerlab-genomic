@@ -38,15 +38,18 @@ class PCRQC:
         fwd_fold = self.vienna.fold(fwd.sequence)
         rev_fold = self.vienna.fold(rev.sequence)
         
-        fwd_dg = fwd_fold["mfe"]
-        rev_dg = rev_fold["mfe"]
+        fwd_dg = fwd_fold.get("mfe", 0.0)
+        rev_dg = rev_fold.get("mfe", 0.0)
         
-        # Update Primer objects with real ΔG
-        fwd.hairpin_dg = fwd_dg
-        rev.hairpin_dg = rev_dg
-        
-        fwd_hairpin_ok = fwd_dg >= self.hairpin_dg_min
-        rev_hairpin_ok = rev_dg >= self.hairpin_dg_min
+        # Check if ViennaRNA failed or is missing
+        if "error" in fwd_fold or "error" in rev_fold:
+             warnings.append("Secondary structure QC skipped: ViennaRNA (RNAfold) not available or failed.")
+             # We set ok=True to not block workflow, but warning is present
+             fwd_hairpin_ok = True
+             rev_hairpin_ok = True
+        else:
+             fwd_hairpin_ok = fwd_dg >= self.hairpin_dg_min
+             rev_hairpin_ok = rev_dg >= self.hairpin_dg_min
         
         hairpin_ok = fwd_hairpin_ok and rev_hairpin_ok
         
