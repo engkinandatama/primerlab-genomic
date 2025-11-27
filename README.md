@@ -5,8 +5,10 @@ A modular bioinformatics framework for automated **primer and probe design**, bu
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-BSD%203--Clause-green.svg)](LICENSE)
 [![Tests](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml/badge.svg)](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml)
-
 [![Status](https://img.shields.io/badge/status-v0.1.0-orange.svg)]()
+
+> 🔰 **Latest Release**: **v0.1.0 Technical Preview** is now available! 🎉  
+> Download the [latest release](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.1.0) or check out the [CHANGELOG](CHANGELOG.md) for details.
 
 ---
 
@@ -36,20 +38,44 @@ PrimerLab focuses on **deterministic, transparent bioinformatics**, following st
 
 ### Installation
 
+#### Option 1: For Developers (Source)
 ```bash
 # Clone the repository
 git clone https://github.com/engkinandatama/primerlab-genomic.git
 cd primerlab-genomic
 
-# Create virtual environment (recommended for WSL users)
+# Create virtual environment (recommended)
+python3 -m venv ~/primerlab_venv
+source ~/primerlab_venv/bin/activate  # Linux/WSL
+# or
+# .\primerlab_venv\Scripts\activate   # Windows PowerShell
+
+# Install dependencies & package in editable mode
+pip install -e .
+```
+
+#### Option 2: For End Users (Using Release Files)
+If you downloaded the release files (`.whl` or `.tar.gz`) from GitHub:
+
+**Using the Wheel (.whl) - Recommended:**
+```bash
+# Create a virtual environment first
 python3 -m venv ~/primerlab_venv
 source ~/primerlab_venv/bin/activate
 
-# Install dependencies
-pip install -r requirements.txt
+# Install directly from the file
+pip install primerlab_genomic-0.1.0-py3-none-any.whl
+```
 
-# Install PrimerLab in editable mode
-pip install -e .
+**Using the Source Tarball (.tar.gz):**
+```bash
+pip install primerlab_genomic-0.1.0.tar.gz
+```
+
+Once installed, you can run PrimerLab from anywhere in your terminal:
+```bash
+primerlab --version
+primerlab run pcr --config my_config.yaml
 ```
 
 ---
@@ -122,8 +148,7 @@ PrimerLab generates a structured report containing:
 * **QC Checks** — Dimers, hairpins, Tm balance
 * **Warnings** — Optimization suggestions
 
-Example report:
-[`report.md`](test_qpcr_out/20251127_163137_QPCR/report.md)
+Run a workflow to generate your own report!
 
 ---
 
@@ -143,19 +168,25 @@ primerlab-genomic/
 ├── Docs/                 # High-level documentation
 ```
 
-### 📌 Version Roadmap
+### 📌 Development Status
 
-* **v0.1** — Core foundation (config, logging, output system)
-* **v0.2** — PCR workflow (Primer3 integration)
-* **v0.3** — Extended QC (secondary structure, dimer models)
-* **v0.4** — qPCR workflow (probes + efficiency estimation)
+#### ✅ **v0.1.0 Technical Preview** (Released)
+The current release includes:
+* Core foundation (configuration, logging, output system)
+* PCR workflow with Primer3 integration
+* Extended QC (secondary structure, hairpin/dimer validation via ViennaRNA)
+* qPCR workflow (TaqMan probe design + efficiency estimation)
+* Public API (`design_pcr_primers`, `design_qpcr_assays`)
+* Automated testing suite (pytest)
+* CI/CD pipeline (GitHub Actions)
 
-### 🔜 Mid-Term Goals
+#### � **Upcoming Milestones**
 
-* CRISPR guide design
-* Multiplex PCR support
-* Dockerized environment
-* Enhanced thermodynamic models
+* **v0.5** — CRISPR guide design (PAM finding, off-target filtering)
+* **v0.6** — Multiplex PCR support
+* **v0.7** — Genome-aware off-target search
+* **v0.8** — Advanced thermodynamic modeling
+* **v1.0** — Production-ready release with full documentation
 
 ---
 
