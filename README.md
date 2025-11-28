@@ -223,14 +223,14 @@ The current release includes:
 * Automated testing suite (pytest)
 * CI/CD pipeline (GitHub Actions)
 
-#### � **Upcoming Milestones**
+#### 🚧 **Upcoming Features**
 
-* **v0.5** — CRISPR guide design (PAM finding, off-target filtering)
-* **v0.6** — Multiplex PCR support
-* **v0.7** — Genome-aware off-target search
-* **v0.8** — Advanced thermodynamic modeling
+* CRISPR guide design (PAM finding, off-target filtering)
+* Multiplex PCR support
+* Genome-aware off-target search
+* Advanced thermodynamic modeling
 * **v1.0** — Production-ready release with full documentation
-
+  
 ---
 
 ## 🛠️ Requirements
