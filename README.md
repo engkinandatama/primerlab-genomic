@@ -8,25 +8,6 @@ A modular bioinformatics framework for automated **primer and probe design**, bu
 [![Status](https://img.shields.io/badge/status-v0.1.0-orange.svg)]()
 
 > 🔰 **Latest Release**: **v0.1.0 Technical Preview** is now available! 🎉  
-> Download the [latest release](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.1.0) or check out the [CHANGELOG](CHANGELOG.md) for details.
-
----
-
-## 📋 Overview
-
-**PrimerLab Genomic** is a Python-based toolkit for automated primer and probe design in molecular biology workflows.
-It provides a structured and reproducible framework for:
-
-* **PCR** — Standard primer design with quality control
-* **qPCR** — Probe design with thermodynamic checks
-* **(Future)** CRISPR guides, mutagenesis primers, cloning primers, and multiplex workflows
-
-PrimerLab focuses on **deterministic, transparent bioinformatics**, following strict modularity and best practices.
-
-### 🔑 Key Features
-
-* **End-to-End Workflow**: Sequence input → Primer/Probe design → QC → Report
-* **Thermodynamic Validation**: Secondary structure prediction via ViennaRNA
 * **QC Framework**: Hairpins, dimers, GC%, Tm ranges, amplicon checks
 * **qPCR Support**: TaqMan-style probe design with efficiency estimation
 * **Safe Execution**: Timeout protection for complex sequences
@@ -185,43 +166,6 @@ workflow: qpcr
 
 parameters:
   mode: sybr  # New in v0.1.1: Disables probe design automatically
-  
-  primer_size: {min: 18, opt: 20, max: 24}
-  tm: {min: 58.0, opt: 60.0, max: 62.0}
-  product_size: {min: 70, opt: 100, max: 150}
-
-output:
-  directory: "test_output_sybr"
-```
-
-Sample config files are included in the repository root for immediate testing.
-
----
-
-## 📊 Output Overview
-
-PrimerLab generates a structured report containing:
-
-* **Primer & Probe Details** — Sequences, GC%, Tm, positions
-* **qPCR Metrics** — Estimated amplification efficiency
-* **Amplicon Properties** — Length, GC%, suitability
-* **QC Checks** — Dimers, hairpins, Tm balance
-* **Warnings** — Optimization suggestions
-
-Run a workflow to generate your own report!
-
----
-
-## 🏗️ Project Structure
-
-```
-primerlab-genomic/
-├── primerlab/
-│   ├── cli/              # Command-line interface
-│   ├── core/             # Reusable utilities (sequence, QC, tools)
-│   │   ├── tools/        # Primer3, ViennaRNA wrappers
-│   │   └── models/       # Data models and schema
-│   ├── workflows/        # Workflow modules
 │   │   ├── pcr/          # PCR workflow implementation
 │   │   └── qpcr/         # qPCR workflow implementation
 │   └── config/           # Default configurations
