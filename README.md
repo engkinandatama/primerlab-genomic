@@ -151,19 +151,20 @@ input:
 parameters:
   primer_size: {min: 18, opt: 20, max: 24}
   tm: {min: 58.0, opt: 60.0, max: 62.0}
-  product_size_range: [[200, 600]]  # Amplicon size range
+  product_size: {min: 200, opt: 400, max: 600}  # New in v0.1.1: Simple min/opt/max
 
 output:
   directory: "test_output"
 ```
 
-### qPCR Configuration (`test_qpcr.yaml`)
+### qPCR Configuration (TaqMan - Default)
 
 ```yaml
 workflow: qpcr
+# mode: taqman (default)
 
 input:
-  sequence: "ATGGGGAAGGTGAAGGTCGGAGT..."  # GAPDH example
+  sequence: "ATGGGGAAGGTGAAGGTCGGAGT..."
 
 parameters:
   primer_size: {min: 18, opt: 20, max: 24}
@@ -171,10 +172,26 @@ parameters:
   
   probe:
     size: {min: 18, opt: 24, max: 30}
-    tm: {min: 68.0, opt: 70.0, max: 72.0}  # Probe Tm should be ~8-10°C higher than primers
+    tm: {min: 68.0, opt: 70.0, max: 72.0}
 
 output:
   directory: "test_output"
+```
+
+### qPCR Configuration (SYBR Green)
+
+```yaml
+workflow: qpcr
+
+parameters:
+  mode: sybr  # New in v0.1.1: Disables probe design automatically
+  
+  primer_size: {min: 18, opt: 20, max: 24}
+  tm: {min: 58.0, opt: 60.0, max: 62.0}
+  product_size: {min: 70, opt: 100, max: 150}
+
+output:
+  directory: "test_output_sybr"
 ```
 
 Sample config files are included in the repository root for immediate testing.
@@ -234,6 +251,11 @@ The current release includes:
 ---
 
 ## 🛠️ Requirements
+
+* qPCR workflow (TaqMan probe design + efficiency estimation)
+* Public API (`design_pcr_primers`, `design_qpcr_assays`)
+* Automated testing suite (pytest)
+* CI/CD pipeline (GitHub Actions)
 
 * **Python 3.10+**
 * **Primer3** (`primer3-py`)
