@@ -107,3 +107,10 @@ $RECYCLE.BIN/
 blast_db/
 primer3_output/
 evaluation.md
+
+# Test config files (root level)
+test_*.yaml
+test_*/
+
+# Pytest logs
+pytest_error.log

@@ -77,7 +77,47 @@ def load_and_merge_config(workflow: str, user_config_path: Optional[str] = None,
         logger.debug("Applying CLI overrides")
         final_config = deep_merge(final_config, cli_overrides)
 
-    # 4. Validate
+    # 4. Process Enhancements (Presets & Product Size)
+    final_config = _process_enhancements(final_config)
+
+    # 5. Validate
     validate_config(final_config)
     
     return final_config
+
+def _process_enhancements(config: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Applies v0.1.1 enhancements:
+    1. Presets (e.g., preset: "long_range")
+    2. product_size (min/opt/max) -> product_size_range
+    """
+    params = config.get("parameters", {})
+    
+    # 1. Presets
+    preset = config.get("preset")
+    if preset:
+        logger.info(f"Applying preset: {preset}")
+        if preset == "long_range":
+            # Long-range PCR defaults
+            params["product_size"] = {"min": 1000, "opt": 2000, "max": 3000}
+            params["tm"] = {"min": 60.0, "opt": 62.0, "max": 65.0} # Higher Tm for long PCR
+        elif preset == "standard_pcr":
+             params["product_size"] = {"min": 100, "opt": 200, "max": 600}
+        # Add more presets here as needed
+        
+    # 2. product_size -> product_size_range
+    # Primer3 expects [[min, max]] for PRIMER_PRODUCT_SIZE_RANGE
+    # We support user-friendly product_size: {min: X, opt: Y, max: Z}
+    
+    p_size = params.get("product_size")
+    p_range = params.get("product_size_range")
+    
+    if p_size and not p_range:
+        # Convert user-friendly size to range format
+        # Note: Primer3 takes a list of ranges. We use min-max.
+        min_s = p_size.get("min", 100)
+        max_s = p_size.get("max", 300)
+        params["product_size_range"] = [[min_s, max_s]]
+        logger.debug(f"Converted product_size {p_size} to range [[{min_s}, {max_s}]]")
+        
+    return config

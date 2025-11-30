@@ -35,6 +35,17 @@ def run_qpcr_workflow(config: Dict[str, Any]) -> WorkflowResult:
     logger.info(f"Input sequence length: {len(sequence)} bp")
 
     # 2. Run Primer3 (with Probe settings)
+    # Check for explicit mode (v0.1.1 enhancement)
+    mode = config.get("parameters", {}).get("mode", "taqman").lower()
+    
+    if mode == "sybr":
+        logger.info("qPCR Mode: SYBR Green (Primers only)")
+        # Explicitly remove probe config to prevent Primer3 from designing probes
+        if "probe" in config.get("parameters", {}):
+            del config["parameters"]["probe"]
+    else:
+        logger.info("qPCR Mode: TaqMan (Primers + Probe)")
+
     p3_wrapper = Primer3Wrapper()
     raw_results = p3_wrapper.design_primers(sequence, config)
     
