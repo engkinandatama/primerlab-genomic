@@ -5,9 +5,9 @@ A modular bioinformatics framework for automated **primer and probe design**, bu
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-BSD%203--Clause-green.svg)](LICENSE)
 [![Tests](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml/badge.svg)](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml)
-[![Status](https://img.shields.io/badge/status-v0.1.1-blue.svg)](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.1.1)
+[![Status](https://img.shields.io/badge/status-v0.1.2-blue.svg)](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.1.2)
 
-> 🔰 **Latest Release**: [**v0.1.1 Patch Release**](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.1.1) 🎉
+> 🔰 **Latest Release**: [**v0.1.2 Patch Release**](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.1.2) 🎉
 
 ---
 
@@ -56,7 +56,7 @@ pip install -e .
 #### Option 2: For End Users (From GitHub Release)
 ```bash
 # Install directly from GitHub (latest release)
-pip install git+https://github.com/engkinandatama/primerlab-genomic.git@v0.1.1
+pip install git+https://github.com/engkinandatama/primerlab-genomic.git@v0.1.2
 ```
 
 Once installed, verify the installation:
@@ -210,30 +210,39 @@ primerlab-genomic/
 │   └── config/           # Default configurations
 ├── tests/                # Automated test suite
 ├── Docs/                 # High-level documentation
-└── examples/             # Example configurations (coming in v0.1.2)
+└── examples/             # Example configurations
 ```
 
 ---
 
 ## 📌 Development Status
 
-### ✅ **v0.1.1 Patch Release** (Current)
+### ✅ **v0.1.2 Patch Release** (Current)
 
 The current release includes:
 
-* **Configuration Enhancements**: 
-  - `product_size` parameter with simplified syntax (`min`, `opt`, `max`)
-  - Preset configurations (`long_range`, `standard_pcr`)
-* **qPCR Modes**: Explicit `mode: sybr` (primers only) & `mode: taqman` (primers + probe)
+* **Example Packages**: 4 ready-to-use configs + batch CSV
+* **Enhanced Error Handling**:
+  - Sequence validation (min length, invalid characters)
+  - Config validation with clear, actionable messages
+  - Detailed Primer3 failure reasons
+* **Output Enhancements**:
+  - CSV export (`primers.csv`)
+  - Vendor ordering formats (IDT, Sigma, Thermo)
+  - ASCII amplicon visualizer
+  - Summary statistics & rejection log in reports
+* **CLI Improvements**:
+  - `--dry-run` flag for config validation
+  - `batch-generate` command for multi-config generation
 * **Core Foundation**: PCR/qPCR workflows, Primer3 integration, Extended QC
 * **Public API**: `design_pcr_primers`, `design_qpcr_assays`
 * **Testing**: pytest suite with GitHub Actions CI/CD
 
 ### 🚧 **Roadmap**
 
-**Near-term:**
-- Usability & Examples (Example packages, CSV export, CLI improvements)
-- QC Enhancements (GC clamp, poly-X detection, ranking system)
+**Near-term (v0.1.3+):**
+- Multi-Candidate Re-ranking (ViennaRNA-based primer selection)
+- QC Enhancements (GC clamp, poly-X detection)
 - Advanced Reporting (HTML reports, explanations)
 - Smart Features (Auto-suggestions, interactive wizard)
 
