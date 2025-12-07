@@ -39,64 +39,69 @@ def run_pcr_workflow(config: Dict[str, Any]) -> WorkflowResult:
     num_returned = raw_results.get('PRIMER_LEFT_NUM_RETURNED', 0)
     logger.info(f"Primer3 returned {num_returned} pairs.")
 
-    # 3. Parse Results into Data Models
+    # 3. Multi-Candidate Re-ranking (v0.1.3)
+    from primerlab.core.reranking import RerankingEngine
+    
+    reranker = RerankingEngine(config)
+    best_candidate, alternatives = reranker.select_best(raw_results)
+    
+    # 4. Parse Best Candidate into Data Models
     primers = {}
     amplicons = []
     
-    # We'll just take the best pair (index 0) for this milestone
-    if num_returned > 0:
-        # Forward Primer
-        fwd_seq = raw_results.get('PRIMER_LEFT_0_SEQUENCE')
-        fwd_tm = raw_results.get('PRIMER_LEFT_0_TM')
-        fwd_gc = raw_results.get('PRIMER_LEFT_0_GC_PERCENT')
-        fwd_start, fwd_len = raw_results.get('PRIMER_LEFT_0') # tuple (start, len)
+    if best_candidate:
+        idx = best_candidate["index"]
         
+        # Forward Primer
+        fwd_start, fwd_len = best_candidate["fwd_pos"]
         fwd_primer = Primer(
-            id="forward_0",
-            sequence=fwd_seq,
-            tm=fwd_tm,
-            gc=fwd_gc,
+            id=f"forward_{idx}",
+            sequence=best_candidate["fwd_seq"],
+            tm=best_candidate["fwd_tm"],
+            gc=best_candidate["fwd_gc"],
             length=fwd_len,
             start=fwd_start,
-            end=fwd_start + fwd_len - 1, # 0-based inclusive
-            hairpin_dg=raw_results.get('PRIMER_LEFT_0_HAIRPIN_TH', 0.0),
-            homodimer_dg=raw_results.get('PRIMER_LEFT_0_HOMODIMER_TH', 0.0),
-            raw={"p3_index": 0}
+            end=fwd_start + fwd_len - 1,
+            hairpin_dg=best_candidate["qc_details"].get("hairpin_fwd_dg", 0.0),
+            homodimer_dg=best_candidate["qc_details"].get("homodimer_fwd_dg", 0.0),
+            raw={"p3_index": idx, "passes_qc": best_candidate["passes_qc"]}
         )
         primers["forward"] = fwd_primer
 
         # Reverse Primer
-        rev_seq = raw_results.get('PRIMER_RIGHT_0_SEQUENCE')
-        rev_tm = raw_results.get('PRIMER_RIGHT_0_TM')
-        rev_gc = raw_results.get('PRIMER_RIGHT_0_GC_PERCENT')
-        rev_start, rev_len = raw_results.get('PRIMER_RIGHT_0')
-        
+        rev_start, rev_len = best_candidate["rev_pos"]
         rev_primer = Primer(
-            id="reverse_0",
-            sequence=rev_seq,
-            tm=rev_tm,
-            gc=rev_gc,
+            id=f"reverse_{idx}",
+            sequence=best_candidate["rev_seq"],
+            tm=best_candidate["rev_tm"],
+            gc=best_candidate["rev_gc"],
             length=rev_len,
-            start=rev_start - rev_len + 1, # 5' end on template
-            end=rev_start, # 3' end on template (Primer3 returns this as index)
-            hairpin_dg=raw_results.get('PRIMER_RIGHT_0_HAIRPIN_TH', 0.0),
-            homodimer_dg=raw_results.get('PRIMER_RIGHT_0_HOMODIMER_TH', 0.0),
-            raw={"p3_index": 0}
+            start=rev_start - rev_len + 1,
+            end=rev_start,
+            hairpin_dg=best_candidate["qc_details"].get("hairpin_rev_dg", 0.0),
+            homodimer_dg=best_candidate["qc_details"].get("homodimer_rev_dg", 0.0),
+            raw={"p3_index": idx, "passes_qc": best_candidate["passes_qc"]}
         )
         primers["reverse"] = rev_primer
 
         # Amplicon
-        product_size = raw_results.get('PRIMER_PAIR_0_PRODUCT_SIZE')
         amplicon = Amplicon(
             start=fwd_start,
-            end=rev_start, # Simplified
-            length=product_size,
-            sequence="N/A", # TODO: Extract subsequence
-            gc=0.0, # TODO: Calculate GC
-            tm_forward=fwd_tm,
-            tm_reverse=rev_tm
+            end=rev_start,
+            length=best_candidate["product_size"],
+            sequence="N/A",
+            gc=0.0,
+            tm_forward=best_candidate["fwd_tm"],
+            tm_reverse=best_candidate["rev_tm"]
         )
         amplicons.append(amplicon)
+        
+        # Log selection info
+        if best_candidate["passes_qc"]:
+            logger.info(f"Selected primer pair #{idx} (passes ViennaRNA QC)")
+        else:
+            reasons = best_candidate["qc_details"].get("rejection_reasons", [])
+            logger.warning(f"Best available primer #{idx} has QC warnings: {reasons}")
 
     # 4. Run QC
     from primerlab.workflows.pcr.qc import PCRQC
@@ -126,6 +131,7 @@ def run_pcr_workflow(config: Dict[str, Any]) -> WorkflowResult:
         amplicons=amplicons,
         metadata=metadata,
         qc=qc_result,
+        alternatives=alternatives if best_candidate else [],
         raw=raw_results
     )
     
