@@ -17,6 +17,9 @@ class WorkflowResult:
     warnings: List[str] = field(default_factory=list)
     errors: List[str] = field(default_factory=list)
     
+    # v0.1.3: Alternative primer candidates
+    alternatives: List[Dict[str, Any]] = field(default_factory=list)
+    
     # Internal diagnostics
     raw: Dict[str, Any] = field(default_factory=dict, repr=False)
 
@@ -28,5 +31,6 @@ class WorkflowResult:
             "qc": self.qc.to_dict() if self.qc else None,
             "metadata": self.metadata.to_dict(),
             "warnings": self.warnings,
-            "errors": self.errors
+            "errors": self.errors,
+            "alternatives": self.alternatives
         }

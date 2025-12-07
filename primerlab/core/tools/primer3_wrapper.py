@@ -24,13 +24,18 @@ class Primer3Wrapper:
         # Extract parameters from config
         params = config.get("parameters", {})
         
+        # Determine default num_candidates based on workflow type
+        # qPCR with probe design is slower, so use fewer candidates
+        workflow_type = config.get('workflow', 'pcr')
+        default_num_candidates = 30 if workflow_type == 'qpcr' else 50
+        
         # Map PrimerLab config to Primer3 parameters
         p3_settings = {
             'SEQUENCE_TEMPLATE': sequence,
             'PRIMER_TASK': 'generic',
             'PRIMER_PICK_LEFT_PRIMER': 1,
             'PRIMER_PICK_RIGHT_PRIMER': 1,
-            'PRIMER_NUM_RETURN': 1,
+            'PRIMER_NUM_RETURN': params.get('num_candidates', default_num_candidates),  # v0.1.3: Multi-candidate support
             
             # Size
             'PRIMER_OPT_SIZE': params.get('primer_size', {}).get('opt', 20),
@@ -48,7 +53,6 @@ class Primer3Wrapper:
         }
         
         # Product Size Range - determine based on workflow type
-        workflow_type = config.get('workflow', 'pcr')
         if workflow_type == 'qpcr':
             default_range = [[70, 150]]  # qPCR-optimal range
         else:
