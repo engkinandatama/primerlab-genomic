@@ -111,10 +111,11 @@ def run_pcr_workflow(config: Dict[str, Any]) -> WorkflowResult:
             logger.warning(f"QC Warnings: {qc_result.warnings}")
 
     # 5. Create Metadata
+    from primerlab import __version__
     metadata = RunMetadata(
         workflow="pcr",
         timestamp=datetime.now(timezone.utc).isoformat(),
-        version="0.1.0",
+        version=__version__,
         parameters=config.get("parameters", {})
     )
 

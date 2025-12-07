@@ -34,19 +34,78 @@ def deep_merge(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]
 def validate_config(config: Dict[str, Any]):
     """
     Validates the merged configuration against required schema.
+    Provides clear, actionable error messages.
     """
+    # Check required top-level sections
     required_keys = ["workflow", "input", "parameters", "output"]
-    for key in required_keys:
-        if key not in config:
-            raise ConfigError(f"Missing required config section: '{key}'", "ERR_CONFIG_003")
+    missing_keys = [key for key in required_keys if key not in config]
+    if missing_keys:
+        raise ConfigError(
+            f"Missing required config section(s): {', '.join(missing_keys)}. "
+            f"Your config must include: {', '.join(required_keys)}",
+            "ERR_CONFIG_003"
+        )
             
     # Validate workflow name
-    if not config.get("workflow"):
-        raise ConfigError("Workflow name cannot be empty", "ERR_CONFIG_004")
+    workflow = config.get("workflow")
+    if not workflow:
+        raise ConfigError(
+            "Workflow name cannot be empty. "
+            "Please specify 'workflow: pcr' or 'workflow: qpcr' in your config.",
+            "ERR_CONFIG_004"
+        )
+    
+    # Check for valid workflow types
+    valid_workflows = ["pcr", "qpcr"]
+    if workflow.lower() not in valid_workflows:
+        raise ConfigError(
+            f"Unknown workflow '{workflow}'. "
+            f"Valid workflows are: {', '.join(valid_workflows)}",
+            "ERR_CONFIG_007"
+        )
+
+    # Validate input section
+    input_section = config.get("input", {})
+    if not input_section.get("sequence"):
+        raise ConfigError(
+            "Input sequence is missing. "
+            "Add 'input: sequence: <your_sequence>' or 'input: sequence: path/to/file.fasta'",
+            "ERR_CONFIG_008"
+        )
 
     # Validate output directory
-    if not config["output"].get("directory"):
-        raise ConfigError("Output directory must be specified", "ERR_CONFIG_005")
+    output_section = config.get("output", {})
+    if not output_section.get("directory"):
+        raise ConfigError(
+            "Output directory must be specified. "
+            "Add 'output: directory: <output_folder>' to your config.",
+            "ERR_CONFIG_005"
+        )
+    
+    # Validate parameter ranges (optional but helpful)
+    params = config.get("parameters", {})
+    
+    # Check Tm range validity
+    tm = params.get("tm", {})
+    if tm:
+        tm_min = tm.get("min", 0)
+        tm_max = tm.get("max", 100)
+        if tm_min >= tm_max:
+            raise ConfigError(
+                f"Invalid Tm range: min ({tm_min}) must be less than max ({tm_max}).",
+                "ERR_CONFIG_009"
+            )
+    
+    # Check product_size range validity
+    p_size = params.get("product_size", {})
+    if p_size:
+        p_min = p_size.get("min", 0)
+        p_max = p_size.get("max", 10000)
+        if p_min >= p_max:
+            raise ConfigError(
+                f"Invalid product_size range: min ({p_min}) must be less than max ({p_max}).",
+                "ERR_CONFIG_010"
+            )
 
 def load_and_merge_config(workflow: str, user_config_path: Optional[str] = None, cli_overrides: Optional[Dict] = None) -> Dict[str, Any]:
     """

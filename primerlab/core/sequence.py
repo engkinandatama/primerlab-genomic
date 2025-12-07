@@ -68,5 +68,13 @@ class SequenceLoader:
         
         if invalid_chars:
             raise SequenceError(f"Invalid characters found in sequence: {invalid_chars}", "ERR_SEQ_INVALID_CHAR")
+        
+        # Check minimum length (50bp minimum for primer design)
+        MIN_SEQUENCE_LENGTH = 50
+        if len(sequence) < MIN_SEQUENCE_LENGTH:
+            raise SequenceError(
+                f"Sequence too short ({len(sequence)} bp). Minimum length is {MIN_SEQUENCE_LENGTH} bp for primer design.",
+                "ERR_SEQ_TOO_SHORT"
+            )
             
         return sequence

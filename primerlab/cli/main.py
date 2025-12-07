@@ -7,7 +7,7 @@ from primerlab.core.config_loader import load_and_merge_config
 from primerlab.core.exceptions import PrimerLabException
 
 # Version definition
-__version__ = "0.1.0"
+__version__ = "0.1.2"
 
 def main():
     parser = argparse.ArgumentParser(
@@ -28,6 +28,13 @@ def main():
     run_parser.add_argument("--config", "-c", type=str, help="Path to user config YAML file")
     run_parser.add_argument("--out", "-o", type=str, help="Override output directory")
     run_parser.add_argument("--debug", action="store_true", help="Enable debug logging")
+    run_parser.add_argument("--dry-run", action="store_true", help="Validate config without running workflow")
+
+    # --- BATCH-GENERATE Command ---
+    batch_parser = subparsers.add_parser("batch-generate", help="Generate multiple configs from CSV")
+    batch_parser.add_argument("--input", "-i", type=str, required=True, help="Input CSV file")
+    batch_parser.add_argument("--output", "-o", type=str, default="./configs", help="Output directory for configs")
+    batch_parser.add_argument("--workflow", "-w", type=str, choices=["pcr", "qpcr"], default="pcr", help="Workflow type")
 
     args = parser.parse_args()
 
@@ -69,6 +76,18 @@ def main():
             
             logger.info("Configuration loaded successfully.")
             logger.debug(f"Final Config: {config}")
+            
+            # Check for dry-run mode
+            if args.dry_run:
+                logger.info("✅ Dry-run complete. Configuration is valid.")
+                logger.info(f"   Workflow: {args.workflow}")
+                logger.info(f"   Output: {config['output']['directory']}")
+                params = config.get('parameters', {})
+                if params.get('tm'):
+                    logger.info(f"   Tm Range: {params['tm'].get('min', '?')} - {params['tm'].get('max', '?')} °C")
+                if params.get('product_size'):
+                    logger.info(f"   Product Size: {params['product_size'].get('min', '?')} - {params['product_size'].get('max', '?')} bp")
+                sys.exit(0)
 
             # 4. Run Workflow
             logger.info("Initializing workflow engine...")
@@ -89,8 +108,8 @@ def main():
                 output_mgr = OutputManager(out_dir, args.workflow)
                 
                 output_mgr.save_json(result)
-                
-                
+                output_mgr.save_csv(result)
+                output_mgr.save_ordering_format(result, "idt")                
                 # 6. Generate Report
                 if args.workflow == "qpcr":
                     from primerlab.workflows.qpcr.report import qPCRReportGenerator
@@ -126,6 +145,30 @@ def main():
         except Exception as e:
             logger.error(f"Unexpected Error: {e}")
             logger.exception("Traceback:")
+            sys.exit(1)
+
+    if args.command == "batch-generate":
+        logger = setup_logger(level=logging.INFO)
+        logger.info(f"Starting PrimerLab Batch Generator v{__version__}")
+        
+        try:
+            from primerlab.cli.batch_generator import generate_configs_from_csv
+            
+            generated = generate_configs_from_csv(
+                csv_path=args.input,
+                output_dir=args.output,
+                workflow=args.workflow
+            )
+            
+            logger.info(f"✅ Successfully generated {len(generated)} config files")
+            for f in generated:
+                print(f"  - {f}")
+            
+        except FileNotFoundError as e:
+            logger.error(f"Error: {e}")
+            sys.exit(1)
+        except Exception as e:
+            logger.error(f"Unexpected Error: {e}")
             sys.exit(1)
 
 if __name__ == "__main__":

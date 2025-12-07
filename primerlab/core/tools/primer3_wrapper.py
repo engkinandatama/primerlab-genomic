@@ -132,8 +132,28 @@ class Primer3Wrapper:
         if not queue.empty():
             result_wrapper = queue.get()
             if result_wrapper["success"]:
-                logger.info("Primer3 returned results.")
-                return result_wrapper["data"]
+                data = result_wrapper["data"]
+                
+                # Check if any primers were actually returned
+                num_returned = data.get('PRIMER_LEFT_NUM_RETURNED', 0)
+                if num_returned == 0:
+                    # Extract explanations
+                    left_explain = data.get('PRIMER_LEFT_EXPLAIN', 'N/A')
+                    right_explain = data.get('PRIMER_RIGHT_EXPLAIN', 'N/A')
+                    pair_explain = data.get('PRIMER_PAIR_EXPLAIN', 'N/A')
+                    
+                    error_msg = (
+                        "Primer3 failed to find any primers.\n"
+                        "Reasons:\n"
+                        f"- Left Primer: {left_explain}\n"
+                        f"- Right Primer: {right_explain}\n"
+                        f"- Pair: {pair_explain}\n\n"
+                        "Suggestion: Try relaxing constraints (e.g., wider Tm range, lower GC content) or using a different region."
+                    )
+                    raise ToolExecutionError(error_msg, "ERR_TOOL_P3_NO_PRIMERS")
+                
+                logger.info(f"Primer3 returned {num_returned} pairs.")
+                return data
             else:
                 raise ToolExecutionError(f"Primer3 failed: {result_wrapper['error']}", "ERR_TOOL_P3_001")
         else:
