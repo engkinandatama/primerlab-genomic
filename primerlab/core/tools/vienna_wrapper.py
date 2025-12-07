@@ -9,14 +9,29 @@ logger = get_logger()
 class ViennaWrapper:
     """
     Wrapper for ViennaRNA tools (RNAfold, RNAcofold).
+    Gracefully handles missing installation.
     """
+    
+    _warned = False  # Class-level flag to avoid repeated warnings
     
     def __init__(self):
         self.rnafold_path = shutil.which("RNAfold")
         self.rnacofold_path = shutil.which("RNAcofold")
         
-        if not self.rnafold_path:
-            logger.warning("RNAfold not found in PATH. Secondary structure QC will be disabled.")
+        if not self.is_available and not ViennaWrapper._warned:
+            ViennaWrapper._warned = True
+            logger.warning(
+                "⚠️ ViennaRNA not found. Secondary structure QC will be skipped.\n"
+                "   Install ViennaRNA for full QC:\n"
+                "   - Linux: sudo apt install vienna-rna\n"
+                "   - macOS: brew install viennarna\n"
+                "   - Conda: conda install -c bioconda viennarna"
+            )
+    
+    @property
+    def is_available(self) -> bool:
+        """Check if ViennaRNA tools are available."""
+        return self.rnafold_path is not None
         
     def fold(self, sequence: str, temp: float = 37.0) -> Dict[str, Any]:
         """
