@@ -83,6 +83,28 @@ class Primer3Wrapper:
             'SEQUENCE_TEMPLATE': sequence
         }
         
+        # v0.1.4: Target Region Specification
+        target_region = params.get('target_region')
+        if target_region:
+            start = target_region.get('start', 0)
+            length = target_region.get('length', 100)
+            
+            # Validate region is within sequence bounds
+            if start < 0:
+                start = 0
+            if start + length > len(sequence):
+                length = len(sequence) - start
+                logger.warning(f"Target region adjusted to fit sequence: {start},{length}")
+            
+            seq_args['SEQUENCE_TARGET'] = [[start, length]]
+            logger.info(f"Target region set: position {start}, length {length}")
+        
+        # v0.1.4: Excluded Regions (for avoiding specific areas)
+        excluded_regions = params.get('excluded_regions', [])
+        if excluded_regions:
+            seq_args['SEQUENCE_EXCLUDED_REGION'] = [[r['start'], r['length']] for r in excluded_regions]
+            logger.info(f"Excluded regions: {len(excluded_regions)}")
+        
         # Remove sequence from global settings to avoid duplication/confusion
         if 'SEQUENCE_TEMPLATE' in p3_settings:
             del p3_settings['SEQUENCE_TEMPLATE']

@@ -1,8 +1,10 @@
 """
-Multi-Candidate Re-ranking Engine for v0.1.3
+Multi-Candidate Re-ranking Engine for v0.1.3+
 
 This module evaluates multiple primer candidates from Primer3,
 applies ViennaRNA QC thresholds, and selects the best candidate.
+
+v0.1.4: Added quality scoring and rationale tracking.
 """
 
 import random
@@ -11,6 +13,8 @@ from dataclasses import dataclass
 from primerlab.core.models import Primer
 from primerlab.core.tools.vienna_wrapper import ViennaWrapper
 from primerlab.core.logger import get_logger
+from primerlab.core.scoring import calculate_quality_score, ScoringResult
+from primerlab.core.rationale import RationaleTracker
 
 logger = get_logger()
 
@@ -67,6 +71,12 @@ class RerankingEngine:
         if self.seed is not None:
             random.seed(self.seed)
             logger.info(f"Reproducibility seed set: {self.seed}")
+        
+        # v0.1.4: Store QC mode for scoring
+        self.qc_mode = qc_mode
+        
+        # v0.1.4: Rationale tracker
+        self.rationale_tracker = RationaleTracker()
         
         logger.info(f"Re-ranking Engine initialized with QC mode: {qc_mode}")
     
@@ -229,6 +239,36 @@ class RerankingEngine:
                 "passes_qc": passes_qc,
                 "qc_details": details
             })
+            
+            # v0.1.4: Calculate quality score
+            gc_clamp_fwd = "ok" if details["gc_clamp_fwd"] else "weak"
+            gc_clamp_rev = "ok" if details["gc_clamp_rev"] else "weak"
+            
+            score_result = calculate_quality_score(
+                primer3_penalty=penalty,
+                hairpin_dg_fwd=details.get("hairpin_fwd_dg"),
+                hairpin_dg_rev=details.get("hairpin_rev_dg"),
+                homodimer_dg_fwd=details.get("homodimer_fwd_dg"),
+                homodimer_dg_rev=details.get("homodimer_rev_dg"),
+                heterodimer_dg=details.get("heterodimer_dg"),
+                gc_clamp_fwd=gc_clamp_fwd,
+                gc_clamp_rev=gc_clamp_rev,
+                poly_x_fwd=not details.get("poly_x_fwd", True),
+                poly_x_rev=not details.get("poly_x_rev", True),
+                qc_mode=self.qc_mode
+            )
+            
+            candidates[-1]["quality_score"] = score_result.score
+            candidates[-1]["quality_category"] = score_result.category
+            candidates[-1]["quality_category_emoji"] = score_result.category_emoji
+            candidates[-1]["quality_penalties"] = score_result.penalties
+            
+            # v0.1.4: Track for rationale
+            if passes_qc:
+                self.rationale_tracker.record_pass(i, score_result.score, penalty)
+            else:
+                for reason in details.get("rejection_reasons", []):
+                    self.rationale_tracker.record_rejection(i, reason)
         
         # Sort: QC-passing first, then by Primer3 penalty
         candidates.sort(key=lambda c: (not c["passes_qc"], c["primer3_penalty"]))
@@ -253,8 +293,50 @@ class RerankingEngine:
         alternatives = candidates[1:self.show_alternatives + 1]
         
         if best["passes_qc"]:
-            logger.info(f"Selected candidate #{best['index']} (passes QC, penalty={best['primer3_penalty']:.2f})")
+            logger.info(f"Selected candidate #{best['index']} (passes QC, penalty={best['primer3_penalty']:.2f}, score={best.get('quality_score', 'N/A')})")
         else:
             logger.warning(f"Best available candidate #{best['index']} does NOT pass QC: {best['qc_details'].get('rejection_reasons', [])}")
         
         return best, alternatives
+    
+    def get_rationale(self, best_candidate: Optional[Dict]) -> Optional[Dict]:
+        """
+        Get selection rationale for the best candidate.
+        
+        Args:
+            best_candidate: The selected best candidate
+            
+        Returns:
+            Dict with rationale information, or None
+        """
+        if not best_candidate:
+            return None
+        
+        rationale = self.rationale_tracker.generate_rationale(
+            selected_score=best_candidate.get("quality_score", 0),
+            selected_penalty=best_candidate.get("primer3_penalty", 0),
+            selected_rank=1
+        )
+        
+        return rationale.to_dict()
+    
+    def get_rationale_markdown(self, best_candidate: Optional[Dict]) -> str:
+        """
+        Get selection rationale as markdown.
+        
+        Args:
+            best_candidate: The selected best candidate
+            
+        Returns:
+            Markdown formatted rationale string
+        """
+        if not best_candidate:
+            return ""
+        
+        rationale = self.rationale_tracker.generate_rationale(
+            selected_score=best_candidate.get("quality_score", 0),
+            selected_penalty=best_candidate.get("primer3_penalty", 0),
+            selected_rank=1
+        )
+        
+        return rationale.to_markdown()

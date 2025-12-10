@@ -45,9 +45,17 @@ class ReportGenerator:
                 if result.qc and result.qc.errors:
                     qc_status = f"❌ FAIL ({len(result.qc.errors)} errors)"
                 
+                # v0.1.4: Quality Score
+                quality_display = "N/A"
+                if result.qc and result.qc.quality_score is not None:
+                    emoji = result.qc.quality_category_emoji or ""
+                    category = result.qc.quality_category or ""
+                    quality_display = f"{emoji} {result.qc.quality_score}/100 ({category})"
+                
                 md.append("| Metric | Value |")
                 md.append("|:-------|------:|")
                 md.append(f"| **Primers Found** | {len(result.primers)} |")
+                md.append(f"| **Quality Score** | {quality_display} |")
                 md.append(f"| **Average Tm** | {avg_tm:.1f}°C |")
                 md.append(f"| **Tm Difference** | {tm_diff:.1f}°C |")
                 md.append(f"| **Average GC%** | {avg_gc:.1f}% |")
@@ -133,6 +141,11 @@ class ReportGenerator:
                     md.append(f"- ⚠️ {w}")
         else:
             md.append("QC data not available.")
+        
+        # v0.1.4: Why This Primer section
+        if hasattr(result, 'rationale_md') and result.rationale_md:
+            md.append("")
+            md.append(result.rationale_md)
         
         # 6. Rejected Candidates Log
         if hasattr(result, 'raw') and result.raw:

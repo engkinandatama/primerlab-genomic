@@ -7,7 +7,7 @@ from primerlab.core.config_loader import load_and_merge_config
 from primerlab.core.exceptions import PrimerLabException
 
 # Version definition
-__version__ = "0.1.3"
+__version__ = "0.1.4"
 
 
 def _run_health_check():
@@ -212,6 +212,15 @@ def main():
                 for fmt in export_formats:
                     if fmt in ["idt", "sigma", "thermo"]:
                         output_mgr.save_ordering_format(result, fmt)
+                    elif fmt == "xlsx":
+                        # v0.1.4: Excel export
+                        output_mgr.save_excel(result)
+                    elif fmt == "idt_bulk":
+                        # v0.1.4: IDT bulk order with plate positions
+                        output_mgr.save_idt_bulk_order(result)
+                    elif fmt == "html":
+                        # v0.1.4: HTML report
+                        output_mgr.save_html(result)
                     else:
                         logger.warning(f"Unknown export format: {fmt}")
                 

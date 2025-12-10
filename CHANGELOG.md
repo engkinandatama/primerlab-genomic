@@ -5,6 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4] - 2025-12-10
+### Added
+- **Primer Quality Score (0-100)**:
+    - Combined scoring from Primer3, ViennaRNA, and Sequence QC.
+    - Mode-specific penalties (strict, standard, relaxed).
+    - Categories: Excellent (85-100), Good (70-84), Fair (50-69), Poor (0-49).
+    - Scientific backing from Benchling 2024, IDT, DeGenPrime guidelines.
+- **"Why This Primer?" Rationale**:
+    - Explains why the selected primer was chosen.
+    - Shows rejected candidates count and top rejection reasons.
+    - Included in Markdown and HTML reports.
+- **Audit Log (audit.json)**:
+    - Captures all parameters, config hash, sequence hash.
+    - Records quality score and candidates summary.
+    - Enables reproducibility and troubleshooting.
+- **Excel Export (.xlsx)**:
+    - Formatted primer table with color-coded Tm/GC values.
+    - QC Summary sheet with quality score.
+    - Requires openpyxl dependency.
+- **IDT Bulk Ordering Template**:
+    - Plate layout format (A1, A2, etc.).
+    - Ready for IDT bulk upload.
+- **HTML Report Generator**:
+    - Standalone HTML with embedded CSS.
+    - Quality score banner with color coding.
+    - "Why This Primer?" section.
+    - Copy-to-clipboard functionality.
+- **Target Region Specification**:
+    - `parameters.target_region.start` and `length` in config.
+    - `parameters.excluded_regions` for avoiding specific areas.
+    - Integrates with Primer3 SEQUENCE_TARGET.
+- **New Export Formats**:
+    - `--export xlsx` for Excel output.
+    - `--export html` for HTML report.
+    - `--export idt_bulk` for plate-ordered Excel.
+
+### Improved
+- Scoring documentation with scientific references.
+- Report now includes Quality Score in Summary Statistics.
+
+### Dependencies
+- Added `openpyxl>=3.1.0` for Excel export.
+
 ## [0.1.3] - 2025-12-08
 ### Added
 - **Multi-Candidate Re-ranking Engine**:

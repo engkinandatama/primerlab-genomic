@@ -5,9 +5,9 @@ A modular bioinformatics framework for automated **primer and probe design**, bu
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-BSD%203--Clause-green.svg)](LICENSE)
 [![Tests](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml/badge.svg)](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml)
-[![Status](https://img.shields.io/badge/status-v0.1.3-blue.svg)](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.1.3)
+[![Status](https://img.shields.io/badge/status-v0.1.4-blue.svg)](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.1.4)
 
-> 🔰 **Latest Release**: [**v0.1.3 - Multi-Candidate Re-ranking & QC Enhancements**](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.1.3) 🎉
+> 🔰 **Latest Release**: [**v0.1.4 - Reporting & Transparency**](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.1.4) 🎉
 
 ---
 
@@ -56,7 +56,7 @@ pip install -e .
 #### Option 2: For End Users (From GitHub Release)
 ```bash
 # Install directly from GitHub (latest release)
-pip install git+https://github.com/engkinandatama/primerlab-genomic.git@v0.1.3
+pip install git+https://github.com/engkinandatama/primerlab-genomic.git@v0.1.4
 ```
 
 Once installed, verify the installation:
@@ -217,44 +217,24 @@ primerlab-genomic/
 
 ## 📌 Development Status
 
-### ✅ **v0.1.3** (Current)
+### ✅ **v0.1.4** (Current)
 
 The current release includes:
 
-* **Multi-Candidate Re-ranking Engine**:
-  - Requests N candidates from Primer3 (configurable)
-  - Evaluates each with ViennaRNA QC (hairpin, homodimer, heterodimer)
-  - Selects best primer pair that passes all QC checks
-* **Sequence QC Enhancements**:
-  - GC Clamp check (3' end stability)
-  - Poly-X run detection
-* **New Workflow Presets**: `dna_barcoding`, `rt_pcr`, `long_range`
-* **CLI Enhancements**:
-  - `primerlab init` - Generate template config
-  - `primerlab health` - Check all dependencies
-  - `--export` flag for vendor format selection
-  - Colorized output (Rich) & progress bars (tqdm)
-* **Configuration**: `seed` parameter for reproducibility
-* **Documentation**: Troubleshooting guide, QC metrics with citations
-
-### 🚧 **Roadmap**
-
-**Near-term (v0.1.3+):**
-- Multi-Candidate Re-ranking (ViennaRNA-based primer selection)
-- QC Enhancements (GC clamp, poly-X detection)
-- Advanced Reporting (HTML reports, explanations)
-- Smart Features (Auto-suggestions, interactive wizard)
-
-**Mid-term:**
-- CRISPR Workflow (PAM finding, guide extraction, off-target scoring)
-- Multiplex PCR support
-
-**Long-term:**
-- Performance optimizations & parallel processing
-- ML-based primer prediction
-- Web interface & cloud deployment
-
-**v1.0.0 — Production Ready**: Stable public release with full documentation
+* **Primer Quality Score (0-100)**:
+  - Combined scoring from Primer3, ViennaRNA, and Sequence QC
+  - Mode-specific penalties (strict, standard, relaxed)
+  - Categories: Excellent, Good, Fair, Poor
+* **"Why This Primer?" Rationale**:
+  - Explains primer selection decision
+  - Shows rejected candidates and top rejection reasons
+* **Audit Log (audit.json)**: Reproducibility and troubleshooting
+* **New Export Formats**:
+  - Excel (.xlsx) with color-coded formatting
+  - IDT Bulk Ordering Template with plate positions
+  - Standalone HTML Report
+* **Target Region Specification**: Precise amplicon targeting
+* **New Dependency**: `openpyxl>=3.1.0` for Excel export
 
 ---
 
