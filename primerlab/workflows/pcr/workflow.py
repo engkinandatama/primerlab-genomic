@@ -111,10 +111,24 @@ def run_pcr_workflow(config: Dict[str, Any]) -> WorkflowResult:
     if primers:
         qc_result = qc_engine.evaluate_pair(primers["forward"], primers["reverse"])
         
+        # v0.1.4: Add quality score from best candidate
+        if best_candidate:
+            qc_result.quality_score = best_candidate.get("quality_score")
+            qc_result.quality_category = best_candidate.get("quality_category")
+            qc_result.quality_category_emoji = best_candidate.get("quality_category_emoji")
+            qc_result.quality_penalties = best_candidate.get("quality_penalties")
+        
         # Add QC warnings to main result warnings
         if qc_result.warnings:
             logger.warning(f"QC Warnings: {qc_result.warnings}")
 
+    # v0.1.4: Get selection rationale
+    rationale = None
+    rationale_md = ""
+    if best_candidate:
+        rationale = reranker.get_rationale(best_candidate)
+        rationale_md = reranker.get_rationale_markdown(best_candidate)
+    
     # 5. Create Metadata
     from primerlab import __version__
     metadata = RunMetadata(
@@ -135,4 +149,33 @@ def run_pcr_workflow(config: Dict[str, Any]) -> WorkflowResult:
         raw=raw_results
     )
     
+    # v0.1.4: Add rationale to result
+    result.rationale = rationale
+    result.rationale_md = rationale_md
+    
+    # v0.1.4: Create audit log
+    from primerlab.core.audit import create_audit_log
+    from pathlib import Path
+    
+    output_dir = Path(config.get("output", {}).get("directory", "output"))
+    try:
+        create_audit_log(
+            workflow="pcr",
+            config=config,
+            sequence=sequence,
+            results={
+                "success": bool(primers),
+                "quality_score": qc_result.quality_score if qc_result else None,
+                "quality_category": qc_result.quality_category if qc_result else None,
+                "candidates_evaluated": len(reranker.rationale_tracker.passed) + len(reranker.rationale_tracker.rejections),
+                "candidates_passed_qc": len(reranker.rationale_tracker.passed),
+                "primers_designed": len(primers),
+                "alternatives_count": len(alternatives)
+            },
+            output_dir=output_dir
+        )
+    except Exception as e:
+        logger.warning(f"Failed to create audit log: {e}")
+    
     return result
+

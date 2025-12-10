@@ -14,6 +14,12 @@ class QCResult:
 
     tm_diff: float
 
+    # Quality score fields (v0.1.4)
+    quality_score: Optional[int] = None  # 0-100
+    quality_category: Optional[str] = None  # Excellent, Good, Fair, Poor
+    quality_category_emoji: Optional[str] = None  # ✅, ⚠️, ❌
+    quality_penalties: Optional[Dict[str, int]] = None
+
     warnings: List[str] = field(default_factory=list)
     errors: List[str] = field(default_factory=list)
 
@@ -27,6 +33,11 @@ class QCResult:
             "homodimer_dg": round(self.homodimer_dg, 2) if self.homodimer_dg is not None else None,
             "heterodimer_dg": round(self.heterodimer_dg, 2) if self.heterodimer_dg is not None else None,
             "tm_diff": round(self.tm_diff, 2),
+            "quality_score": self.quality_score,
+            "quality_category": self.quality_category,
+            "quality_category_emoji": self.quality_category_emoji,
+            "quality_penalties": self.quality_penalties,
             "warnings": self.warnings,
             "errors": self.errors
         }
+
