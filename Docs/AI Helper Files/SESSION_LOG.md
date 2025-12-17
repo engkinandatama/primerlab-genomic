@@ -115,7 +115,17 @@ Types: `INFO`, `CHANGE`, `FIX`, `TODO`, `WARN`, `ERR`
 
 Last updated: 2025-12-17
 
-- v0.1-v0.4 milestones: COMPLETE
-- v0.1.5: Partial (FASTA done, Auto-suggestion pending)
-- Interactive CLI Wizard: Moved to v1.0 Future Plan
-- Next targets: v0.1.5 pending features OR v0.2.0 CRISPR
+- v0.1.0 - v0.1.4: ✅ COMPLETE
+- v0.1.5 Priority 4 (Smart Features): ✅ COMPLETE
+  - Auto Parameter Suggestion
+  - Primer Comparison Tool
+- v0.1.5 Priority 5 (Export & Integration): ✅ COMPLETE
+  - Benchling CSV Export
+  - Batch Summary Module
+  - Batch Run Command
+  - JSON Schema for Config
+- v0.1.5 Priority 6 (Optional Advanced Features): ⏳ PENDING
+  - GC Profile Plot (needs matplotlib)
+  - Region Masking
+  - Primer Database (SQLite)
+- Next decision point: v0.1.5 optional features OR v0.2.0 CRISPR
