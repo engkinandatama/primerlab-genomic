@@ -42,6 +42,23 @@ All new code must integrate with test guidelines.
 
 If unsure → do not modify.
 
+### **1.6 Use Session Log (MANDATORY)**
+
+At the **start** of every session:
+
+* Read `Docs/AI Helper Files/SESSION_LOG.md`
+* Understand context from previous sessions
+
+At the **end** of every session (or before major changes):
+
+* Update `SESSION_LOG.md` with:
+  * Tasks attempted (success/fail)
+  * Files changed
+  * Issues encountered and resolutions
+  * Notes for next session
+
+This ensures continuity across chat sessions.
+
 ---
 
 # **2. Allowed Contribution Scope**
@@ -305,7 +322,7 @@ from primerlab.core.tools.primer3_wrapper import run_primer3
 
 # **10. Testing Rules for AI-Generated Code**
 
-### AI MUST:
+### AI MUST
 
 * write deterministic tests
 * use mocks for external tools
@@ -314,7 +331,7 @@ from primerlab.core.tools.primer3_wrapper import run_primer3
 * follow test folder structure
 * follow naming conventions
 
-### AI MUST NOT:
+### AI MUST NOT
 
 * call external binaries
 * use large sample data
@@ -416,4 +433,3 @@ These rules ensure automated contributors:
 
 **AI Helper Rules = the law of the land.**
 Every automated contribution must comply.
-

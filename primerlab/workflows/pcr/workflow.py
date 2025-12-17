@@ -52,10 +52,32 @@ def run_pcr_workflow(config: Dict[str, Any]) -> WorkflowResult:
     if best_candidate:
         idx = best_candidate["index"]
         
+        # v0.1.5: Primer Naming Convention
+        # Priority: config > FASTA header > filename > default
+        naming_config = config.get("parameters", {}).get("primer_naming", {})
+        gene_name = naming_config.get("gene_name")
+        
+        if not gene_name:
+            # Try to get from sequence loader (FASTA header or filename)
+            gene_name = SequenceLoader.get_last_sequence_name()
+        
+        if not gene_name:
+            gene_name = "primer"
+        
+        # Clean gene name for use in primer IDs
+        gene_name = gene_name.replace(" ", "_").replace("-", "_")[:20]
+        
+        # Custom naming pattern or default
+        fwd_pattern = naming_config.get("forward_pattern", "{gene}_F{idx}")
+        rev_pattern = naming_config.get("reverse_pattern", "{gene}_R{idx}")
+        
+        fwd_id = fwd_pattern.format(gene=gene_name, idx=idx + 1)
+        rev_id = rev_pattern.format(gene=gene_name, idx=idx + 1)
+        
         # Forward Primer
         fwd_start, fwd_len = best_candidate["fwd_pos"]
         fwd_primer = Primer(
-            id=f"forward_{idx}",
+            id=fwd_id,
             sequence=best_candidate["fwd_seq"],
             tm=best_candidate["fwd_tm"],
             gc=best_candidate["fwd_gc"],
@@ -71,7 +93,7 @@ def run_pcr_workflow(config: Dict[str, Any]) -> WorkflowResult:
         # Reverse Primer
         rev_start, rev_len = best_candidate["rev_pos"]
         rev_primer = Primer(
-            id=f"reverse_{idx}",
+            id=rev_id,
             sequence=best_candidate["rev_seq"],
             tm=best_candidate["rev_tm"],
             gc=best_candidate["rev_gc"],
@@ -85,12 +107,27 @@ def run_pcr_workflow(config: Dict[str, Any]) -> WorkflowResult:
         primers["reverse"] = rev_primer
 
         # Amplicon
+        # v0.1.5: Extract actual amplicon sequence from template
+        amp_start = fwd_start
+        amp_end = rev_start
+        
+        # Extract amplicon sequence (fwd_start to rev_start inclusive)
+        if 0 <= amp_start < len(sequence) and amp_start < amp_end <= len(sequence):
+            amplicon_seq = sequence[amp_start:amp_end]
+            # Calculate GC content
+            gc_count = amplicon_seq.upper().count('G') + amplicon_seq.upper().count('C')
+            amplicon_gc = (gc_count / len(amplicon_seq)) * 100 if amplicon_seq else 0.0
+        else:
+            amplicon_seq = "N/A"
+            amplicon_gc = 0.0
+            logger.warning(f"Could not extract amplicon sequence: positions {amp_start}-{amp_end}")
+        
         amplicon = Amplicon(
-            start=fwd_start,
-            end=rev_start,
+            start=amp_start,
+            end=amp_end,
             length=best_candidate["product_size"],
-            sequence="N/A",
-            gc=0.0,
+            sequence=amplicon_seq,
+            gc=round(amplicon_gc, 1),
             tm_forward=best_candidate["fwd_tm"],
             tm_reverse=best_candidate["rev_tm"]
         )

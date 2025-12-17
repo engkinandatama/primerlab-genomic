@@ -7,7 +7,7 @@ from primerlab.core.config_loader import load_and_merge_config
 from primerlab.core.exceptions import PrimerLabException
 
 # Version definition
-__version__ = "0.1.4"
+__version__ = "0.1.5"
 
 
 def _run_health_check():
@@ -117,6 +117,30 @@ def main():
     # --- HEALTH Command (v0.1.3) ---
     subparsers.add_parser("health", help="Check all dependencies and show system info")
 
+    # --- VALIDATE Command (v0.1.5) ---
+    validate_parser = subparsers.add_parser("validate", help="Validate a configuration file")
+    validate_parser.add_argument("config", type=str, help="Path to config YAML file to validate")
+    validate_parser.add_argument("--workflow", "-w", type=str, choices=["pcr", "qpcr"], default="pcr",
+                                help="Workflow type (default: pcr)")
+
+    # --- PRESET Command (v0.1.5) ---
+    preset_parser = subparsers.add_parser("preset", help="Manage and view presets")
+    preset_subparsers = preset_parser.add_subparsers(dest="preset_action", help="Preset actions")
+    
+    # preset list
+    preset_subparsers.add_parser("list", help="List all available presets")
+    
+    # preset show <name>
+    preset_show = preset_subparsers.add_parser("show", help="Show details of a specific preset")
+    preset_show.add_argument("name", type=str, help="Name of preset to show")
+
+    # --- COMPARE Command (v0.1.5) ---
+    compare_parser = subparsers.add_parser("compare", help="Compare two primer design results")
+    compare_parser.add_argument("result_a", type=str, help="Path to first result.json")
+    compare_parser.add_argument("result_b", type=str, help="Path to second result.json")
+    compare_parser.add_argument("--labels", "-l", type=str, default="A,B",
+                               help="Labels for comparison (default: A,B)")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -131,6 +155,85 @@ def main():
     if args.command == "health":
         _run_health_check()
         sys.exit(0)
+
+    # --- VALIDATE Command Handler (v0.1.5) ---
+    if args.command == "validate":
+        logger = setup_logger(level=logging.INFO)
+        logger.info(f"🔍 Validating configuration: {args.config}")
+        
+        try:
+            config = load_and_merge_config(
+                workflow=args.workflow,
+                user_config_path=args.config
+            )
+            print("\n✅ Configuration is valid!")
+            print(f"   Workflow: {args.workflow.upper()}")
+            print(f"   Output: {config['output']['directory']}")
+            
+            params = config.get('parameters', {})
+            if params.get('tm'):
+                print(f"   Tm Range: {params['tm'].get('min', '?')} - {params['tm'].get('max', '?')} °C")
+            if params.get('product_size_range'):
+                ranges = params['product_size_range']
+                print(f"   Product Size: {ranges[0][0]} - {ranges[0][1]} bp")
+            if params.get('primer_naming'):
+                print(f"   Primer Naming: custom pattern configured")
+            
+            sys.exit(0)
+        except PrimerLabException as e:
+            print(f"\n❌ Configuration Error: {e.message}")
+            print(f"   Error Code: {e.code}")
+            sys.exit(1)
+        except Exception as e:
+            print(f"\n❌ Unexpected Error: {e}")
+            sys.exit(1)
+
+    # --- PRESET Command Handler (v0.1.5) ---
+    if args.command == "preset":
+        from pathlib import Path
+        import yaml
+        
+        preset_dir = Path(__file__).parent.parent / "config"
+        
+        if args.preset_action == "list":
+            print("\n📋 Available Presets:\n")
+            preset_files = list(preset_dir.glob("*_default.yaml"))
+            
+            # Filter out workflow defaults, show only special presets
+            presets = [p.stem.replace("_default", "") for p in preset_files 
+                      if p.stem not in ["pcr_default", "qpcr_default"]]
+            
+            if presets:
+                for preset in sorted(presets):
+                    print(f"  • {preset}")
+                print(f"\nUse 'primerlab preset show <name>' for details.")
+            else:
+                print("  No custom presets found.")
+                print("  Built-in workflows: pcr, qpcr")
+            
+            sys.exit(0)
+        
+        elif args.preset_action == "show":
+            preset_name = args.name
+            preset_file = preset_dir / f"{preset_name}_default.yaml"
+            
+            if not preset_file.exists():
+                print(f"\n❌ Preset '{preset_name}' not found.")
+                print("   Use 'primerlab preset list' to see available presets.")
+                sys.exit(1)
+            
+            print(f"\n📄 Preset: {preset_name}\n")
+            print("-" * 40)
+            
+            with open(preset_file, 'r') as f:
+                content = f.read()
+                print(content)
+            
+            sys.exit(0)
+        
+        else:
+            print("Usage: primerlab preset [list|show <name>]")
+            sys.exit(1)
 
     if args.command == "run":
         # 1. Setup Logging
@@ -221,6 +324,9 @@ def main():
                     elif fmt == "html":
                         # v0.1.4: HTML report
                         output_mgr.save_html(result)
+                    elif fmt in ["json", "csv"]:
+                        # json and csv are saved by default, no extra action needed
+                        pass
                     else:
                         logger.warning(f"Unknown export format: {fmt}")
                 
@@ -261,8 +367,51 @@ def main():
 
         except PrimerLabException as e:
             logger.error(f"Error: {e}")
+            
+            # v0.1.5: Auto Parameter Suggestion for design failures
+            if hasattr(e, 'error_code') and e.error_code == "ERR_TOOL_P3_NO_PRIMERS":
+                try:
+                    from primerlab.core.suggestion import suggest_relaxed_parameters, format_suggestions_for_cli
+                    suggestion_result = suggest_relaxed_parameters(config, getattr(e, 'details', None))
+                    print(format_suggestions_for_cli(suggestion_result))
+                except Exception as suggestion_error:
+                    logger.debug(f"Could not generate suggestions: {suggestion_error}")
+            
             if args.debug:
                 logger.exception("Traceback:")
+            sys.exit(1)
+        except Exception as e:
+            logger.error(f"Unexpected Error: {e}")
+            logger.exception("Traceback:")
+            sys.exit(1)
+
+    # --- COMPARE Command Handler (v0.1.5) ---
+    if args.command == "compare":
+        logger = setup_logger(level=logging.INFO)
+        logger.info(f"🔬 PrimerLab Primer Comparison v{__version__}")
+        
+        try:
+            from primerlab.core.comparison import compare_primers, format_comparison_for_cli, load_result_json
+            
+            # Parse labels
+            labels = tuple(args.labels.split(",")[:2])
+            if len(labels) < 2:
+                labels = ("A", "B")
+            
+            # Load results
+            result_a = load_result_json(args.result_a)
+            result_b = load_result_json(args.result_b)
+            
+            # Compare
+            comparison = compare_primers(result_a, result_b, labels)
+            
+            # Display
+            print(format_comparison_for_cli(comparison, labels))
+            
+            sys.exit(0)
+            
+        except FileNotFoundError as e:
+            logger.error(f"Error: {e}")
             sys.exit(1)
         except Exception as e:
             logger.error(f"Unexpected Error: {e}")

@@ -65,11 +65,12 @@ def validate_config(config: Dict[str, Any]):
         )
 
     # Validate input section
+    # Validate input section
     input_section = config.get("input", {})
-    if not input_section.get("sequence"):
+    if not (input_section.get("sequence") or input_section.get("sequence_path")):
         raise ConfigError(
             "Input sequence is missing. "
-            "Add 'input: sequence: <your_sequence>' or 'input: sequence: path/to/file.fasta'",
+            "Add 'input: sequence: <your_sequence>' or 'input: sequence_path: path/to/file.fasta'",
             "ERR_CONFIG_008"
         )
 
