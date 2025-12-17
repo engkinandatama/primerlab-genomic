@@ -99,11 +99,22 @@ class Primer3Wrapper:
             seq_args['SEQUENCE_TARGET'] = [[start, length]]
             logger.info(f"Target region set: position {start}, length {length}")
         
-        # v0.1.4: Excluded Regions (for avoiding specific areas)
+        # v0.1.4/v0.1.5: Excluded Regions (for avoiding specific areas)
+        # Supports both [[start, length], ...] and [{"start": X, "length": Y}, ...] formats
         excluded_regions = params.get('excluded_regions', [])
         if excluded_regions:
-            seq_args['SEQUENCE_EXCLUDED_REGION'] = [[r['start'], r['length']] for r in excluded_regions]
-            logger.info(f"Excluded regions: {len(excluded_regions)}")
+            formatted_regions = []
+            for r in excluded_regions:
+                if isinstance(r, (list, tuple)):
+                    # Tuple/list format: (start, length)
+                    formatted_regions.append(list(r))
+                elif isinstance(r, dict):
+                    # Dict format: {"start": X, "length": Y}
+                    formatted_regions.append([r['start'], r['length']])
+            
+            if formatted_regions:
+                seq_args['SEQUENCE_EXCLUDED_REGION'] = formatted_regions
+                logger.info(f"Excluded regions: {len(formatted_regions)}")
         
         # Remove sequence from global settings to avoid duplication/confusion
         if 'SEQUENCE_TEMPLATE' in p3_settings:
