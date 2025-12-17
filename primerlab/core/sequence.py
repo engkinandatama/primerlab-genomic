@@ -117,20 +117,51 @@ class SequenceLoader:
     def _clean_and_validate(sequence: str) -> str:
         """
         Validates DNA characters and converts to uppercase.
+        
+        v0.1.6 Enhancements:
+        - Converts RNA (U) to DNA (T) with warning
+        - Converts IUPAC ambiguous codes to N with warning
         """
         if not sequence:
             raise SequenceError("Input sequence is empty.", "ERR_SEQ_EMPTY")
-            
-        sequence = sequence.upper().replace(" ", "").replace("\n", "").replace("\r", "")
         
-        allowed_chars = set("ATCGN")
-        # Check for invalid characters
-        # Note: For large sequences, set difference is faster than iterating
+        # v0.1.6: Convert to uppercase first, then handle special cases
+        sequence = sequence.replace(" ", "").replace("\n", "").replace("\r", "")
+        
+        # v0.1.6: Check for RNA (U/u) and convert to DNA
+        if 'U' in sequence or 'u' in sequence:
+            logger.warning("RNA sequence detected (contains U). Converting to DNA (U→T).")
+            sequence = sequence.replace('U', 'T').replace('u', 't')
+        
+        # Now convert to uppercase
+        sequence = sequence.upper()
+        
+        # v0.1.6: IUPAC ambiguous codes
+        IUPAC_AMBIGUOUS = set("RYSWKMBDHV")
+        standard_chars = set("ATCGN")
         unique_chars = set(sequence)
-        invalid_chars = unique_chars - allowed_chars
+        
+        # Find any IUPAC codes in the sequence
+        iupac_found = unique_chars & IUPAC_AMBIGUOUS
+        if iupac_found:
+            logger.warning(
+                f"IUPAC ambiguous codes detected: {iupac_found}. "
+                f"Converting to N (will be masked/excluded from primer placement)."
+            )
+            # Convert all IUPAC codes to N
+            for code in IUPAC_AMBIGUOUS:
+                sequence = sequence.replace(code, 'N')
+        
+        # Check for remaining invalid characters
+        unique_chars = set(sequence)
+        invalid_chars = unique_chars - standard_chars
         
         if invalid_chars:
-            raise SequenceError(f"Invalid characters found in sequence: {invalid_chars}", "ERR_SEQ_INVALID_CHAR")
+            raise SequenceError(
+                f"Invalid characters found in sequence: {invalid_chars}. "
+                f"Allowed: A, T, G, C, N. IUPAC codes (R,Y,W,S,K,M,B,D,H,V) are converted to N.",
+                "ERR_SEQ_INVALID_CHAR"
+            )
         
         # Check minimum length (50bp minimum for primer design)
         MIN_SEQUENCE_LENGTH = 50
