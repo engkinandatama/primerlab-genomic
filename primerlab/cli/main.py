@@ -100,6 +100,9 @@ def main():
     run_parser.add_argument("--dry-run", action="store_true", help="Validate config without running workflow")
     run_parser.add_argument("--export", "-e", type=str, 
                            help="Export formats: comma-separated (e.g., --export idt,sigma,thermo)")
+    run_parser.add_argument("--mask", "-m", type=str, default=None,
+                           choices=["auto", "lowercase", "n", "none"],
+                           help="Region masking mode: auto (detect all), lowercase, n, none (default: none)")
 
     # --- BATCH-GENERATE Command ---
     batch_parser = subparsers.add_parser("batch-generate", help="Generate multiple configs from CSV")
@@ -338,7 +341,37 @@ def main():
                     logger.info(f"   Product Size: {params['product_size'].get('min', '?')} - {params['product_size'].get('max', '?')} bp")
                 sys.exit(0)
 
-            # 4. Run Workflow
+            # 4. Region Masking (v0.1.5)
+            if args.mask and args.mask != "none":
+                from primerlab.core.masking import RegionMasker, apply_masks_to_config, format_mask_report
+                from primerlab.core.sequence import SequenceLoader
+                
+                # Get raw sequence before workflow
+                input_cfg = config.get("input", {})
+                raw_seq = input_cfg.get("sequence") or ""
+                seq_path = input_cfg.get("sequence_path")
+                
+                if seq_path:
+                    # Read raw (unprocessed) sequence to detect lowercase
+                    from pathlib import Path
+                    raw_seq = Path(seq_path).read_text()
+                
+                masker = RegionMasker()
+                
+                # Determine detection mode
+                detect_lower = args.mask in ["auto", "lowercase"]
+                detect_n = args.mask in ["auto", "n"]
+                
+                masks = masker.analyze_sequence(raw_seq, detect_lowercase=detect_lower, detect_n=detect_n)
+                
+                if masks:
+                    # Apply masks to config
+                    config = apply_masks_to_config(config, masks)
+                    print(format_mask_report(masks, len(raw_seq)))
+                else:
+                    logger.info("No masked regions detected")
+
+            # 5. Run Workflow
             logger.info("Initializing workflow engine...")
             
             result = None

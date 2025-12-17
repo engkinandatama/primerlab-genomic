@@ -48,6 +48,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Subcommands: `list`, `show`, `export`, `stats`, `delete`.
   - Search by gene name, workflow type.
   - Export history to CSV.
+- **Region Masking** (`--mask` flag):
+  - Auto-detect lowercase (RepeatMasker) and N-masked regions.
+  - Modes: `auto`, `lowercase`, `n`, `none`.
+  - Regions excluded from primer placement.
+  - BED file support for custom exclusion zones.
 
 ### Improved
 
