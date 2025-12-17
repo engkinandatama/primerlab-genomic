@@ -31,6 +31,14 @@ PrimerLab focuses on **deterministic, transparent bioinformatics**, following st
 * **Safe Execution**: Timeout protection for complex sequences
 * **Structured Output**: JSON + Markdown reports with interpretable metrics
 
+#### v0.1.6 New Features
+
+* **Sequence Analysis** (`primerlab stats`): Quick sequence stats before design
+* **IUPAC Support**: Ambiguous codes (R,Y,W,S,K,M,B,D,H,V) auto-converted to N
+* **RNA Detection**: Uracil (U) auto-converted to Thymine (T)
+* **Quiet Mode** (`--quiet`): Suppress warnings for scripted pipelines
+* **Version Check**: `primerlab health` notifies if newer release available
+
 ---
 
 ## 🚀 Quick Start
@@ -83,6 +91,23 @@ primerlab run pcr --config test_pcr.yaml
 
 ```bash
 primerlab run qpcr --config test_qpcr.yaml
+```
+
+**Sequence Stats (v0.1.6):**
+
+```bash
+# Check sequence before design
+primerlab stats input.fasta
+
+# JSON output for pipelines
+primerlab stats input.fasta --json
+```
+
+**Quiet Mode (v0.1.6):**
+
+```bash
+# Suppress warnings for scripted pipelines
+primerlab run pcr --config test_pcr.yaml --quiet
 ```
 
 ### Programmatic API (Python)
@@ -201,7 +226,7 @@ Run a workflow to generate your own report!
 
 ## 🏗️ Project Structure
 
-```
+```text
 primerlab-genomic/
 ├── primerlab/
 │   ├── cli/              # Command-line interface
