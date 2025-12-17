@@ -234,6 +234,19 @@ def main():
     stats_parser.add_argument("sequence", type=str, help="Path to sequence file (FASTA) or raw sequence")
     stats_parser.add_argument("--json", "-j", action="store_true", help="Output as JSON")
 
+    # --- INSILICO Command (v0.2.0) ---
+    insilico_parser = subparsers.add_parser("insilico", help="In-silico PCR simulation")
+    insilico_parser.add_argument("--primers", "-p", required=True,
+                                 help="Path to primers JSON file or FASTA")
+    insilico_parser.add_argument("--template", "-t", required=True,
+                                 help="Path to template FASTA file")
+    insilico_parser.add_argument("--output", "-o", type=str, default="insilico_output",
+                                 help="Output directory (default: insilico_output)")
+    insilico_parser.add_argument("--config", "-c", type=str,
+                                 help="Optional config file for parameters")
+    insilico_parser.add_argument("--json", action="store_true",
+                                 help="Output results as JSON only")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -367,6 +380,156 @@ def main():
             
         except Exception as e:
             print(f"\n❌ Error: {e}")
+            sys.exit(1)
+
+    # --- INSILICO Command Handler (v0.2.0) ---
+    if args.command == "insilico":
+        from pathlib import Path
+        import json
+        from primerlab.core.insilico import run_insilico_pcr
+        from primerlab.core.sequence import SequenceLoader
+        
+        logger = setup_logger(level=logging.INFO)
+        logger.info("🧬 Running In-silico PCR Simulation...")
+        
+        try:
+            # Load template
+            template_path = Path(args.template)
+            if not template_path.exists():
+                print(f"❌ Template file not found: {args.template}")
+                sys.exit(1)
+            
+            template_seq = SequenceLoader.load(str(template_path))
+            template_name = template_path.stem
+            
+            # Load primers from JSON or FASTA
+            primers_path = Path(args.primers)
+            if not primers_path.exists():
+                print(f"❌ Primers file not found: {args.primers}")
+                sys.exit(1)
+            
+            with open(primers_path, 'r') as f:
+                content = f.read()
+            
+            if content.strip().startswith('{'):
+                # JSON format
+                primers_data = json.loads(content)
+                fwd_primer = primers_data.get("forward", primers_data.get("fwd", ""))
+                rev_primer = primers_data.get("reverse", primers_data.get("rev", ""))
+            elif content.strip().startswith('>'):
+                # FASTA format - expect 2 sequences
+                lines = content.strip().split('\n')
+                fwd_primer = ""
+                rev_primer = ""
+                current = None
+                for line in lines:
+                    if line.startswith('>'):
+                        if 'forward' in line.lower() or 'fwd' in line.lower() or 'f1' in line.lower():
+                            current = 'fwd'
+                        elif 'reverse' in line.lower() or 'rev' in line.lower() or 'r1' in line.lower():
+                            current = 'rev'
+                        elif not fwd_primer:
+                            current = 'fwd'
+                        else:
+                            current = 'rev'
+                    else:
+                        if current == 'fwd':
+                            fwd_primer += line.strip()
+                        elif current == 'rev':
+                            rev_primer += line.strip()
+            else:
+                print("❌ Primers file must be JSON or FASTA format")
+                sys.exit(1)
+            
+            if not fwd_primer or not rev_primer:
+                print("❌ Could not parse forward and reverse primers from file")
+                sys.exit(1)
+            
+            # Load params from config if provided
+            params = {}
+            if args.config:
+                import yaml
+                with open(args.config, 'r') as f:
+                    config = yaml.safe_load(f)
+                params = config.get("insilico", {})
+            
+            # Run in-silico PCR
+            result = run_insilico_pcr(
+                template=template_seq,
+                forward_primer=fwd_primer,
+                reverse_primer=rev_primer,
+                template_name=template_name,
+                params=params
+            )
+            
+            # Create output directory
+            output_dir = Path(args.output)
+            output_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Output as JSON
+            result_dict = {
+                "success": result.success,
+                "template_name": result.template_name,
+                "template_length": result.template_length,
+                "forward_primer": result.forward_primer,
+                "reverse_primer": result.reverse_primer,
+                "products_count": len(result.products),
+                "products": [
+                    {
+                        "size": p.product_size,
+                        "start": p.start_position,
+                        "end": p.end_position,
+                        "likelihood": p.likelihood_score,
+                        "is_primary": p.is_primary,
+                        "sequence": p.product_sequence[:100] + "..." if len(p.product_sequence) > 100 else p.product_sequence
+                    } for p in result.products
+                ],
+                "forward_bindings": len(result.all_forward_bindings),
+                "reverse_bindings": len(result.all_reverse_bindings),
+                "warnings": result.warnings,
+                "errors": result.errors
+            }
+            
+            # Save JSON
+            json_path = output_dir / "insilico_result.json"
+            with open(json_path, 'w') as f:
+                json.dump(result_dict, f, indent=2)
+            
+            if args.json:
+                print(json.dumps(result_dict, indent=2))
+            else:
+                # Pretty print
+                print("\n" + "=" * 50)
+                print("🧬 In-silico PCR Results")
+                print("=" * 50)
+                print(f"Template: {result.template_name} ({result.template_length} bp)")
+                print(f"Forward:  {fwd_primer}")
+                print(f"Reverse:  {rev_primer}")
+                print("-" * 50)
+                
+                if result.success:
+                    print(f"✅ {len(result.products)} product(s) predicted")
+                    for i, p in enumerate(result.products):
+                        marker = "🎯" if p.is_primary else "  "
+                        print(f"{marker} Product {i+1}: {p.product_size} bp (pos {p.start_position}-{p.end_position})")
+                else:
+                    print("❌ No products predicted")
+                
+                if result.warnings:
+                    print("\n⚠️  Warnings:")
+                    for w in result.warnings:
+                        print(f"   - {w}")
+                
+                print("-" * 50)
+                print(f"📁 Results saved to: {output_dir}")
+                print()
+            
+            sys.exit(0 if result.success else 1)
+            
+        except Exception as e:
+            print(f"\n❌ Error: {e}")
+            import traceback
+            traceback.print_exc()
             sys.exit(1)
 
     # --- PRESET Command Handler (v0.1.5) ---
