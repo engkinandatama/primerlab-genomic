@@ -41,3 +41,20 @@ primerlab run pcr --config configs/GAPDH.yaml
 | `qpcr_taqman.yaml` | qPCR | Design primers + probe for TaqMan assays |
 | `qpcr_sybr.yaml` | qPCR | Design primers only (no probe) for SYBR Green |
 | `batch_sequences.csv` | Batch | Example CSV for batch config generation |
+
+### v0.1.6 Test Fixtures
+
+| File | Description |
+|------|-------------|
+| `multi_sequences.fasta` | 10 housekeeping genes (GAPDH, ACTB, etc.) for batch testing |
+| `masked_sequence.fasta` | Sequence with lowercase repeats and N-masked regions |
+| `excluded_regions.bed` | BED file with example exclusion zones |
+
+## Sequence Stats (v0.1.6)
+
+Check sequence before design:
+
+```bash
+primerlab stats examples/multi_sequences.fasta
+primerlab stats examples/masked_sequence.fasta --json
+```
