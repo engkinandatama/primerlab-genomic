@@ -176,7 +176,18 @@ class Primer3Wrapper:
                         f"- Pair: {pair_explain}\n\n"
                         "Suggestion: Try relaxing constraints (e.g., wider Tm range, lower GC content) or using a different region."
                     )
-                    raise ToolExecutionError(error_msg, "ERR_TOOL_P3_NO_PRIMERS")
+                    
+                    # v0.1.5: Include structured details for Auto Parameter Suggestion
+                    raise ToolExecutionError(
+                        error_msg, 
+                        "ERR_TOOL_P3_NO_PRIMERS",
+                        details={
+                            "left_explain": left_explain,
+                            "right_explain": right_explain,
+                            "pair_explain": pair_explain,
+                            "config_params": p3_settings
+                        }
+                    )
                 
                 logger.info(f"Primer3 returned {num_returned} pairs.")
                 return data
