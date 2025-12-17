@@ -7,9 +7,9 @@ Types: `INFO`, `CHANGE`, `FIX`, `TODO`, `WARN`, `ERR`
 
 ## Quick Reference
 
-- **Current Version**: v0.1.4 (CHANGELOG) / CLI v0.1.5
-- **v0.1.5 Pending**: Auto Suggestion, Primer Comparison, Benchling Export
+- **Current Version**: v0.1.6 (in progress)
 - **Dev Environment**: Requires WSL (primer3-py doesn't work on Windows native)
+- **Test Status**: 196 passed, 0 warnings
 
 ---
 
@@ -63,69 +63,76 @@ Types: `INFO`, `CHANGE`, `FIX`, `TODO`, `WARN`, `ERR`
 [2025-12-10] CHANGE  Added target_region and excluded_regions in Primer3 wrapper
 [2025-12-10] CHANGE  Added --export xlsx, html, idt_bulk options
 
-# ===== v0.1.5 Development (Current) =====
-[2025-12-xx] CHANGE  Added FASTA file input support (sequence.py)
-[2025-12-xx] CHANGE  Added primer naming convention ({gene}_F1, {gene}_R1)
-[2025-12-xx] CHANGE  Added amplicon sequence extraction
-[2025-12-xx] CHANGE  Added CLI validate command
-[2025-12-xx] CHANGE  Added CLI preset list/show commands
-[2025-12-xx] TODO    Auto Parameter Suggestion - not implemented
-[2025-12-xx] TODO    Primer Comparison Tool - not implemented
-[2025-12-xx] TODO    Benchling CSV Export - not implemented
-[2025-12-xx] INFO    Interactive CLI Wizard moved to v1.0 Future Plan
+# ===== v0.1.5 Release (2025-12-17) =====
+[2025-12-17] CHANGE  Added Auto Parameter Suggestion (core/suggestion.py)
+[2025-12-17] CHANGE  Added Primer Comparison Tool (core/comparison.py, CLI compare)
+[2025-12-17] CHANGE  Added Benchling CSV Export (--export benchling)
+[2025-12-17] CHANGE  Added Batch Run Command (primerlab batch-run)
+[2025-12-17] CHANGE  Added GC Profile Plot (primerlab plot, requires matplotlib)
+[2025-12-17] CHANGE  Added Primer Database (primerlab history, SQLite)
+[2025-12-17] CHANGE  Added Region Masking (--mask auto/lowercase/n)
+[2025-12-17] CHANGE  Added JSON Schema for config validation
 
-# ===== Session 2025-12-17 (Agent Review) =====
-[2025-12-17 20:46] INFO    Session start - Conv ID: 3e04b361
-[2025-12-17 20:47] INFO    Read artifacts from prev session (f57f96b3)
-[2025-12-17 20:50] INFO    Read all Docs/Development Rules and High-Level Documentation
-[2025-12-17 20:55] CHANGE  Created SESSION_LOG.md for cross-session continuity
-[2025-12-17 20:55] CHANGE  Updated ai-helper-rules.md - added Rule 1.6 (session log mandatory)
-[2025-12-17 21:01] INFO    Started comprehensive project review
-[2025-12-17 21:05] INFO    Reviewed: CLI(513 lines), PCR(219), qPCR(133), Primer3(188), Vienna(147)
-[2025-12-17 21:07] WARN    pytest fails on Windows native - primer3-py requires WSL
-[2025-12-17 21:08] INFO    No critical bugs found - architecture is solid
-[2025-12-17 21:12] CHANGE  Simplified SESSION_LOG.md to debug-log format
-[2025-12-17 21:13] INFO    Wrote historical log entries from CHANGELOG
-
-# ===== v0.1.5 Priority 4: Smart Features =====
-[2025-12-17 21:17] INFO    Started v0.1.5 Priority 4 implementation
-[2025-12-17 21:18] CHANGE  Created core/suggestion.py (285 lines) - Auto Parameter Suggestion
-[2025-12-17 21:19] CHANGE  Updated primer3_wrapper.py - added structured error details
-[2025-12-17 21:20] CHANGE  Created core/comparison.py (350 lines) - Primer Comparison Tool
-[2025-12-17 21:21] CHANGE  Updated cli/main.py - added compare command + suggestion integration
-[2025-12-17 21:22] CHANGE  Created tests/test_suggestion.py (145 lines)
-[2025-12-17 21:27] CHANGE  Created tests/test_comparison.py (200 lines)
-[2025-12-17 21:44] INFO    Git commit 8813829 - feat(v0.1.5): Add Auto Parameter Suggestion and Primer Comparison Tool
-[2025-12-17 21:51] INFO    All 29 tests passed (test_suggestion + test_comparison)
-
-# ===== v0.1.5 Priority 5: Export & Integration =====
-[2025-12-17 21:52] INFO    Started v0.1.5 Priority 5 implementation
-[2025-12-17 21:53] CHANGE  Added save_benchling_csv() to output.py
-[2025-12-17 21:53] CHANGE  Updated cli/main.py - added benchling export format
-[2025-12-17 21:54] CHANGE  Created core/batch_summary.py (280 lines) - batch summary reports
-[2025-12-17 21:55] CHANGE  Created config/schema.json - JSON Schema for YAML validation
-[2025-12-17 21:55] CHANGE  Created .vscode/settings.json - VSCode autocomplete
-[2025-12-17 21:56] CHANGE  Created tests/test_batch_summary.py (110 lines)
-[2025-12-17 22:28] CHANGE  Added `primerlab batch-run` command to CLI (110 lines)
+# ===== v0.1.6 Development (2025-12-17 - 2025-12-18) =====
+[2025-12-17 22:48] INFO    Session start - v0.1.6 Stabilization & Testing
+[2025-12-17 23:00] CHANGE  Created test fixtures (multi_sequences.fasta, masked_sequence.fasta, etc.)
+[2025-12-17 23:15] CHANGE  Created test_visualization.py (13 tests)
+[2025-12-17 23:20] CHANGE  Created test_database.py (9 tests)
+[2025-12-17 23:25] CHANGE  Created test_masking.py (9 tests)
+[2025-12-17 23:30] CHANGE  Added matplotlib to required dependencies
+[2025-12-17 23:45] CHANGE  Created test_integration.py (10 E2E tests)
+[2025-12-18 00:00] CHANGE  Added IUPAC ambiguous codes handling (R,Y,W,S,K,M,B,D,H,V → N)
+[2025-12-18 00:05] CHANGE  Added RNA sequence detection (U → T conversion)
+[2025-12-18 00:15] CHANGE  Created test_sequence.py (14 tests)
+[2025-12-18 00:30] CHANGE  Added primerlab stats command
+[2025-12-18 00:35] CHANGE  Added version check in primerlab health
+[2025-12-18 00:45] CHANGE  Added --quiet flag for run command
+[2025-12-18 00:50] CHANGE  Created test_stats.py (8 tests)
+[2025-12-18 01:00] FIX     Fixed datetime.utcnow() deprecation warning
+[2025-12-18 01:45] CHANGE  Bumped version to 0.1.6
+[2025-12-18 01:50] CHANGE  Updated CHANGELOG.md with v0.1.6 entries
+[2025-12-18 02:00] CHANGE  Updated README.md with v0.1.6 features
+[2025-12-18 02:10] CHANGE  Created comprehensive docs (20 files in Docs/)
+[2025-12-18 02:20] CHANGE  Reorganized docs - moved internal to .dev/
+[2025-12-18 02:25] INFO    Total: 196 tests passing, 0 warnings
 ```
 
 ---
 
 ## Context Notes (Update when major state changes)
 
-Last updated: 2025-12-17
+Last updated: 2025-12-18
 
-- v0.1.0 - v0.1.4: ✅ COMPLETE
-- v0.1.5 Priority 4 (Smart Features): ✅ COMPLETE
-  - Auto Parameter Suggestion
-  - Primer Comparison Tool
-- v0.1.5 Priority 5 (Export & Integration): ✅ COMPLETE
-  - Benchling CSV Export
-  - Batch Summary Module
-  - Batch Run Command
-  - JSON Schema for Config
-- v0.1.5 Priority 6 (Optional Advanced Features): ⏳ PENDING
-  - GC Profile Plot (needs matplotlib)
-  - Region Masking
-  - Primer Database (SQLite)
-- Next decision point: v0.1.5 optional features OR v0.2.0 CRISPR
+### Release Status
+
+| Version | Status | Highlights |
+|---------|--------|------------|
+| v0.1.0 - v0.1.4 | ✅ COMPLETE | Core functionality |
+| v0.1.5 | ✅ RELEASED | Smart features, batch, database |
+| v0.1.6 | 🔄 IN PROGRESS | Stabilization, testing, docs |
+
+### v0.1.6 Checklist
+
+- [x] Test Fixtures & Examples
+- [x] Unit Tests (70+ new tests)
+- [x] Integration Tests (10 E2E)
+- [x] IUPAC & RNA Handling
+- [x] `primerlab stats` command
+- [x] Version check in health
+- [x] `--quiet` flag
+- [x] Comprehensive documentation (20 files)
+- [x] Docs reorganization (.dev/ for internal)
+- [ ] Git tag v0.1.6
+- [ ] Push to GitHub
+
+### Test Coverage
+
+- **Total Tests**: 196
+- **Warnings**: 0
+- **Files**: test_cli, test_pcr, test_qpcr, test_visualization, test_database, test_masking, test_suggestion, test_sequence, test_integration, test_stats
+
+### Next Steps
+
+1. Create git tag v0.1.6
+2. Push to GitHub (manual)
+3. Start v0.2.0 planning (In-silico PCR Validation)
