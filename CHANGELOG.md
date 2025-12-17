@@ -21,6 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Benchling CSV Export** (`--export benchling`):
   - Generate Benchling-compatible CSV format for direct import.
   - Columns: Name, Bases, Notes (with Tm and GC info).
+- **Batch Run Command** (`primerlab batch-run`):
+  - Execute multiple config files in one command.
+  - Consolidated summary with success/fail stats.
+  - Combined Excel output (`batch_summary.xlsx`).
+  - Supports `--continue-on-error` for fault tolerance.
 - **Batch Mode Summary** (`core/batch_summary.py`):
   - Consolidated summary report for multi-sequence runs.
   - Combined Excel output with summary sheet.

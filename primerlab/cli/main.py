@@ -141,6 +141,17 @@ def main():
     compare_parser.add_argument("--labels", "-l", type=str, default="A,B",
                                help="Labels for comparison (default: A,B)")
 
+    # --- BATCH RUN Command (v0.1.5) ---
+    batch_run_parser = subparsers.add_parser("batch-run", help="Run multiple configs and consolidate results")
+    batch_run_parser.add_argument("--configs", "-c", type=str, required=True,
+                                  help="Directory containing config files OR comma-separated list of config paths")
+    batch_run_parser.add_argument("--output", "-o", type=str, default="./batch_output",
+                                  help="Output directory for batch results (default: ./batch_output)")
+    batch_run_parser.add_argument("--export", "-e", type=str, default="xlsx",
+                                  help="Export formats for summary (default: xlsx)")
+    batch_run_parser.add_argument("--continue-on-error", action="store_true",
+                                  help="Continue processing even if some configs fail")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -419,6 +430,116 @@ def main():
         except Exception as e:
             logger.error(f"Unexpected Error: {e}")
             logger.exception("Traceback:")
+            sys.exit(1)
+
+    # --- BATCH RUN Command Handler (v0.1.5) ---
+    if args.command == "batch-run":
+        logger = setup_logger(level=logging.INFO)
+        logger.info(f"🚀 PrimerLab Batch Run v{__version__}")
+        
+        try:
+            from pathlib import Path
+            import json
+            from primerlab.core.batch_summary import (
+                generate_batch_summary,
+                format_batch_summary_cli,
+                save_batch_excel,
+                save_batch_summary_csv
+            )
+            
+            # 1. Collect config files
+            config_input = args.configs
+            config_files = []
+            
+            if Path(config_input).is_dir():
+                # Directory: find all yaml files
+                config_dir = Path(config_input)
+                config_files = list(config_dir.glob("*.yaml")) + list(config_dir.glob("*.yml"))
+                logger.info(f"Found {len(config_files)} config files in {config_input}")
+            else:
+                # Comma-separated list of files
+                config_files = [Path(p.strip()) for p in config_input.split(",")]
+            
+            if not config_files:
+                logger.error("No config files found!")
+                sys.exit(1)
+            
+            # 2. Create output directory
+            output_dir = Path(args.output)
+            output_dir.mkdir(parents=True, exist_ok=True)
+            
+            # 3. Run each config
+            results = []
+            for config_path in config_files:
+                sequence_name = config_path.stem.replace("_config", "")
+                logger.info(f"📌 Processing: {sequence_name}")
+                
+                try:
+                    # Load config
+                    config = load_and_merge_config(str(config_path))
+                    workflow_type = config.get("workflow", "pcr").lower()
+                    
+                    # Get workflow engine
+                    if workflow_type == "qpcr":
+                        from primerlab.workflows.qpcr.engine import qPCRWorkflowEngine
+                        engine = qPCRWorkflowEngine()
+                    else:
+                        from primerlab.workflows.pcr.engine import PCRWorkflowEngine
+                        engine = PCRWorkflowEngine()
+                    
+                    # Run workflow
+                    result = engine.run(config)
+                    
+                    # Save individual result
+                    result_dir = output_dir / sequence_name
+                    result_dir.mkdir(exist_ok=True)
+                    
+                    result_data = result.to_dict()
+                    result_data["metadata"] = {"sequence_name": sequence_name}
+                    
+                    with open(result_dir / "result.json", "w") as f:
+                        json.dump(result_data, f, indent=2)
+                    
+                    results.append(result_data)
+                    logger.info(f"  ✅ Success - Quality Score: {result.qc.quality_score if result.qc else 'N/A'}")
+                    
+                except Exception as e:
+                    logger.error(f"  ❌ Failed: {e}")
+                    results.append({
+                        "metadata": {"sequence_name": sequence_name},
+                        "primers": {},
+                        "amplicons": [],
+                        "qc": {},
+                        "error": str(e)
+                    })
+                    
+                    if not args.continue_on_error:
+                        logger.error("Stopping batch run. Use --continue-on-error to continue.")
+                        break
+            
+            # 4. Generate summary
+            summary = generate_batch_summary(results)
+            
+            # 5. Display CLI summary
+            print(format_batch_summary_cli(summary))
+            
+            # 6. Export summary
+            export_formats = [f.strip().lower() for f in args.export.split(",")]
+            
+            if "xlsx" in export_formats:
+                save_batch_excel(results, str(output_dir / "batch_summary.xlsx"))
+            if "csv" in export_formats:
+                save_batch_summary_csv(summary, str(output_dir / "batch_summary.csv"))
+            
+            # Save summary JSON
+            with open(output_dir / "batch_summary.json", "w") as f:
+                json.dump(summary, f, indent=2)
+            
+            logger.info(f"✅ Batch run complete. Results in: {output_dir}")
+            sys.exit(0)
+            
+        except Exception as e:
+            logger.error(f"Batch run failed: {e}")
             sys.exit(1)
 
     if args.command == "batch-generate":

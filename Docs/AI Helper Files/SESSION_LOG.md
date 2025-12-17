@@ -106,6 +106,7 @@ Types: `INFO`, `CHANGE`, `FIX`, `TODO`, `WARN`, `ERR`
 [2025-12-17 21:55] CHANGE  Created config/schema.json - JSON Schema for YAML validation
 [2025-12-17 21:55] CHANGE  Created .vscode/settings.json - VSCode autocomplete
 [2025-12-17 21:56] CHANGE  Created tests/test_batch_summary.py (110 lines)
+[2025-12-17 22:28] CHANGE  Added `primerlab batch-run` command to CLI (110 lines)
 ```
 
 ---
