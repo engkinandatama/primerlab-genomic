@@ -37,6 +37,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Structured Error Details**:
   - `ToolExecutionError` now includes detailed failure info.
   - Enables smart suggestion generation.
+- **GC Profile Plot** (`primerlab plot`):
+  - Professional visualization of GC content across amplicon.
+  - Light/dark mode themes (`--theme light|dark`).
+  - Primer position highlighting.
+  - Configurable sliding window (`--window 20`).
 
 ### Improved
 
