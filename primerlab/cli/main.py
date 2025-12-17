@@ -143,8 +143,12 @@ def main():
 
     # --- BATCH RUN Command (v0.1.5) ---
     batch_run_parser = subparsers.add_parser("batch-run", help="Run multiple configs and consolidate results")
-    batch_run_parser.add_argument("--configs", "-c", type=str, required=True,
+    batch_run_parser.add_argument("--configs", "-c", type=str, default=None,
                                   help="Directory containing config files OR comma-separated list of config paths")
+    batch_run_parser.add_argument("--fasta", "-f", type=str, default=None,
+                                  help="Multi-FASTA file with multiple sequences (uses shared config)")
+    batch_run_parser.add_argument("--config", type=str, default=None,
+                                  help="Shared config file for multi-FASTA mode (required with --fasta)")
     batch_run_parser.add_argument("--output", "-o", type=str, default="./batch_output",
                                   help="Output directory for batch results (default: ./batch_output)")
     batch_run_parser.add_argument("--export", "-e", type=str, default="xlsx",
@@ -446,37 +450,82 @@ def main():
                 save_batch_excel,
                 save_batch_summary_csv
             )
+            from primerlab.core.sequence import SequenceLoader
             
-            # 1. Collect config files
-            config_input = args.configs
-            config_files = []
+            # Determine mode: configs OR fasta
+            use_fasta_mode = args.fasta is not None
+            use_configs_mode = args.configs is not None
             
-            if Path(config_input).is_dir():
-                # Directory: find all yaml files
-                config_dir = Path(config_input)
-                config_files = list(config_dir.glob("*.yaml")) + list(config_dir.glob("*.yml"))
-                logger.info(f"Found {len(config_files)} config files in {config_input}")
-            else:
-                # Comma-separated list of files
-                config_files = [Path(p.strip()) for p in config_input.split(",")]
+            if not use_fasta_mode and not use_configs_mode:
+                logger.error("Either --configs or --fasta is required")
+                sys.exit(1)
             
-            if not config_files:
-                logger.error("No config files found!")
+            if use_fasta_mode and use_configs_mode:
+                logger.error("Cannot use both --configs and --fasta. Choose one.")
                 sys.exit(1)
             
             # 2. Create output directory
             output_dir = Path(args.output)
             output_dir.mkdir(parents=True, exist_ok=True)
             
-            # 3. Run each config
             results = []
-            for config_path in config_files:
-                sequence_name = config_path.stem.replace("_config", "")
+            sequences_to_process = []  # List of (name, sequence, config)
+            
+            # === FASTA MODE ===
+            if use_fasta_mode:
+                fasta_path = Path(args.fasta)
+                if not fasta_path.exists():
+                    logger.error(f"FASTA file not found: {fasta_path}")
+                    sys.exit(1)
+                
+                # Load shared config
+                if args.config:
+                    shared_config = load_and_merge_config(args.config)
+                else:
+                    # Default config
+                    shared_config = {"workflow": "pcr", "parameters": {}}
+                    logger.warning("No --config provided, using defaults")
+                
+                # Parse multi-FASTA
+                fasta_content = fasta_path.read_text()
+                parsed_seqs = SequenceLoader._parse_fasta(fasta_content)
+                
+                logger.info(f"Found {len(parsed_seqs)} sequences in {fasta_path.name}")
+                
+                for name, seq in parsed_seqs:
+                    # Clone config and inject sequence
+                    seq_config = shared_config.copy()
+                    if "input" not in seq_config:
+                        seq_config["input"] = {}
+                    seq_config["input"]["sequence"] = seq
+                    sequences_to_process.append((name, seq, seq_config))
+            
+            # === CONFIGS MODE ===
+            else:
+                config_input = args.configs
+                config_files = []
+                
+                if Path(config_input).is_dir():
+                    config_dir = Path(config_input)
+                    config_files = list(config_dir.glob("*.yaml")) + list(config_dir.glob("*.yml"))
+                    logger.info(f"Found {len(config_files)} config files in {config_input}")
+                else:
+                    config_files = [Path(p.strip()) for p in config_input.split(",")]
+                
+                if not config_files:
+                    logger.error("No config files found!")
+                    sys.exit(1)
+                
+                for config_path in config_files:
+                    sequence_name = config_path.stem.replace("_config", "")
+                    config = load_and_merge_config(str(config_path))
+                    sequences_to_process.append((sequence_name, None, config))
+            
+            # 3. Run each sequence
+            for sequence_name, raw_seq, config in sequences_to_process:
                 logger.info(f"📌 Processing: {sequence_name}")
                 
                 try:
-                    # Load config
-                    config = load_and_merge_config(str(config_path))
                     workflow_type = config.get("workflow", "pcr").lower()
                     
                     # Get workflow engine

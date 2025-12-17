@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Columns: Name, Bases, Notes (with Tm and GC info).
 - **Batch Run Command** (`primerlab batch-run`):
   - Execute multiple config files in one command.
+  - **NEW: Multi-FASTA mode** (`--fasta genes.fasta --config params.yaml`)
   - Consolidated summary with success/fail stats.
   - Combined Excel output (`batch_summary.xlsx`).
   - Supports `--continue-on-error` for fault tolerance.
