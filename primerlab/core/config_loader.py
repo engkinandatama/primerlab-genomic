@@ -8,14 +8,48 @@ from .logger import get_logger
 logger = get_logger()
 
 def load_yaml(path: str) -> Dict[str, Any]:
-    """Loads a YAML file safely."""
+    """
+    Loads a YAML file safely with enhanced error messages.
+    
+    v0.2.0: Shows line number and context for YAML syntax errors.
+    """
     try:
-        with open(path, 'r') as f:
-            return yaml.safe_load(f) or {}
+        with open(path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        return yaml.safe_load(content) or {}
     except FileNotFoundError:
         raise ConfigError(f"Config file not found: {path}", "ERR_CONFIG_001")
     except yaml.YAMLError as e:
-        raise ConfigError(f"Invalid YAML syntax in {path}: {e}", "ERR_CONFIG_002")
+        # Extract detailed error information
+        error_msg = f"Invalid YAML syntax in {path}"
+        
+        if hasattr(e, 'problem_mark') and e.problem_mark:
+            mark = e.problem_mark
+            line_num = mark.line + 1
+            col_num = mark.column + 1
+            error_msg += f"\n  → Line {line_num}, Column {col_num}"
+            
+            # Try to show the problematic line
+            try:
+                with open(path, 'r', encoding='utf-8') as f:
+                    lines = f.readlines()
+                if 0 < line_num <= len(lines):
+                    problem_line = lines[line_num - 1].rstrip()
+                    error_msg += f"\n  → Content: {problem_line}"
+                    error_msg += f"\n  → " + " " * col_num + "^"
+            except Exception:
+                pass
+        
+        if hasattr(e, 'problem') and e.problem:
+            error_msg += f"\n  → Problem: {e.problem}"
+        
+        error_msg += "\n\nCommon YAML errors:"
+        error_msg += "\n  • Missing colon after key (key value → key: value)"
+        error_msg += "\n  • Incorrect indentation (use 2 spaces, not tabs)"
+        error_msg += "\n  • Unquoted special characters (use quotes for : @ # etc.)"
+        
+        raise ConfigError(error_msg, "ERR_CONFIG_002")
+
 
 def deep_merge(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
     """

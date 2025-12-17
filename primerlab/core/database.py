@@ -35,7 +35,9 @@ class PrimerDatabase:
     
     def __init__(self, db_path: Optional[str] = None):
         """
-        Initialize database connection.
+        Initialize database connection with resilience features.
+        
+        v0.2.0: Added corruption handling, auto-backup, auto-repair.
         
         Args:
             db_path: Path to SQLite database file (default: ~/.primerlab/primer_history.db)
@@ -43,9 +45,87 @@ class PrimerDatabase:
         self.db_path = Path(db_path) if db_path else DEFAULT_DB_PATH
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         
-        self.conn = sqlite3.connect(str(self.db_path))
-        self.conn.row_factory = sqlite3.Row
-        self._init_schema()
+        # Try to connect with corruption handling
+        try:
+            self.conn = sqlite3.connect(str(self.db_path))
+            self.conn.row_factory = sqlite3.Row
+            
+            # Check integrity
+            if not self._check_integrity():
+                logger.warning("Database integrity check failed, attempting repair...")
+                self._repair_database()
+            
+            self._init_schema()
+            
+        except sqlite3.DatabaseError as e:
+            logger.error(f"Database error: {e}")
+            logger.info("Attempting to recover database...")
+            self._recover_database()
+            # Retry connection
+            self.conn = sqlite3.connect(str(self.db_path))
+            self.conn.row_factory = sqlite3.Row
+            self._init_schema()
+    
+    def _check_integrity(self) -> bool:
+        """Check database integrity using PRAGMA integrity_check."""
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute("PRAGMA integrity_check")
+            result = cursor.fetchone()
+            return result[0] == "ok"
+        except Exception as e:
+            logger.error(f"Integrity check failed: {e}")
+            return False
+    
+    def _repair_database(self):
+        """Attempt to repair a corrupted database."""
+        try:
+            # Create backup first
+            self._create_backup()
+            
+            # Try to recover data
+            cursor = self.conn.cursor()
+            cursor.execute("REINDEX")
+            cursor.execute("VACUUM")
+            self.conn.commit()
+            logger.info("Database repaired successfully")
+        except Exception as e:
+            logger.error(f"Repair failed: {e}")
+            raise
+    
+    def _recover_database(self):
+        """Recover from a completely corrupted database."""
+        try:
+            # Create backup of corrupted file
+            if self.db_path.exists():
+                backup_path = self.db_path.with_suffix('.db.corrupted')
+                import shutil
+                shutil.move(str(self.db_path), str(backup_path))
+                logger.info(f"Corrupted database backed up to: {backup_path}")
+            
+            # Create fresh database
+            logger.info("Creating fresh database...")
+            
+        except Exception as e:
+            logger.error(f"Recovery failed: {e}")
+            raise
+    
+    def _create_backup(self):
+        """Create a timestamped backup of the database."""
+        if self.db_path.exists():
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            backup_path = self.db_path.with_suffix(f'.backup_{timestamp}.db')
+            import shutil
+            shutil.copy2(str(self.db_path), str(backup_path))
+            logger.debug(f"Database backup created: {backup_path}")
+            
+            # Keep only last 5 backups
+            backups = sorted(self.db_path.parent.glob("primer_history.backup_*.db"))
+            if len(backups) > 5:
+                for old_backup in backups[:-5]:
+                    old_backup.unlink()
+                    logger.debug(f"Removed old backup: {old_backup}")
+
     
     def _init_schema(self):
         """Create database tables if they don't exist."""
