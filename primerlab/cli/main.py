@@ -126,6 +126,8 @@ def main():
     run_parser.add_argument("--mask", "-m", type=str, default=None,
                            choices=["auto", "lowercase", "n", "none"],
                            help="Region masking mode: auto (detect all), lowercase, n, none (default: none)")
+    run_parser.add_argument("--quiet", "-q", action="store_true",
+                           help="Suppress warnings and non-essential output (v0.1.6)")
 
     # --- BATCH-GENERATE Command ---
     batch_parser = subparsers.add_parser("batch-generate", help="Generate multiple configs from CSV")
@@ -416,11 +418,18 @@ def main():
 
     if args.command == "run":
         # 1. Setup Logging
-        log_level = logging.DEBUG if args.debug else logging.INFO
+        # v0.1.6: --quiet flag suppresses info/warning messages
+        if hasattr(args, 'quiet') and args.quiet:
+            log_level = logging.ERROR  # Only show errors
+        elif args.debug:
+            log_level = logging.DEBUG
+        else:
+            log_level = logging.INFO
         logger = setup_logger(level=log_level)
         
-        logger.info(f"Starting PrimerLab v{__version__}")
-        logger.info(f"Workflow: {args.workflow.upper()}")
+        if not (hasattr(args, 'quiet') and args.quiet):
+            logger.info(f"Starting PrimerLab v{__version__}")
+            logger.info(f"Workflow: {args.workflow.upper()}")
 
         # Early check for unimplemented workflows
         if args.workflow == "crispr":
