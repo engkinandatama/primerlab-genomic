@@ -204,6 +204,11 @@ def main():
     history_delete = history_subparsers.add_parser("delete", help="Delete a design")
     history_delete.add_argument("id", type=int, help="Design ID to delete")
 
+    # --- STATS Command (v0.1.6) ---
+    stats_parser = subparsers.add_parser("stats", help="Show sequence statistics before design")
+    stats_parser.add_argument("sequence", type=str, help="Path to sequence file (FASTA) or raw sequence")
+    stats_parser.add_argument("--json", "-j", action="store_true", help="Output as JSON")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -249,6 +254,94 @@ def main():
             sys.exit(1)
         except Exception as e:
             print(f"\n❌ Unexpected Error: {e}")
+            sys.exit(1)
+
+    # --- STATS Command Handler (v0.1.6) ---
+    if args.command == "stats":
+        import json
+        from pathlib import Path
+        
+        seq_input = args.sequence
+        
+        try:
+            # Load sequence from file or use as raw
+            if Path(seq_input).exists():
+                with open(seq_input, 'r') as f:
+                    content = f.read()
+                if content.startswith('>'):
+                    # FASTA format
+                    lines = content.strip().split('\n')
+                    seq_name = lines[0][1:].split()[0]
+                    sequence = ''.join(line for line in lines[1:] if not line.startswith('>'))
+                else:
+                    seq_name = Path(seq_input).stem
+                    sequence = content.replace('\n', '').replace(' ', '')
+            else:
+                seq_name = "Input"
+                sequence = seq_input
+            
+            # Calculate statistics
+            seq_upper = sequence.upper()
+            length = len(sequence)
+            gc_count = seq_upper.count('G') + seq_upper.count('C')
+            gc_percent = (gc_count / length * 100) if length > 0 else 0
+            at_count = seq_upper.count('A') + seq_upper.count('T')
+            n_count = seq_upper.count('N')
+            
+            # Check for IUPAC codes
+            iupac_codes = set("RYSWKMBDHV")
+            iupac_found = set(seq_upper) & iupac_codes
+            iupac_count = sum(seq_upper.count(c) for c in iupac_found)
+            
+            # Check for RNA
+            has_uracil = 'U' in sequence.upper()
+            
+            if args.json:
+                stats = {
+                    "name": seq_name,
+                    "length": length,
+                    "gc_percent": round(gc_percent, 2),
+                    "gc_count": gc_count,
+                    "at_count": at_count,
+                    "n_count": n_count,
+                    "iupac_codes": list(iupac_found),
+                    "iupac_count": iupac_count,
+                    "has_uracil": has_uracil,
+                    "valid_for_design": length >= 50 and iupac_count == 0 and not has_uracil
+                }
+                print(json.dumps(stats, indent=2))
+            else:
+                print(f"\n📊 Sequence Statistics: {seq_name}")
+                print("=" * 45)
+                print(f"  Length:      {length:,} bp")
+                print(f"  GC Content:  {gc_percent:.2f}% ({gc_count:,} bp)")
+                print(f"  AT Content:  {(100-gc_percent-n_count/length*100):.2f}% ({at_count:,} bp)")
+                
+                if n_count > 0:
+                    print(f"  N (masked):  {n_count:,} bp ({n_count/length*100:.2f}%)")
+                
+                if iupac_found:
+                    print(f"  ⚠️  IUPAC codes: {sorted(iupac_found)} ({iupac_count} bp)")
+                    print(f"      → Will be converted to N during design")
+                
+                if has_uracil:
+                    print(f"  ⚠️  RNA detected (contains U)")
+                    print(f"      → Will be converted to T during design")
+                
+                print("=" * 45)
+                
+                if length < 50:
+                    print("❌ Too short for primer design (min 50 bp)")
+                elif iupac_count > length * 0.1:
+                    print("⚠️  High IUPAC content - may limit primer options")
+                else:
+                    print("✅ Ready for primer design")
+                print()
+            
+            sys.exit(0)
+            
+        except Exception as e:
+            print(f"\n❌ Error: {e}")
             sys.exit(1)
 
     # --- PRESET Command Handler (v0.1.5) ---
