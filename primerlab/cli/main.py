@@ -75,6 +75,29 @@ def _run_health_check():
     except ImportError:
         print("⚠️ Biopython not found (optional, for advanced sequence parsing)")
     
+    # v0.1.6: Check for updates
+    print("\n" + "-" * 45)
+    print("📡 Checking for updates...")
+    try:
+        import urllib.request
+        import json
+        
+        url = "https://api.github.com/repos/engkinandatama/primerlab-genomic/releases/latest"
+        req = urllib.request.Request(url, headers={"User-Agent": "PrimerLab"})
+        
+        with urllib.request.urlopen(req, timeout=5) as response:
+            data = json.loads(response.read().decode())
+            latest_version = data.get("tag_name", "").lstrip("v")
+            
+            if latest_version and latest_version > __version__:
+                print(f"🆕 New version available: v{latest_version}")
+                print(f"   Current: v{__version__}")
+                print(f"   Update: pip install git+https://github.com/engkinandatama/primerlab-genomic.git@v{latest_version}")
+            else:
+                print(f"✅ You are on the latest version (v{__version__})")
+    except Exception as e:
+        print(f"⚠️ Could not check for updates: {e}")
+    
     print("\n" + "=" * 45)
     print("Health check complete.\n")
 
