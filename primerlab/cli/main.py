@@ -580,9 +580,10 @@ def main():
                 
                 logger.info(f"Found {len(parsed_seqs)} sequences in {fasta_path.name}")
                 
+                import copy
                 for name, seq in parsed_seqs:
-                    # Clone config and inject sequence
-                    seq_config = shared_config.copy()
+                    # Deep clone config to avoid shared state
+                    seq_config = copy.deepcopy(shared_config)
                     if "input" not in seq_config:
                         seq_config["input"] = {}
                     seq_config["input"]["sequence"] = seq
