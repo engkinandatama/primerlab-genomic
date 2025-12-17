@@ -156,6 +156,22 @@ def main():
     batch_run_parser.add_argument("--continue-on-error", action="store_true",
                                   help="Continue processing even if some configs fail")
 
+    # --- PLOT Command (v0.1.5) ---
+    plot_parser = subparsers.add_parser("plot", help="Generate visualizations from results")
+    plot_parser.add_argument("result", type=str, help="Path to result.json file")
+    plot_parser.add_argument("--sequence", "-s", type=str, required=True,
+                             help="Path to sequence file (FASTA or raw)")
+    plot_parser.add_argument("--type", "-t", type=str, default="gc-profile",
+                             choices=["gc-profile"],
+                             help="Plot type (default: gc-profile)")
+    plot_parser.add_argument("--theme", type=str, default="light",
+                             choices=["light", "dark"],
+                             help="Color theme (default: light)")
+    plot_parser.add_argument("--output", "-o", type=str, default=None,
+                             help="Output path for plot (PNG/SVG)")
+    plot_parser.add_argument("--window", "-w", type=int, default=20,
+                             help="Sliding window size for GC analysis (default: 20)")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -589,6 +605,85 @@ def main():
             
         except Exception as e:
             logger.error(f"Batch run failed: {e}")
+            sys.exit(1)
+
+    # --- PLOT Command Handler (v0.1.5) ---
+    if args.command == "plot":
+        logger = setup_logger(level=logging.INFO)
+        logger.info(f"🎨 PrimerLab Visualization v{__version__}")
+        
+        try:
+            from pathlib import Path
+            import json
+            from primerlab.core.visualization import plot_gc_profile
+            from primerlab.core.sequence import SequenceLoader
+            
+            # Load result
+            result_path = Path(args.result)
+            if not result_path.exists():
+                logger.error(f"Result file not found: {result_path}")
+                sys.exit(1)
+            
+            with open(result_path) as f:
+                result = json.load(f)
+            
+            # Load sequence
+            sequence = SequenceLoader.load(args.sequence)
+            
+            # Determine output path
+            output_path = args.output
+            if not output_path:
+                output_path = result_path.parent / f"gc_profile_{args.theme}.png"
+            
+            # Get primer info
+            primers = result.get("primers", {})
+            amplicons = result.get("amplicons", [])
+            
+            primer_fwd = None
+            primer_rev = None
+            probe = None
+            amplicon_start = 0
+            amplicon_end = len(sequence)
+            
+            if "forward" in primers:
+                fwd = primers["forward"]
+                primer_fwd = {"start": fwd.get("start", 0), "end": fwd.get("end", 0)}
+            
+            if "reverse" in primers:
+                rev = primers["reverse"]
+                primer_rev = {"start": rev.get("start", 0), "end": rev.get("end", 0)}
+            
+            if "probe" in primers:
+                prb = primers["probe"]
+                probe = {"start": prb.get("start", 0), "end": prb.get("end", 0)}
+            
+            if amplicons:
+                amplicon_start = amplicons[0].get("start", 0)
+                amplicon_end = amplicons[0].get("end", len(sequence))
+            
+            # Generate plot
+            saved_path = plot_gc_profile(
+                sequence=sequence,
+                primer_fwd=primer_fwd,
+                primer_rev=primer_rev,
+                probe=probe,
+                amplicon_start=amplicon_start,
+                amplicon_end=amplicon_end,
+                window_size=args.window,
+                theme=args.theme,
+                output_path=str(output_path),
+                title=f"GC Content Profile - {result.get('workflow', 'PCR').upper()}"
+            )
+            
+            if saved_path:
+                logger.info(f"✅ Plot saved to: {saved_path}")
+            else:
+                logger.warning("Plot generation failed (matplotlib may not be installed)")
+            
+            sys.exit(0)
+            
+        except Exception as e:
+            logger.error(f"Plot generation failed: {e}")
             sys.exit(1)
 
     if args.command == "batch-generate":
