@@ -5,6 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.6] - 2025-12-18
+
+### Added
+
+- **`primerlab stats` command** (NEW):
+  - Quick sequence analysis before primer design.
+  - Shows: length, GC%, AT%, N-masked count, IUPAC codes.
+  - JSON output with `--json` flag.
+  - Warns if sequence is too short or has issues.
+- **Version check in `primerlab health`**:
+  - Automatically checks GitHub for newer releases.
+  - Shows update instructions if available.
+- **`--quiet` flag for `run` command**:
+  - Suppresses info/warning messages.
+  - Only shows errors and final output.
+- **IUPAC Ambiguous Codes Support**:
+  - Codes (R, Y, W, S, K, M, B, D, H, V) auto-converted to N.
+  - Warning displayed to user.
+  - Regions excluded from primer placement.
+- **RNA Sequence Detection**:
+  - Uracil (U) auto-converted to Thymine (T).
+  - Warning displayed to user.
+- **Comprehensive Test Suite**:
+  - 70+ unit tests covering all core modules.
+  - 10 integration tests (E2E for PCR, qPCR, batch).
+  - 8 stats command tests.
+  - Total: 196+ tests passing.
+- **Test Fixtures**:
+  - `examples/multi_sequences.fasta` - 10 housekeeping genes.
+  - `examples/masked_sequence.fasta` - N-masked regions.
+  - `examples/excluded_regions.bed` - BED file example.
+  - `tests/fixtures/sample_result.json` - Result fixture.
+
+### Improved
+
+- Better sequence validation with descriptive error messages.
+- Matplotlib now a required dependency (for `primerlab plot`).
+
+### Dependencies
+
+- Added `matplotlib>=3.5.0` to required dependencies.
+
 ## [0.1.5] - 2025-12-17
 
 ### Added
