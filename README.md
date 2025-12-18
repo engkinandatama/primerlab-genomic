@@ -319,7 +319,7 @@ PrimerLab follows strict architecture guidelines:
 * Explicit error handling
 * Deterministic, reproducible outputs
 
-See: 📄 [`rules-development.md`](Docs/Development%20Rules/rules-development.md)
+See: 📄 [`rules-development.md`](docs/Development%20Rules/rules-development.md)
 
 ---
 
