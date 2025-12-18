@@ -1,6 +1,6 @@
 {
   "primerlab_version": "0.2.0",
-  "timestamp": "2025-12-18T06:12:25.743548Z",
+  "timestamp": "2025-12-18T06:18:16.621762Z",
   "workflow": "pcr",
   "qc_mode": "standard",
   "config_hash": "sha256:554669ffdc6b",
