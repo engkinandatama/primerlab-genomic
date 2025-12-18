@@ -389,8 +389,12 @@ def main():
         from primerlab.core.insilico import run_insilico_pcr
         from primerlab.core.sequence import SequenceLoader
         
-        logger = setup_logger(level=logging.INFO)
-        logger.info("🧬 Running In-silico PCR Simulation...")
+        # Suppress logs when --json flag is used for clean output
+        if args.json:
+            logger = setup_logger(level=logging.ERROR)
+        else:
+            logger = setup_logger(level=logging.INFO)
+            logger.info("🧬 Running In-silico PCR Simulation...")
         
         try:
             # Load template
