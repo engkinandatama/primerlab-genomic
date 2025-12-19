@@ -11,6 +11,7 @@ from typing import List, Optional, Tuple, Dict, Any
 from pathlib import Path
 
 from primerlab.core.logger import get_logger
+from primerlab.core.sequence import reverse_complement, bases_match
 
 logger = get_logger()
 
@@ -89,12 +90,6 @@ class InsilicoPCRResult:
     errors: List[str] = field(default_factory=list)
 
 
-def reverse_complement(seq: str) -> str:
-    """Return reverse complement of DNA sequence."""
-    complement = {'A': 'T', 'T': 'A', 'G': 'C', 'C': 'G', 
-                  'a': 't', 't': 'a', 'g': 'c', 'c': 'g',
-                  'N': 'N', 'n': 'n'}
-    return ''.join(complement.get(base, 'N') for base in reversed(seq))
 
 
 def calculate_match_percent(primer: str, target: str) -> Tuple[float, int, int]:
@@ -110,14 +105,15 @@ def calculate_match_percent(primer: str, target: str) -> Tuple[float, int, int]:
         primer = primer.ljust(max_len, 'N')
         target = target.ljust(max_len, 'N')
     
-    matches = sum(1 for p, t in zip(primer.upper(), target.upper()) if p == t)
+    # v0.2.1: IUPAC aware matching
+    matches = sum(1 for p, t in zip(primer.upper(), target.upper()) if bases_match(p, t))
     mismatches = len(primer) - matches
     match_percent = (matches / len(primer)) * 100
     
     # Count 3' end perfect match (from 3' end of primer)
     three_prime_match = 0
     for p, t in zip(reversed(primer.upper()), reversed(target.upper())):
-        if p == t:
+        if bases_match(p, t):
             three_prime_match += 1
         else:
             break
@@ -156,10 +152,15 @@ def find_binding_sites(
         search_seq = primer_upper
     
     template_upper = template_seq.upper()
+    template_len = len(template_upper)
+    
+    # v0.2.1: Circular template support
+    is_circular = params.get("circular", False)
+    search_template = template_upper + template_upper[:primer_len-1] if is_circular else template_upper
     
     # Slide along template looking for potential binding sites
-    for i in range(len(template_upper) - primer_len + 1):
-        target_region = template_upper[i:i + primer_len]
+    for i in range(len(search_template) - primer_len + 1):
+        target_region = search_template[i:i + primer_len]
         
         match_pct, mismatches, three_prime_match = calculate_match_percent(
             search_seq, target_region
@@ -257,7 +258,13 @@ def predict_products(
             product_seq = template_seq[fwd_start:rev_end]
             
             # Calculate likelihood score (average of binding qualities)
-            likelihood = (fwd.match_percent + rev.match_percent) / 2
+            # v0.2.1: Weighted likelihood - penalize 3' mismatches more
+            fwd_score = (fwd.match_percent * 0.7) + (min(10, fwd.three_prime_match) * 3)
+            rev_score = (rev.match_percent * 0.7) + (min(10, rev.three_prime_match) * 3)
+            likelihood = (fwd_score + rev_score) / 2
+            
+            # Normalize to 0-100 (roughly)
+            likelihood = min(100.0, likelihood)
             
             # Check for warnings
             warnings = []
@@ -305,6 +312,10 @@ class InsilicoPCR:
         self.params = {**DEFAULT_INSILICO_PARAMS}
         if params:
             self.params.update(params)
+        
+        # v0.2.1: Auto-detect circularity from config if not explicit
+        if "circular" not in self.params:
+            self.params["circular"] = False
     
     def run(
         self,

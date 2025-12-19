@@ -5,7 +5,7 @@
 ### Option 1: From GitHub (Recommended)
 
 ```bash
-pip install git+https://github.com/engkinandatama/primerlab-genomic.git@v0.1.6
+pip install git+https://github.com/engkinandatama/primerlab-genomic.git@v0.2.0
 ```
 
 ### Option 2: From Source (Development)
@@ -16,11 +16,32 @@ cd primerlab-genomic
 pip install -e .
 ```
 
+### WSL Users (Windows)
+
+PrimerLab requires `primer3-py` which compiles native extensions. For best results on Windows:
+
+1. **Use WSL2** (Windows Subsystem for Linux)
+2. Install dependencies in WSL:
+
+   ```bash
+   sudo apt update && sudo apt install -y python3-pip python3-venv
+   ```
+
+3. Create a virtual environment:
+
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   pip install -e .
+   ```
+
+See [WSL Quickstart Guide](../.dev/Guide/wsl_quickstart.md) for detailed setup.
+
 ## Verify Installation
 
 ```bash
 primerlab --version
-# Output: PrimerLab v0.1.6
+# Output: PrimerLab v0.2.0
 
 primerlab health
 # Shows dependency status
