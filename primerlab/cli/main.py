@@ -128,6 +128,8 @@ def main():
                            help="Region masking mode: auto (detect all), lowercase, n, none (default: none)")
     run_parser.add_argument("--quiet", "-q", action="store_true",
                            help="Suppress warnings and non-essential output (v0.1.6)")
+    run_parser.add_argument("--validate", "-V", action="store_true",
+                           help="Run in-silico PCR validation after primer design (v0.2.3)")
 
     # --- BATCH-GENERATE Command ---
     batch_parser = subparsers.add_parser("batch-generate", help="Generate multiple configs from CSV")
