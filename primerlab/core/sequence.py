@@ -172,3 +172,59 @@ class SequenceLoader:
             )
             
         return sequence
+
+    @staticmethod
+    def get_iupac_map() -> dict:
+        """Returns map of IUPAC codes to sets of possible bases."""
+        return {
+            'A': {'A'}, 'C': {'C'}, 'G': {'G'}, 'T': {'T'},
+            'R': {'A', 'G'}, 'Y': {'C', 'T'}, 'S': {'G', 'C'}, 'W': {'A', 'T'},
+            'K': {'G', 'T'}, 'M': {'A', 'C'}, 'B': {'C', 'G', 'T'},
+            'D': {'A', 'G', 'T'}, 'H': {'A', 'C', 'T'}, 'V': {'A', 'C', 'G'},
+            'N': {'A', 'C', 'G', 'T'}
+        }
+
+
+def reverse_complement(seq: str) -> str:
+    """
+    Return reverse complement of DNA sequence including IUPAC codes.
+    
+    v0.2.1: Centralized and supports all IUPAC codes.
+    """
+    complement = {
+        'A': 'T', 'T': 'A', 'G': 'C', 'C': 'G',
+        'R': 'Y', 'Y': 'R', 'S': 'S', 'W': 'W',
+        'K': 'M', 'M': 'K', 'B': 'V', 'V': 'B',
+        'D': 'H', 'H': 'D', 'N': 'N',
+        'a': 't', 't': 'a', 'g': 'c', 'c': 'g',
+        'r': 'y', 'y': 'r', 's': 's', 'w': 'w',
+        'k': 'm', 'm': 'k', 'b': 'v', 'v': 'b',
+        'd': 'h', 'h': 'd', 'n': 'n'
+    }
+    return ''.join(complement.get(base, 'N') for base in reversed(seq))
+
+
+def bases_match(b1: str, b2: str) -> bool:
+    """
+    Check if two bases match, accounting for IUPAC ambiguity.
+    
+    v0.2.1: Semantic matching.
+    """
+    # Quick exact match
+    b1_up, b2_up = b1.upper(), b2.upper()
+    if b1_up == b2_up:
+        return True
+    
+    # IUPAC logic
+    iupac = {
+        'A': {'A'}, 'C': {'C'}, 'G': {'G'}, 'T': {'T'},
+        'R': {'A', 'G'}, 'Y': {'C', 'T'}, 'S': {'G', 'C'}, 'W': {'A', 'T'},
+        'K': {'G', 'T'}, 'M': {'A', 'C'}, 'B': {'C', 'G', 'T'},
+        'D': {'A', 'G', 'T'}, 'H': {'A', 'C', 'T'}, 'V': {'A', 'C', 'G'},
+        'N': {'A', 'C', 'G', 'T'}
+    }
+    
+    s1 = iupac.get(b1_up, {b1_up})
+    s2 = iupac.get(b2_up, {b2_up})
+    
+    return bool(s1 & s2)

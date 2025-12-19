@@ -102,8 +102,10 @@ class TestFindBindingSites:
     
     def test_no_binding(self):
         """Should return empty for non-matching primer."""
+        # v0.2.1: N now matches everything with IUPAC support
+        # Use a sequence that truly doesn't exist in template
         bindings = find_binding_sites(
-            primer_seq="NNNNNNNNNNNNNNNN",  # Won't match anything
+            primer_seq="XXXXXXXXXXXXXXXXX",  # Invalid bases won't match
             template_seq=TEMPLATE_SEQ,
             primer_name="Fake",
             strand='+',
@@ -173,10 +175,12 @@ class TestInsilicoPCR:
     
     def test_no_binding_warning(self):
         """Should warn when no binding found."""
+        # v0.2.1: N now matches everything with IUPAC support
+        # Use a sequence that truly doesn't exist in template
         result = run_insilico_pcr(
             template=TEMPLATE_SEQ,
-            forward_primer="NNNNNNNNNNNNNNNNNNNN",  # Won't bind
-            reverse_primer="NNNNNNNNNNNNNNNNNNNN"
+            forward_primer="XXXXXXXXXXXXXXXXXXXXXXX",  # Won't bind
+            reverse_primer="XXXXXXXXXXXXXXXXXXXXXXX"
         )
         assert result.success == False
         assert len(result.warnings) > 0

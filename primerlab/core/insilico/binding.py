@@ -8,9 +8,10 @@ Advanced binding site analysis including:
 """
 
 from dataclasses import dataclass
-from typing import List, Optional, Dict, Any, Tuple
+from typing import List, Optional, Dict, Any
 
 from primerlab.core.logger import get_logger
+from primerlab.core.sequence import reverse_complement, bases_match
 
 logger = get_logger()
 
@@ -94,13 +95,17 @@ def calculate_three_prime_dg(
         p1, p2 = primer_3prime[i:i+2].upper()
         t1, t2 = target_3prime[i:i+2].upper()
         
-        # Check for match
-        if p1 == t1 and p2 == t2:
+        # Check for match (IUPAC aware)
+        if bases_match(p1, t1) and bases_match(p2, t2):
             dinuc = p1 + p2
             total_dg += nn_dg.get(dinuc, -1.0)
         else:
-            # Mismatch penalty
-            total_dg += 1.0  # Destabilizing
+            # Mismatch penalty (IUPAC aware)
+            # Penalize more if it's a true mismatch even after IUPAC resolution
+            if not bases_match(p1, t1) or not bases_match(p2, t2):
+                total_dg += 1.5  # Higher penalty for true mismatch
+            else:
+                total_dg += 0.5  # Slight penalty for degeneracy
             mismatches += 1
     
     # Salt correction (simplified)
@@ -139,8 +144,8 @@ def analyze_binding(
     if len(primer) != len(target):
         raise ValueError(f"Primer ({len(primer)}bp) and target ({len(target)}bp) must be same length")
     
-    # Count matches/mismatches
-    match_count = sum(1 for p, t in zip(primer, target) if p == t)
+    # Count matches/mismatches (IUPAC aware)
+    match_count = sum(1 for p, t in zip(primer, target) if bases_match(p, t))
     mismatch_count = len(primer) - match_count
     match_percent = (match_count / len(primer)) * 100
     
@@ -151,7 +156,7 @@ def analyze_binding(
     
     three_prime_match = 0
     for p, t in zip(reversed(primer), reversed(target)):
-        if p == t:
+        if bases_match(p, t):
             three_prime_match += 1
         else:
             break
@@ -167,7 +172,7 @@ def analyze_binding(
     five_prime_len = min(5, len(primer))
     five_prime_mismatch = sum(
         1 for p, t in zip(primer[:five_prime_len], target[:five_prime_len])
-        if p != t
+        if not bases_match(p, t)
     )
     
     # Calculate overall binding Tm (simplified)
@@ -177,7 +182,16 @@ def analyze_binding(
     binding_tm = 64.9 + 41 * (gc_count - 16.4) / len(primer)  # Simplified
     
     # Adjust for mismatches (roughly -5°C per mismatch)
-    binding_tm -= mismatch_count * 5
+    # v0.2.1: Weighted penalty for 3' mismatches
+    # Mismatches in the last 5bp (3' end) are much more destabilizing
+    for i in range(len(primer)):
+        if not bases_match(primer[i], target[i]):
+            dist_from_3prime = len(primer) - 1 - i
+            if dist_from_3prime < 5:
+                binding_tm -= 10.0  # Severe penalty for 3' mismatch
+            else:
+                binding_tm -= 5.0   # Standard penalty for 5' mismatch
+                
     binding_tm = max(30, min(90, binding_tm))  # Clamp
     
     # Overall binding ΔG (simplified)
@@ -212,7 +226,7 @@ def analyze_binding(
         validation_notes.append("All requirements met")
     
     # Create alignment string
-    alignment_str = ''.join('|' if p == t else 'x' for p, t in zip(primer, target))
+    alignment_str = ''.join('|' if bases_match(p, t) else 'x' for p, t in zip(primer, target))
     
     return BindingSite(
         position=position,
@@ -268,7 +282,7 @@ def find_all_binding_sites(
         target_region = template_upper[i:i + primer_len]
         
         # Quick check - count matches
-        matches = sum(1 for p, t in zip(search_primer.upper(), target_region) if p == t)
+        matches = sum(1 for p, t in zip(search_primer.upper(), target_region) if bases_match(p, t))
         match_pct = (matches / primer_len) * 100
         
         if match_pct >= threshold:
@@ -287,9 +301,3 @@ def find_all_binding_sites(
     return sites
 
 
-def reverse_complement(seq: str) -> str:
-    """Return reverse complement of DNA sequence."""
-    complement = {'A': 'T', 'T': 'A', 'G': 'C', 'C': 'G', 
-                  'a': 't', 't': 'a', 'g': 'c', 'c': 'g',
-                  'N': 'N', 'n': 'n'}
-    return ''.join(complement.get(base, 'N') for base in reversed(seq))
