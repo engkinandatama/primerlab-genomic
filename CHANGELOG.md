@@ -5,6 +5,23 @@ All notable changes to PrimerLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.5] - 2025-12-20
+
+### Added
+
+- Primer-dimer check between forward and reverse primers
+- `check_primer_dimer()` function in binding module
+- Extension time estimation for amplicons (1 min/kb)
+- Primer-dimer section in markdown report
+- Extension time in product details
+
+### Changed
+
+- `InsilicoPCRResult` now includes `primer_dimer` field
+- `AmpliconPrediction` now includes `extension_time_sec` field
+
+---
+
 ## [0.2.4] - 2025-12-20
 
 ### Added
