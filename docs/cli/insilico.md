@@ -1,6 +1,6 @@
 # primerlab insilico
 
-**v0.2.0** - In-silico PCR Simulation
+**v0.2.4** - In-silico PCR Simulation
 
 Validate primers against a template sequence by simulating PCR amplification.
 
@@ -19,6 +19,7 @@ primerlab insilico -p <primers> -t <template> [options]
 | `--output` | `-o` | ❌ | Output directory (default: `insilico_output`) |
 | `--config` | `-c` | ❌ | Optional config file for parameters |
 | `--json` | | ❌ | Output results as JSON only |
+| `--circular` | | ❌ | Treat template as circular (v0.2.4) |
 
 ## Primer File Formats
 
@@ -73,6 +74,7 @@ primerlab insilico \
 | File | Description |
 |------|-------------|
 | `insilico_result.json` | Complete results with binding data |
+| `insilico_report.md` | Human-readable markdown report (v0.2.2) |
 | `predicted_amplicons.fasta` | Predicted amplicon sequences |
 
 ## Console Output

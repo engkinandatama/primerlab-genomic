@@ -7,7 +7,7 @@ from primerlab.core.config_loader import load_and_merge_config
 from primerlab.core.exceptions import PrimerLabException
 
 # Version definition
-__version__ = "0.2.0"
+__version__ = "0.2.4"
 
 
 def _run_health_check():
@@ -248,6 +248,8 @@ def main():
                                  help="Optional config file for parameters")
     insilico_parser.add_argument("--json", action="store_true",
                                  help="Output results as JSON only")
+    insilico_parser.add_argument("--circular", action="store_true",
+                                 help="Treat template as circular (v0.2.4)")
 
     args = parser.parse_args()
 
@@ -458,6 +460,10 @@ def main():
                 with open(args.config, 'r') as f:
                     config = yaml.safe_load(f)
                 params = config.get("insilico", {})
+            
+            # v0.2.4: Add circular flag from CLI
+            if args.circular:
+                params["circular"] = True
             
             # Run in-silico PCR
             result = run_insilico_pcr(
