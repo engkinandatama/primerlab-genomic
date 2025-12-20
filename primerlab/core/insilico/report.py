@@ -64,6 +64,8 @@ def generate_markdown_report(result: InsilicoPCRResult, output_dir: Optional[Pat
             lines.append(f"| Size | **{product.product_size} bp** |")
             lines.append(f"| Position | {product.start_position} - {product.end_position} |")
             lines.append(f"| Likelihood | {product.likelihood_score:.1f}% |")
+            if product.extension_time_sec > 0:
+                lines.append(f"| Extension Time | {product.extension_time_sec:.1f}s (~{product.extension_time_sec/60:.1f} min) |")
             lines.append("")
             
             # Binding details
@@ -115,6 +117,22 @@ def generate_markdown_report(result: InsilicoPCRResult, output_dir: Optional[Pat
         for e in result.errors:
             lines.append(f"- {e}")
         lines.append("")
+    
+    # v0.2.5: Primer-dimer analysis
+    if result.primer_dimer:
+        dimer = result.primer_dimer
+        if dimer.get("severity") != "none":
+            lines.append("## ⚗️ Primer-Dimer Analysis")
+            lines.append("")
+            lines.append(f"| Metric | Value |")
+            lines.append("|--------|-------|")
+            lines.append(f"| Severity | **{dimer['severity'].upper()}** |")
+            lines.append(f"| Max Complementary | {dimer['max_complementary']} bp |")
+            lines.append(f"| 3' Complementary | {dimer['three_prime_complementary']} bp |")
+            lines.append("")
+            if dimer.get("warning"):
+                lines.append(f"> ⚠️ {dimer['warning']}")
+                lines.append("")
     
     # Parameters
     lines.append("## Parameters Used")

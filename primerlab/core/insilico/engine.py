@@ -72,6 +72,7 @@ class AmpliconPrediction:
     likelihood_score: float         # 0-100 based on binding quality
     is_primary: bool = False        # primary (best) product
     warnings: List[str] = field(default_factory=list)
+    extension_time_sec: float = 0.0  # v0.2.5: Estimated extension time
 
 
 @dataclass
@@ -88,6 +89,7 @@ class InsilicoPCRResult:
     parameters: Dict[str, Any]
     warnings: List[str] = field(default_factory=list)
     errors: List[str] = field(default_factory=list)
+    primer_dimer: Optional[Dict[str, Any]] = None  # v0.2.5: Dimer check result
 
 
 
@@ -397,6 +399,17 @@ class InsilicoPCR:
             params=self.params
         )
         
+        # v0.2.5: Calculate extension time for each product (1 min/kb = 60s/1000bp)
+        for product in products:
+            product.extension_time_sec = (product.product_size / 1000.0) * 60.0
+        
+        # v0.2.5: Check primer-dimer between Fwd and Rev
+        from primerlab.core.insilico.binding import check_primer_dimer
+        primer_dimer_result = check_primer_dimer(forward_primer, reverse_primer)
+        
+        if primer_dimer_result["warning"]:
+            warnings.append(primer_dimer_result["warning"])
+        
         if not products:
             warnings.append("No valid products predicted")
         else:
@@ -417,7 +430,8 @@ class InsilicoPCR:
             all_reverse_bindings=reverse_bindings,
             parameters=self.params,
             warnings=warnings,
-            errors=errors
+            errors=errors,
+            primer_dimer=primer_dimer_result
         )
 
 

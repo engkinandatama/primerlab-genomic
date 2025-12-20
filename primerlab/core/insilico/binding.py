@@ -301,3 +301,105 @@ def find_all_binding_sites(
     return sites
 
 
+def check_primer_dimer(
+    forward_primer: str,
+    reverse_primer: str,
+    min_complementary: int = 4,
+    check_3prime: bool = True
+) -> Dict[str, Any]:
+    """
+    Check for primer-dimer formation between forward and reverse primers.
+    
+    v0.2.5: Detects complementarity that could lead to primer-dimer artifacts.
+    
+    Args:
+        forward_primer: Forward primer sequence (5' to 3')
+        reverse_primer: Reverse primer sequence (5' to 3')
+        min_complementary: Minimum consecutive complementary bases to flag
+        check_3prime: Give extra weight to 3' end complementarity
+        
+    Returns:
+        Dictionary with dimer analysis:
+        - has_dimer: bool
+        - max_complementary: int
+        - dimer_regions: list of tuples
+        - severity: "none", "low", "medium", "high"
+        - warning: str or None
+    """
+    fwd = forward_primer.upper()
+    rev = reverse_primer.upper()
+    rev_rc = reverse_complement(reverse_primer).upper()
+    
+    # Check Fwd 3' against Rev 5' (most problematic)
+    # and Fwd against Rev reverse complement
+    
+    dimer_regions = []
+    max_complementary = 0
+    
+    # Slide forward primer against reverse complement of reverse primer
+    for offset in range(-len(fwd) + 1, len(rev_rc)):
+        complementary = 0
+        start_pos = None
+        
+        for i in range(len(fwd)):
+            j = i + offset
+            if 0 <= j < len(rev_rc):
+                if bases_match(fwd[i], rev_rc[j]):
+                    if start_pos is None:
+                        start_pos = i
+                    complementary += 1
+                else:
+                    if complementary >= min_complementary:
+                        dimer_regions.append({
+                            "fwd_start": start_pos,
+                            "fwd_end": i,
+                            "length": complementary,
+                            "type": "internal"
+                        })
+                    max_complementary = max(max_complementary, complementary)
+                    complementary = 0
+                    start_pos = None
+        
+        # Check remaining
+        if complementary >= min_complementary:
+            dimer_regions.append({
+                "fwd_start": start_pos,
+                "fwd_end": start_pos + complementary,
+                "length": complementary,
+                "type": "internal"
+            })
+        max_complementary = max(max_complementary, complementary)
+    
+    # Check 3' end specifically (most critical for extension)
+    three_prime_complementary = 0
+    fwd_3prime = fwd[-6:]  # Last 6 bases
+    rev_3prime = rev[-6:]
+    rev_3prime_rc = reverse_complement(rev_3prime).upper()
+    
+    for i, (f, r) in enumerate(zip(fwd_3prime, rev_3prime_rc)):
+        if bases_match(f, r):
+            three_prime_complementary += 1
+    
+    # Determine severity
+    has_dimer = max_complementary >= min_complementary
+    severity = "none"
+    warning = None
+    
+    if max_complementary >= 8 or three_prime_complementary >= 4:
+        severity = "high"
+        warning = f"High primer-dimer risk: {max_complementary} consecutive complementary bases"
+    elif max_complementary >= 6 or three_prime_complementary >= 3:
+        severity = "medium"
+        warning = f"Moderate primer-dimer risk: {max_complementary} consecutive complementary bases"
+    elif max_complementary >= 4:
+        severity = "low"
+        warning = f"Low primer-dimer risk: {max_complementary} consecutive complementary bases"
+    
+    return {
+        "has_dimer": has_dimer,
+        "max_complementary": max_complementary,
+        "three_prime_complementary": three_prime_complementary,
+        "dimer_regions": dimer_regions[:5],  # Top 5
+        "severity": severity,
+        "warning": warning
+    }
