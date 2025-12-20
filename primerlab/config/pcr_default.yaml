@@ -39,3 +39,4 @@ output:
 advanced:
   primer3_raw: false
   debug: false
+  auto_validate: false  # v0.2.4: Run in-silico validation after design

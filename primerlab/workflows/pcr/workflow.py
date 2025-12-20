@@ -214,5 +214,32 @@ def run_pcr_workflow(config: Dict[str, Any]) -> WorkflowResult:
     except Exception as e:
         logger.warning(f"Failed to create audit log: {e}")
     
+    # v0.2.4: Auto-validate if enabled
+    advanced = config.get("advanced", {})
+    if advanced.get("auto_validate", False) and primers:
+        try:
+            from primerlab.core.insilico import run_insilico_pcr
+            
+            fwd_primer = primers.get("forward")
+            rev_primer = primers.get("reverse")
+            
+            if fwd_primer and rev_primer:
+                validation_result = run_insilico_pcr(
+                    template=sequence,
+                    forward_primer=fwd_primer.sequence,
+                    reverse_primer=rev_primer.sequence,
+                    template_name="auto_validation"
+                )
+                
+                # Add validation summary to result
+                result.insilico_validation = {
+                    "success": validation_result.success,
+                    "products_count": len(validation_result.products),
+                    "warnings": validation_result.warnings
+                }
+                logger.info(f"Auto-validation: {'PASS' if validation_result.success else 'FAIL'} - {len(validation_result.products)} product(s)")
+        except Exception as e:
+            logger.warning(f"Auto-validation failed: {e}")
+    
     return result
 
