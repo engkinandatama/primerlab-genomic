@@ -284,6 +284,13 @@ def main():
                              help="Verbose output with details (v0.3.2)")
     blast_parser.add_argument("--quiet", "-q", action="store_true",
                              help="Quiet mode - minimal output (v0.3.2)")
+    # v0.3.2 Phase 2 flags
+    blast_parser.add_argument("--no-cache", action="store_true",
+                             help="Disable result caching (v0.3.2)")
+    blast_parser.add_argument("--threads", type=int, default=4,
+                             help="Number of parallel threads (v0.3.2)")
+    blast_parser.add_argument("--timeout", type=int, default=300,
+                             help="Timeout per query in seconds (v0.3.2)")
 
     args = parser.parse_args()
 
