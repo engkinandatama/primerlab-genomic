@@ -130,6 +130,10 @@ def main():
                            help="Suppress warnings and non-essential output (v0.1.6)")
     run_parser.add_argument("--validate", "-V", action="store_true",
                            help="Run in-silico PCR validation after primer design (v0.2.3)")
+    run_parser.add_argument("--blast", action="store_true",
+                           help="Run off-target check after primer design (v0.3.1)")
+    run_parser.add_argument("--blast-db", type=str, default=None,
+                           help="Path to BLAST database (FASTA or BLAST DB)")
 
     # --- BATCH-GENERATE Command ---
     batch_parser = subparsers.add_parser("batch-generate", help="Generate multiple configs from CSV")

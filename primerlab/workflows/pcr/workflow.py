@@ -241,5 +241,45 @@ def run_pcr_workflow(config: Dict[str, Any]) -> WorkflowResult:
         except Exception as e:
             logger.warning(f"Auto-validation failed: {e}")
     
+    # v0.3.1: Auto off-target check if enabled
+    offtarget_config = config.get("offtarget", {})
+    if offtarget_config.get("enabled", False) and primers:
+        try:
+            from primerlab.core.offtarget.finder import OfftargetFinder
+            from primerlab.core.offtarget.scorer import SpecificityScorer
+            
+            database = offtarget_config.get("database")
+            if database:
+                fwd_primer = primers.get("forward")
+                rev_primer = primers.get("reverse")
+                
+                if fwd_primer and rev_primer:
+                    finder = OfftargetFinder(
+                        database=database,
+                        mode=offtarget_config.get("mode", "auto")
+                    )
+                    
+                    offtarget_result = finder.find_primer_pair_offtargets(
+                        forward_primer=fwd_primer.sequence,
+                        reverse_primer=rev_primer.sequence
+                    )
+                    
+                    scorer = SpecificityScorer()
+                    _, _, combined_score = scorer.score_primer_pair(offtarget_result)
+                    
+                    # Add to result
+                    result.offtarget_check = {
+                        "forward_offtargets": offtarget_result.forward_result.offtarget_count,
+                        "reverse_offtargets": offtarget_result.reverse_result.offtarget_count,
+                        "specificity_score": combined_score.overall_score,
+                        "grade": combined_score.grade,
+                        "is_specific": combined_score.is_acceptable
+                    }
+                    logger.info(f"Off-target check: {combined_score.grade} ({combined_score.overall_score:.1f})")
+            else:
+                logger.warning("Off-target enabled but no database specified")
+        except Exception as e:
+            logger.warning(f"Off-target check failed: {e}")
+    
     return result
 
