@@ -13,23 +13,25 @@ def get_output(result):
 class TestCLIVersion:
     """Tests for version commands."""
     
-    def test_version_flag(self):
-        """--version should return version string."""
-        result = subprocess.run(
-            [sys.executable, "-m", "primerlab.cli.main", "--version"],
-            capture_output=True,
-            text=True
-        )
-        assert "0.2.5" in get_output(result)
-    
     def test_version_command(self):
-        """version command should return version string."""
+        """Test --version flag."""
         result = subprocess.run(
-            [sys.executable, "-m", "primerlab.cli.main", "version"],
+            ["python", "-m", "primerlab.cli.main", "--version"],
             capture_output=True,
             text=True
         )
-        assert "0.2.5" in get_output(result)
+        assert result.returncode == 0
+        assert "0.3.0" in result.stdout
+    
+    def test_version_subcommand(self):
+        """Test version subcommand."""
+        result = subprocess.run(
+            ["python", "-m", "primerlab.cli.main", "version"],
+            capture_output=True,
+            text=True
+        )
+        assert result.returncode == 0
+        assert "0.3.0" in result.stdout
 
 
 class TestCLIHealth:

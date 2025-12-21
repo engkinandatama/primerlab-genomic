@@ -3,7 +3,7 @@
 ```
 primerlab-genomic/
 ├── primerlab/                      # Main package
-│   ├── __init__.py                 # Package version (0.2.0)
+│   ├── __init__.py                 # Package version (0.3.0)
 │   │
 │   ├── cli/                        # Command-line interface
 │   │   ├── __init__.py
@@ -94,11 +94,13 @@ primerlab-genomic/
 ├── STRUCTURE.md                    # This file
 ├── pyproject.toml
 └── LICENSE
+
 ```
 
 ## Architecture
 
 ```
+
 ┌─────────────┐
 │     CLI     │  primerlab run/insilico/stats/...
 └──────┬──────┘
@@ -112,6 +114,7 @@ primerlab-genomic/
 ┌─────────────┐
 │    Core     │  Tools, Models, Utilities, In-silico
 └─────────────┘
+
 ```
 
 ## Module Summary

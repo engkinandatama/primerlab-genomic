@@ -5,6 +5,30 @@ All notable changes to PrimerLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2025-12-21
+
+### Added
+
+- **BLAST Integration** for off-target detection
+- `primerlab blast` CLI command for primer specificity check
+- `BlastWrapper` class with BLAST+ auto-detection
+- `BiopythonAligner` fallback using `Bio.Align.PairwiseAligner`
+- `PrimerAligner` unified interface (auto-selects BLAST+ or Biopython)
+- `OfftargetFinder` for off-target binding site detection
+- `SpecificityScorer` with grades (A-F) and risk levels
+- `IntegratedPCRResult` combining in-silico and off-target results
+- `specificity_report.md` and `blast_result.json` outputs
+- Test database `examples/blast/test_db.fasta`
+
+### New CLI Usage
+
+```bash
+primerlab blast -p primers.fasta -d database.fasta
+primerlab blast -p "ATGC...,GCAT..." -d genome.fasta --target gene_x
+```
+
+---
+
 ## [0.2.5] - 2025-12-20
 
 ### Added
