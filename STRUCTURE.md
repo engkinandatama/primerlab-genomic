@@ -3,7 +3,7 @@
 ```
 primerlab-genomic/
 ├── primerlab/                      # Main package
-│   ├── __init__.py                 # Package version (0.3.0)
+│   ├── __init__.py                 # Package version (0.3.1)
 │   │
 │   ├── cli/                        # Command-line interface
 │   │   ├── __init__.py

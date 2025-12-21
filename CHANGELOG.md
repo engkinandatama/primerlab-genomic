@@ -5,6 +5,34 @@ All notable changes to PrimerLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2025-12-21
+
+### Added
+
+- **Complete BLAST Integration**
+  - `--blast` and `--blast-db` flags for `primerlab run` command
+  - `offtarget:` config section in YAML files
+  - `check_offtargets()` public API function
+  - `--batch`, `--db-info`, `--variants`, `--maf-threshold` CLI flags
+- **SNP/Variant Check**
+  - VCF parser with gzip support and MAF filtering (`tools/vcf_parser.py`)
+  - BED parser for region filtering (`tools/bed_parser.py`)
+  - Primer-SNP overlap detection with 3' impact assessment
+  - Variant data models with impact levels (HIGH/MEDIUM/LOW)
+- **Documentation**
+  - `docs/cli/blast.md` - BLAST command usage
+  - `examples/workflow_blast_variant.md` - End-to-end workflow
+
+### New CLI Usage
+
+```bash
+primerlab run --config my.yaml --blast --blast-db genome.fasta
+primerlab blast --db-info -d genome.fasta
+primerlab blast -p primers.fasta -d genome.fasta --variants snps.vcf
+```
+
+---
+
 ## [0.3.0] - 2025-12-21
 
 ### Added
