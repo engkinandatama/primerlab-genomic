@@ -41,7 +41,7 @@ See [WSL Quickstart Guide](../.dev/Guide/wsl_quickstart.md) for detailed setup.
 
 ```bash
 primerlab --version
-# Output: PrimerLab v0.3.0
+# Output: PrimerLab v0.3.1
 
 primerlab health
 # Shows dependency status
