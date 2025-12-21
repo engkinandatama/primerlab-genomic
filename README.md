@@ -5,9 +5,9 @@ A modular bioinformatics framework for automated **primer and probe design**, bu
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-BSD%203--Clause-green.svg)](LICENSE)
 [![Tests](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml/badge.svg)](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml)
-[![Status](https://img.shields.io/badge/status-v0.2.5-blue.svg)](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.2.5)
+[![Status](https://img.shields.io/badge/status-v0.3.0-blue.svg)](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.3.0)
 
-> 🔰 **Latest Release**: [**v0.2.5 - In-silico PCR Simulation**](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.2.5) 🎉
+> 🔰 **Latest Release**: [**v0.3.0 - BLAST Integration**](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.3.0) 🎉
 
 ---
 
@@ -18,6 +18,7 @@ It provides a structured and reproducible framework for:
 
 * **PCR** — Standard primer design with quality control
 * **qPCR** — Probe design with thermodynamic checks
+* **Off-target Check** — BLAST-based specificity analysis
 * **(Future)** CRISPR guides, multiplex PCR, and specialized workflows
 
 PrimerLab focuses on **deterministic, transparent bioinformatics**, following strict modularity and best practices.
@@ -31,15 +32,13 @@ PrimerLab focuses on **deterministic, transparent bioinformatics**, following st
 * **Safe Execution**: Timeout protection for complex sequences
 * **Structured Output**: JSON + Markdown reports with interpretable metrics
 
-#### v0.2.5 New Features
+#### 🆕 v0.3.0 Features
 
-* **In-silico PCR** (`primerlab insilico`): Validate primers against template
-* **IUPAC Support**: Degenerate bases (R, Y, S, W, K, M, B, D, H, V, N)
-* **Circular Template**: `--circular` flag for plasmid/bacterial DNA
-* **Integrated Validation**: `--validate` flag for auto in-silico after design
+* **BLAST Integration** (`primerlab blast`): Off-target detection
+* **Specificity Scoring**: Grades (A-F) and risk levels
+* **BLAST+ / Biopython**: Auto-fallback when BLAST+ unavailable
+* **In-silico PCR**: Validate primers against template
 * **Primer-Dimer Check**: Fwd↔Rev complementarity detection
-* **Extension Time**: Estimated PCR extension time (1 min/kb)
-* **Markdown Reports**: Human-readable in-silico reports
 
 ---
 
