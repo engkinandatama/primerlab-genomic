@@ -173,3 +173,63 @@ def design_qpcr_assays(
                 result.insilico_validation = validation
     
     return result
+
+
+def check_offtargets(
+    forward_primer: str,
+    reverse_primer: str,
+    database: str,
+    target_id: Optional[str] = None,
+    mode: str = "auto"
+) -> Dict[str, Any]:
+    """
+    Check primer pair for off-target binding sites (v0.3.1).
+    
+    Args:
+        forward_primer: Forward primer sequence (5' to 3')
+        reverse_primer: Reverse primer sequence (5' to 3')
+        database: Path to FASTA or BLAST database
+        target_id: Expected target sequence ID (optional)
+        mode: Alignment mode - 'auto', 'blast', or 'biopython'
+        
+    Returns:
+        Dictionary with:
+        - specificity_score: 0-100 score
+        - grade: A-F grade
+        - is_specific: bool
+        - forward_offtargets: count
+        - reverse_offtargets: count
+        - details: additional info
+    """
+    from primerlab.core.offtarget.finder import OfftargetFinder
+    from primerlab.core.offtarget.scorer import SpecificityScorer
+    
+    finder = OfftargetFinder(
+        database=database,
+        target_id=target_id,
+        mode=mode
+    )
+    
+    result = finder.find_primer_pair_offtargets(
+        forward_primer=forward_primer,
+        reverse_primer=reverse_primer,
+        target_id=target_id
+    )
+    
+    scorer = SpecificityScorer()
+    fwd_score, rev_score, combined = scorer.score_primer_pair(result)
+    
+    return {
+        "specificity_score": combined.overall_score,
+        "grade": combined.grade,
+        "is_specific": combined.is_acceptable,
+        "forward_offtargets": result.forward_result.offtarget_count,
+        "reverse_offtargets": result.reverse_result.offtarget_count,
+        "potential_products": result.potential_products,
+        "details": {
+            "forward_score": fwd_score.overall_score,
+            "reverse_score": rev_score.overall_score,
+            "binding_score": combined.binding_score,
+            "mismatch_score": combined.mismatch_score
+        }
+    }

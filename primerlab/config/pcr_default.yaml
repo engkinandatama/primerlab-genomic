@@ -40,3 +40,12 @@ advanced:
   primer3_raw: false
   debug: false
   auto_validate: false  # v0.2.4: Run in-silico validation after design
+
+# v0.3.1: Off-target detection settings
+offtarget:
+  enabled: false          # Enable off-target check after design
+  database: null          # Path to FASTA/BLAST database
+  mode: auto              # auto, blast, or biopython
+  evalue: 10.0            # E-value threshold
+  identity: 70.0          # Minimum identity %
+  max_hits: 50            # Maximum hits to report
