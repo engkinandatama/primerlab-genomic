@@ -23,11 +23,12 @@ def mock_blast_func(query_seq: str, database: str, params: Dict[str, Any]) -> Bl
     return BlastResult(
         query_id=f"query_{query_seq[:4]}",
         query_seq=query_seq,
+        query_length=len(query_seq),
         hits=[
             BlastHit(
                 subject_id="hit_1",
                 subject_title=f"Hit for {query_seq[:4]}",
-                identity=95.0,
+                identity_percent=95.0,
                 alignment_length=len(query_seq),
                 mismatches=1,
                 gaps=0,
@@ -66,7 +67,6 @@ class TestParallelBlastTask:
 class TestParallelBlastRunner:
     """Tests for ParallelBlastRunner."""
     
-    @pytest.mark.skip(reason="TODO: Fix mock function params handling")
     def test_run_single_task(self):
         """Should run a single task."""
         runner = ParallelBlastRunner(mock_blast_func, max_threads=1)
@@ -99,7 +99,6 @@ class TestParallelBlastRunner:
             assert r is not None
             assert r.result is not None or r.error is not None
     
-    @pytest.mark.skip(reason="TODO: Fix mock signature mismatch")
     def test_run_preserves_order(self):
         """Results should be in same order as tasks."""
         runner = ParallelBlastRunner(mock_blast_func, max_threads=4)
@@ -160,7 +159,6 @@ class TestParallelBlastRunner:
 class TestRunParallelBlast:
     """Tests for convenience function."""
     
-    @pytest.mark.skip(reason="TODO: Fix wrapper function integration")
     def test_run_parallel_blast(self):
         """Convenience function should work."""
         queries = ["ATGCATGC", "GCTAATGC", "TTAAGCAT"]
