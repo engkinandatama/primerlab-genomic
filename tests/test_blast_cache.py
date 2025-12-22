@@ -6,6 +6,8 @@ import pytest
 import tempfile
 import time
 from pathlib import Path
+from datetime import datetime, timedelta
+from freezegun import freeze_time
 
 from primerlab.core.tools.blast_cache import BlastCache, get_cache, clear_cache
 
@@ -77,20 +79,26 @@ class TestBlastCache:
             result = cache.get("ATGC", "/db.fasta")
             assert result is None
     
-    @pytest.mark.skip(reason="Timing-dependent - may flake on slow systems")
     def test_cache_ttl(self):
         """Expired entries should not be returned."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            # Very short TTL
-            cache = BlastCache(cache_dir=tmpdir, ttl=1)
+            # TTL of 60 seconds
+            cache = BlastCache(cache_dir=tmpdir, ttl=60)
             
-            cache.set("ATGC", "/db.fasta", {"hits": []})
+            # Set at initial time
+            initial_time = datetime(2024, 1, 1, 12, 0, 0)
+            with freeze_time(initial_time):
+                cache.set("ATGC", "/db.fasta", {"hits": []})
             
-            # Wait for expiration
-            time.sleep(1.5)
+            # Check 30 seconds later - should still be valid
+            with freeze_time(initial_time + timedelta(seconds=30)):
+                result = cache.get("ATGC", "/db.fasta")
+                assert result is not None
             
-            result = cache.get("ATGC", "/db.fasta")
-            assert result is None
+            # Check 120 seconds later - should be expired
+            with freeze_time(initial_time + timedelta(seconds=120)):
+                result = cache.get("ATGC", "/db.fasta")
+                assert result is None
     
     def test_cache_stats(self):
         """Stats should return entry counts."""
@@ -105,19 +113,21 @@ class TestBlastCache:
             assert stats["total_entries"] == 2
             assert stats["valid_entries"] == 2
     
-    @pytest.mark.skip(reason="Timing-dependent - may flake on slow systems")
     def test_cache_cleanup_expired(self):
         """Cleanup should remove expired entries."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            cache = BlastCache(cache_dir=tmpdir, ttl=1)
+            cache = BlastCache(cache_dir=tmpdir, ttl=60)
             
-            cache.set("ATGC", "/db.fasta", {"hits": []})
-            time.sleep(1.5)
+            initial_time = datetime(2024, 1, 1, 12, 0, 0)
+            with freeze_time(initial_time):
+                cache.set("ATGC", "/db.fasta", {"hits": []})
             
-            cache.cleanup_expired()
-            stats = cache.stats()
-            
-            assert stats["valid_entries"] == 0
+            # Move time forward past TTL and cleanup
+            with freeze_time(initial_time + timedelta(seconds=120)):
+                cache.cleanup_expired()
+                stats = cache.stats()
+                
+                assert stats["valid_entries"] == 0
 
 
 class TestCacheHelpers:
