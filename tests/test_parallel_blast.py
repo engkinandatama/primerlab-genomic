@@ -66,7 +66,7 @@ class TestParallelBlastTask:
 class TestParallelBlastRunner:
     """Tests for ParallelBlastRunner."""
     
-    @pytest.mark.skip(reason="Flaky - parallel execution varies")
+    @pytest.mark.skip(reason="TODO: Fix mock function params handling")
     def test_run_single_task(self):
         """Should run a single task."""
         runner = ParallelBlastRunner(mock_blast_func, max_threads=1)
@@ -99,7 +99,7 @@ class TestParallelBlastRunner:
             assert r is not None
             assert r.result is not None or r.error is not None
     
-    @pytest.mark.skip(reason="Flaky - depends on parallel execution timing")
+    @pytest.mark.skip(reason="TODO: Fix mock signature mismatch")
     def test_run_preserves_order(self):
         """Results should be in same order as tasks."""
         runner = ParallelBlastRunner(mock_blast_func, max_threads=4)
@@ -160,7 +160,7 @@ class TestParallelBlastRunner:
 class TestRunParallelBlast:
     """Tests for convenience function."""
     
-    @pytest.mark.skip(reason="Flaky - wrapper function behavior varies")
+    @pytest.mark.skip(reason="TODO: Fix wrapper function integration")
     def test_run_parallel_blast(self):
         """Convenience function should work."""
         queries = ["ATGCATGC", "GCTAATGC", "TTAAGCAT"]
