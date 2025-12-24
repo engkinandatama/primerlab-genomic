@@ -7,15 +7,23 @@ Types: `INFO`, `CHANGE`, `FIX`, `TODO`, `WARN`, `ERR`
 
 ## Quick Reference
 
-- **Current Version**: v0.3.2 (released)
+- **Current Version**: v0.3.6 (dev)
 - **Dev Environment**: Requires WSL (primer3-py doesn't work on Windows native)
-- **Test Status**: 315 passed, 5 skipped, 0 failed
+- **Test Status**: 337 passed, 0 skipped, 0 failed
 
 ---
 
 ## Log
 
 ```
+# ===== v0.3.6 Compliance Refactor (2025-12-25) =====
+[2025-12-25] CHANGE  Created core/qc/base_qc.py with BaseQC class (shared ViennaRNA QC logic)
+[2025-12-25] CHANGE  Updated pcr/qc.py to extend BaseQC from core (no duplicate code)
+[2025-12-25] CHANGE  Updated qpcr/qc.py to extend BaseQC from core (eliminated cross-workflow import)
+[2025-12-25] CHANGE  Added Primer3-specific error codes (ERR_TOOL_P3_*) to error-codes.md
+[2025-12-25] CHANGE  Added ViennaRNA-specific error codes (ERR_TOOL_VR_*) to error-codes.md
+[2025-12-25] CHANGE  Added extended SEQ/CONFIG/WORKFLOW codes (aliases + new codes)
+[2025-12-25] INFO    All 337 tests pass after refactor
 # ===== v0.1.0 Release (2025-11-27) =====
 [2025-11-27] INFO    Project initialized - 3-layer architecture (CLI → Workflows → Core)
 [2025-11-27] CHANGE  Created core modules: config_loader.py, logger.py, exceptions.py
