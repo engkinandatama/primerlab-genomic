@@ -1,18 +1,43 @@
+"""
+qPCR-specific Quality Control module.
+
+Extends BaseQC with qPCR-specific validation including probe checks,
+amplicon size validation, and efficiency estimation.
+
+This module follows the architecture principle that workflows import
+from core/, not from other workflows.
+
+Version: v0.3.6
+"""
+
 from typing import Dict, Any
 from primerlab.core.models import Primer, QCResult
 from primerlab.core.logger import get_logger
-from primerlab.workflows.pcr.qc import PCRQC
+from primerlab.core.qc import BaseQC
 
 logger = get_logger()
 
-class qPCRQC(PCRQC):
+
+class qPCRQC(BaseQC):
     """
     Quality Control for qPCR primers and probes.
-    Extends PCRQC with qPCR-specific validation.
+    
+    Extends BaseQC with qPCR-specific validation:
+    - Probe Tm validation (must be higher than primers)
+    - Probe secondary structure check
+    - Amplicon size validation (70-150bp optimal for qPCR)
+    - PCR efficiency estimation
     """
     
     def __init__(self, config: Dict[str, Any]):
+        """
+        Initialize qPCRQC with configuration.
+        
+        Args:
+            config: Full workflow configuration dict containing 'qc' section
+        """
         super().__init__(config)
+        
         # qPCR-specific thresholds
         self.amplicon_size_min = self.qc_config.get("amplicon_size_min", 70)
         self.amplicon_size_max = self.qc_config.get("amplicon_size_max", 150)
@@ -22,6 +47,11 @@ class qPCRQC(PCRQC):
         """
         Evaluates probe-specific QC metrics.
         
+        Args:
+            probe: Probe primer
+            fwd: Forward primer
+            rev: Reverse primer
+            
         Returns:
             Dict with probe QC results
         """
@@ -42,10 +72,10 @@ class qPCRQC(PCRQC):
         probe_dg = probe_fold.get("mfe", 0.0)
         
         if "error" in probe_fold:
-             warnings.append("Probe secondary structure QC skipped: ViennaRNA (RNAfold) not available or failed.")
-             probe_hairpin_ok = True
+            warnings.append("Probe secondary structure QC skipped: ViennaRNA (RNAfold) not available or failed.")
+            probe_hairpin_ok = True
         else:
-             probe_hairpin_ok = probe_dg >= self.hairpin_dg_min
+            probe_hairpin_ok = probe_dg >= self.hairpin_dg_min
         
         if not probe_hairpin_ok:
             warnings.append(f"Probe hairpin ΔG ({probe_dg:.2f}) too stable (threshold: {self.hairpin_dg_min})")
@@ -62,6 +92,9 @@ class qPCRQC(PCRQC):
         """
         Validates amplicon size against qPCR-optimal range (70-150bp).
         
+        Args:
+            amplicon_size: Size of the amplicon in base pairs
+            
         Returns:
             Dict with size validation results
         """
@@ -90,6 +123,11 @@ class qPCRQC(PCRQC):
         - Penalty for dimers
         - Bonus for good Tm balance
         
+        Args:
+            fwd: Forward primer
+            rev: Reverse primer
+            probe: Optional probe (not currently used in calculation)
+            
         Returns:
             Estimated efficiency percentage (80-110%)
         """
