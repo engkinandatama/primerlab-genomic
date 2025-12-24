@@ -15,11 +15,13 @@ PrimerLab is a Python-based toolkit for automated primer and probe design in mol
 
 - **PCR** — Standard primer design with quality control
 - **qPCR** — Probe design (TaqMan/SYBR) with thermodynamic checks
+- **Off-target Detection** — BLAST-based specificity analysis
+- **In-silico PCR** — Virtual amplification validation
 - **Batch Processing** — Multi-sequence design in one command
 - **Quality Control** — Hairpins, dimers, GC%, Tm validation
 
 ## Version
 
-Current version: **v0.1.6**
+Current version: **v0.3.4**
 
 See [CHANGELOG](../CHANGELOG.md) for version history.

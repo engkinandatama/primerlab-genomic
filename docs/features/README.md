@@ -2,6 +2,12 @@
 
 Advanced features in PrimerLab.
 
+## v0.3.x Features
+
+- [Report Generation](report-generation.md) - Markdown, HTML, JSON reports
+- [Off-target Detection](offtarget-detection.md) - BLAST specificity analysis
+- [In-silico PCR](../cli/insilico.md) - Virtual amplification
+
 ## v0.1.6 Features
 
 - [Sequence Handling](sequence-handling.md) - IUPAC and RNA support
