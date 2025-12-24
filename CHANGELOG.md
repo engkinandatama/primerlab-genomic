@@ -9,14 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `docs/features/report-generation.md` - Report module documentation
-- `docs/features/offtarget-detection.md` - Off-target detection documentation
+- **Tutorials** (`docs/tutorials/`)
+  - Quick Start guide
+  - PCR Walkthrough
+  - qPCR Design
+  - Off-target Tutorial
+- **API Reference** (`docs/api/`)
+  - public.md, insilico.md, report.md, models.md
+- **Troubleshooting** (`docs/troubleshooting.md`)
+- **Presets Documentation** (`docs/configuration/presets.md`)
+- **Architecture Overview** (`docs/architecture.md`)
+- `docs/features/report-generation.md`
+- `docs/features/offtarget-detection.md`
 
 ### Changed
 
-- Updated `README.md` with v0.3.x features
+- Enhanced `README.md` with documentation table
+- Updated `RELEASE_NOTES.md` to v0.3.5
 - Updated `docs/cli/run.md` with --validate, --blast, --report flags
-- Updated `docs/index.md` and `docs/features/README.md`
+- Updated `docs/configuration/README.md` with offtarget/report sections
+- Fixed broken links in `docs/features/README.md`
+- Removed future/placeholder references
 
 ---
 
