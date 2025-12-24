@@ -5,9 +5,9 @@ A modular bioinformatics framework for automated **primer and probe design**, bu
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-BSD%203--Clause-green.svg)](LICENSE)
 [![Tests](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml/badge.svg)](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml)
-[![Status](https://img.shields.io/badge/status-v0.3.0-blue.svg)](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.3.0)
+[![Status](https://img.shields.io/badge/status-v0.3.4-blue.svg)](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.3.4)
 
-> 🔰 **Latest Release**: [**v0.3.0 - BLAST Integration**](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.3.0) 🎉
+> 🔰 **Latest Release**: [**v0.3.4 - In-silico Enhancements**](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.3.4) 🎉
 
 ---
 
@@ -19,6 +19,7 @@ It provides a structured and reproducible framework for:
 * **PCR** — Standard primer design with quality control
 * **qPCR** — Probe design with thermodynamic checks
 * **Off-target Check** — BLAST-based specificity analysis
+* **In-silico PCR** — Virtual PCR simulation and validation
 * **(Future)** CRISPR guides, multiplex PCR, and specialized workflows
 
 PrimerLab focuses on **deterministic, transparent bioinformatics**, following strict modularity and best practices.
@@ -30,15 +31,16 @@ PrimerLab focuses on **deterministic, transparent bioinformatics**, following st
 * **QC Framework**: Hairpins, dimers, GC%, Tm ranges, amplicon checks
 * **qPCR Support**: TaqMan-style probe design with efficiency estimation
 * **Safe Execution**: Timeout protection for complex sequences
-* **Structured Output**: JSON + Markdown reports with interpretable metrics
+* **Structured Output**: JSON + Markdown + HTML reports with interpretable metrics
 
-#### 🆕 v0.3.0 Features
+#### 🆕 v0.3.x Features
 
-* **BLAST Integration** (`primerlab blast`): Off-target detection
-* **Specificity Scoring**: Grades (A-F) and risk levels
-* **BLAST+ / Biopython**: Auto-fallback when BLAST+ unavailable
-* **In-silico PCR**: Validate primers against template
-* **Primer-Dimer Check**: Fwd↔Rev complementarity detection
+* **Enhanced Reporting** (v0.3.3): Markdown, HTML, JSON reports with scoring
+* **Tm Correction** (v0.3.4): Mismatch-based Tm adjustment
+* **3' Stability Warning** (v0.3.4): ΔG threshold checks
+* **BLAST Integration** (v0.3.0): Off-target detection with A-F grades
+* **In-silico PCR** (v0.2.4): Validate primers against template
+* **Parallel BLAST** (v0.3.2): Multi-threaded off-target checking
 
 ---
 
@@ -67,7 +69,7 @@ pip install -e .
 
 ```bash
 # Install directly from GitHub (latest release)
-pip install git+https://github.com/engkinandatama/primerlab-genomic.git@v0.2.5
+pip install git+https://github.com/engkinandatama/primerlab-genomic.git@v0.3.4
 ```
 
 Once installed, verify the installation:
