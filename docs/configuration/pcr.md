@@ -19,6 +19,9 @@ output:
 ```yaml
 workflow: pcr
 
+# Optional: Use a preset (see presets.md)
+# preset: long_range
+
 input:
   # Inline sequence
   sequence: "ATGAGTAAAGGAGAAGAACTTTTCACTGGAGT..."
