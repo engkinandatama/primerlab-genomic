@@ -146,44 +146,88 @@ Types: `INFO`, `CHANGE`, `FIX`, `TODO`, `WARN`, `ERR`
 [2025-12-21 14:20] CHANGE  Created examples/workflow_blast_variant.md
 [2025-12-21 14:25] CHANGE  Created tests/test_vcf_parser.py, test_api_offtarget.py
 [2025-12-21 14:30] INFO    Tagged v0.3.1, 302 tests passing
+
+# ===== v0.3.2 Release (2025-12-21) =====
+[2025-12-21 15:00] CHANGE  Added NCBI Web API Fallback (tools/ncbi_blast.py)
+[2025-12-21 15:30] CHANGE  Added Rich/Colored Output (cli/formatter.py)
+[2025-12-21 16:00] CHANGE  Added Progress Indicator (cli/progress.py)
+[2025-12-21 16:30] CHANGE  Added BLAST Cache (tools/blast_cache.py) with SQLite TTL
+[2025-12-21 17:00] CHANGE  Added Parallel BLAST (tools/parallel_blast.py)
+[2025-12-21 17:15] CHANGE  Added --verbose, --quiet, --no-cache, --threads, --timeout flags
+[2025-12-21 17:30] CHANGE  Created tests/test_blast_cache.py, test_parallel_blast.py
+[2025-12-21 18:00] INFO    Tagged v0.3.2, 315 tests passing, 5 skipped
+
+# ===== v0.3.3 Release (2025-12-22) =====
+[2025-12-22 10:00] CHANGE  Created core/report/models.py (PrimerReport, summaries)
+[2025-12-22 11:00] CHANGE  Created core/report/generator.py (ReportGenerator)
+[2025-12-22 12:00] CHANGE  Created core/report/alignment_view.py (ASCII alignment)
+[2025-12-22 13:00] CHANGE  Created core/report/html_export.py (dark mode, collapsible)
+[2025-12-22 14:00] CHANGE  Added --report, --report-format, --report-output CLI flags
+[2025-12-22 15:00] FIX     Fixed all 5 skipped tests (freezegun for timing)
+[2025-12-22 16:00] INFO    Tagged v0.3.3, 334 tests passing, 0 skipped
+
+# ===== v0.3.4 Release (2025-12-24) =====
+[2025-12-24 10:00] CHANGE  Added Tm Correction for mismatches (binding.py:calculate_corrected_tm)
+[2025-12-24 10:30] CHANGE  Added 3' Stability Warning (binding.py:check_three_prime_stability)
+[2025-12-24 11:00] CHANGE  Integrated new functions into analyze_binding()
+[2025-12-24 11:30] CHANGE  Exported new functions from insilico/__init__.py
+[2025-12-24 12:00] INFO    Tagged v0.3.4, 334 tests passing
+
+# ===== v0.3.5 Release (2025-12-24) =====
+[2025-12-24 12:30] CHANGE  Created docs/tutorials/ (quick-start, pcr, qpcr, offtarget)
+[2025-12-24 13:00] CHANGE  Created docs/api/ (public, insilico, report, models)
+[2025-12-24 13:30] CHANGE  Created docs/troubleshooting.md
+[2025-12-24 14:00] CHANGE  Updated README.md (test count 337, version v0.3.5)
+[2025-12-24 14:30] CHANGE  Updated docs/features/ with report-generation.md, offtarget-detection.md
+[2025-12-24 15:00] INFO    Tagged v0.3.5, 337 tests passing
+
+# ===== Session: 2025-12-24 (CI, Docs, Tagging) =====
+[2025-12-24 20:30] FIX     Fixed CI: install freezegun via pip install -e ".[dev]"
+[2025-12-24 21:00] FIX     Fixed CI: added BLAST+ installation (apt-get install ncbi-blast+)
+[2025-12-24 21:15] FIX     Fixed CI: added Biopython installation for fallback testing
+[2025-12-24 21:30] CHANGE  Added TestFallbackMechanism (3 new tests in test_blast_wrapper.py)
+[2025-12-24 21:45] CHANGE  Fixed broken paths in .dev/ folder (Docs/ → .dev/)
+[2025-12-24 22:00] CHANGE  Created root CONTRIBUTING.md with links to .dev/
+[2025-12-24 22:10] CHANGE  Updated README.md Contributing section
+[2025-12-24 22:40] CHANGE  Pushed missing tags: v0.3.0, v0.3.1, v0.3.2 to GitHub
+[2025-12-24 22:45] CHANGE  Created and pushed tags: v0.3.3, v0.3.4, v0.3.5
+[2025-12-24 23:00] CHANGE  Created v0.4.0 implementation plan (Multiplex Analysis)
+[2025-12-24 23:05] CHANGE  Copied full task list (1329 lines) to task.md artifact
+[2025-12-24 23:20] INFO    CI passing: 337 tests, 0 skipped
 ```
 
 ---
 
 ## Context Notes (Update when major state changes)
 
-Last updated: 2025-12-21
+Last updated: 2025-12-24
 
 ### Release Status
 
 | Version | Status | Highlights |
 |---------|--------|------------|
-| v0.1.0 - v0.1.5 | ✅ COMPLETE | Core functionality, smart features |
-| v0.1.6 | ✅ RELEASED | Stabilization, testing, docs |
+| v0.1.0 - v0.1.6 | ✅ COMPLETE | Core, smart features, stabilization |
 | v0.2.0 - v0.2.5 | ✅ RELEASED | In-silico PCR, degenerate, circular |
-| v0.3.0 | ✅ RELEASED | BLAST Integration, off-target detection |
-| v0.3.1 | ✅ RELEASED | VCF/BED parsers, variant check, API |
+| v0.3.0 - v0.3.5 | ✅ RELEASED | BLAST, off-target, reporting, docs |
+| v0.4.0 | 🔄 NEXT | Multiplex Analysis |
 
-### v0.3.1 Checklist
+### v0.3.5 Checklist
 
-- [x] --blast and --blast-db flags for run command
-- [x] offtarget: config section
-- [x] check_offtargets() public API
-- [x] VCF parser with gzip/MAF support
-- [x] BED parser for region filtering
-- [x] Primer-SNP overlap detection
-- [x] --batch, --db-info, --variants, --maf-threshold CLI flags
-- [x] CLI docs and example workflow
-- [x] Tests (302 passed)
-- [x] Git tag v0.3.1
+- [x] Tutorials (quick-start, pcr, qpcr, offtarget)
+- [x] API docs (public, insilico, report, models)
+- [x] Troubleshooting guide
+- [x] README.md updates (337 tests, v0.3.5)
+- [x] All 19 tags pushed to GitHub
+- [x] CI passing with 0 skips
 
 ### Test Coverage
 
-- **Total Tests**: 302
-- **Warnings**: 0
-- **New in v0.3.x**: test_blast_wrapper.py, test_offtarget.py, test_vcf_parser.py, test_api_offtarget.py
+- **Total Tests**: 337
+- **Skipped**: 0
+- **CI Status**: ✅ Passing
 
 ### Next Steps
 
-1. Push v0.3.1 to GitHub (manual)
-2. Start v0.3.2 planning (Polish & UX Improvements)
+1. Begin v0.4.0 Multiplex Analysis (Phase 1: Models + Dimer Engine)
+2. Plan for v1.0.0 stable release
+3. Zenodo archive at v1.0.0
