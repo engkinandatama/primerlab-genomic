@@ -5,9 +5,9 @@ A modular bioinformatics framework for automated **primer and probe design**, bu
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-BSD%203--Clause-green.svg)](LICENSE)
 [![Tests](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml/badge.svg)](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml)
-[![Status](https://img.shields.io/badge/status-v0.3.4-blue.svg)](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.3.4)
+[![Status](https://img.shields.io/badge/status-v0.3.5-blue.svg)](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.3.5)
 
-> 🔰 **Latest Release**: [**v0.3.4 - In-silico Enhancements**](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.3.4) 🎉
+> 🔰 **Latest Release**: [**v0.3.5 - Documentation & Polish**](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.3.5) 🎉
 
 ---
 
@@ -69,7 +69,7 @@ pip install -e .
 
 ```bash
 # Install directly from GitHub (latest release)
-pip install git+https://github.com/engkinandatama/primerlab-genomic.git@v0.3.4
+pip install git+https://github.com/engkinandatama/primerlab-genomic.git@v0.3.5
 ```
 
 Once installed, verify the installation:
