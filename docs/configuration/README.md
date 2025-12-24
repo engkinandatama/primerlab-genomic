@@ -6,6 +6,7 @@ PrimerLab uses YAML configuration files to define primer design parameters.
 
 - [PCR Configuration](pcr.md)
 - [qPCR Configuration](qpcr.md)
+- [Presets](presets.md)
 
 ## Config Structure
 
