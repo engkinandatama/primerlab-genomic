@@ -20,7 +20,6 @@ It provides a structured and reproducible framework for:
 * **qPCR** — Probe design with thermodynamic checks
 * **Off-target Check** — BLAST-based specificity analysis
 * **In-silico PCR** — Virtual PCR simulation and validation
-* **(Future)** CRISPR guides, multiplex PCR, and specialized workflows
 
 PrimerLab focuses on **deterministic, transparent bioinformatics**, following strict modularity and best practices.
 
