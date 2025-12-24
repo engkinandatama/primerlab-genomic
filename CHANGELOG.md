@@ -5,6 +5,37 @@ All notable changes to PrimerLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.3] - 2025-12-24
+
+### Added
+
+- **Report Generation Module** (`core/report/`)
+  - `PrimerReport` and summary dataclasses (`models.py`)
+  - `ReportGenerator` dengan method chaining (`generator.py`)
+  - ASCII alignment visualization (`alignment_view.py`)
+  - HTML export dengan dark/light mode toggle (`html_export.py`)
+  - JSON export dengan filtering options (`json_export.py`)
+  - Unified `ReportExporter` class
+
+- **CLI Report Integration**
+  - `--report` flag untuk generate enhanced report
+  - `--report-format` (markdown, html, json)
+  - `--report-output` untuk custom output path
+
+### Changed
+
+- Fixed all skipped tests (blast_cache, parallel_blast)
+- Added `freezegun` as dev dependency
+- Updated STRUCTURE.md with report module
+
+### New CLI Flags
+
+```bash
+primerlab run --config my.yaml --report --report-format html --report-output report.html
+```
+
+---
+
 ## [0.3.2] - 2025-12-22
 
 ### Added
