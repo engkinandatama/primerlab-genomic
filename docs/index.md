@@ -10,6 +10,7 @@ Welcome to PrimerLab, a modular bioinformatics framework for automated primer an
 - [Features](features/README.md) - Advanced features
 - [API Reference](api/README.md) - Programmatic interface
 - [Architecture](architecture.md) - System design
+- [Troubleshooting](troubleshooting.md) - Common issues and solutions
 
 ## What is PrimerLab?
 
