@@ -5,6 +5,7 @@ Welcome to PrimerLab, a modular bioinformatics framework for automated primer an
 ## Quick Links
 
 - [Getting Started](getting-started.md) - Installation and first steps
+- [Tutorials](tutorials/README.md) - Step-by-step guides
 - [CLI Reference](cli/README.md) - Command-line interface
 - [Configuration](configuration/README.md) - Config file reference
 - [Features](features/README.md) - Advanced features
