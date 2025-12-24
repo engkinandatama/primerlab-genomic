@@ -27,6 +27,17 @@ output:
 
 qc:
   mode: standard  # or strict, relaxed
+
+# Optional: Off-target check (v0.3.0+)
+offtarget:
+  enabled: true
+  database: "/path/to/genome.fasta"
+  mode: auto  # auto, blast, biopython
+
+# Optional: Report generation (v0.3.3+)
+report:
+  format: html  # markdown, html, json
+  output: "report.html"
 ```
 
 ## Generate Template
