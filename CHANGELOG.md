@@ -5,6 +5,21 @@ All notable changes to PrimerLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.5] - 2025-12-24
+
+### Added
+
+- `docs/features/report-generation.md` - Report module documentation
+- `docs/features/offtarget-detection.md` - Off-target detection documentation
+
+### Changed
+
+- Updated `README.md` with v0.3.x features
+- Updated `docs/cli/run.md` with --validate, --blast, --report flags
+- Updated `docs/index.md` and `docs/features/README.md`
+
+---
+
 ## [0.3.4] - 2025-12-24
 
 ### Added

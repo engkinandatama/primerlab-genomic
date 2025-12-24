@@ -3,7 +3,7 @@
 ```
 primerlab-genomic/
 ├── primerlab/                      # Main package
-│   ├── __init__.py                 # Package version (0.3.4)
+│   ├── __init__.py                 # Package version (0.3.5)
 │   │
 │   ├── cli/                        # Command-line interface
 │   │   ├── __init__.py
@@ -25,10 +25,11 @@ primerlab-genomic/
 │   │   ├── sequence.py             # Sequence loading & validation
 │   │   ├── visualization.py        # GC profile plots
 │   │   │
-│   │   ├── insilico/               # v0.2.0: In-silico PCR module
+│   │   ├── insilico/               # v0.2.0+: In-silico PCR module
 │   │   │   ├── __init__.py         # run_insilico_pcr()
 │   │   │   ├── engine.py           # Virtual PCR engine
-│   │   │   └── binding.py          # Binding site analysis
+│   │   │   ├── binding.py          # Binding analysis + v0.3.4 Tm correction
+│   │   │   └── report.py           # In-silico report generation
 │   │   │
 │   │   ├── offtarget/              # v0.3.0: Off-target detection
 │   │   │   ├── __init__.py
