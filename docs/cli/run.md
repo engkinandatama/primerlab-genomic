@@ -25,6 +25,12 @@ primerlab run <workflow> [options]
 | `--export` | `-e` | Export formats (comma-separated) |
 | `--mask` | `-m` | Region masking mode |
 | `--quiet` | `-q` | Suppress warnings (v0.1.6) |
+| `--validate` | `-V` | Run in-silico PCR validation (v0.2.3) |
+| `--blast` | | Run off-target check (v0.3.1) |
+| `--blast-db` | | Path to BLAST database |
+| `--report` | `-R` | Generate enhanced report (v0.3.3) |
+| `--report-format` | | Report format: markdown, html, json |
+| `--report-output` | | Report output path |
 
 ## Examples
 
@@ -65,6 +71,27 @@ primerlab run pcr --config my_pcr.yaml --quiet
 ```bash
 # Validate config without running
 primerlab run pcr --config my_pcr.yaml --dry-run
+```
+
+### With In-silico Validation (v0.2.3)
+
+```bash
+# Design + validate primers against template
+primerlab run pcr --config my_pcr.yaml --validate
+```
+
+### With BLAST Off-target Check (v0.3.1)
+
+```bash
+# Design + check off-targets
+primerlab run pcr --config my_pcr.yaml --blast --blast-db genome.fasta
+```
+
+### With Report Generation (v0.3.3)
+
+```bash
+# Generate enhanced HTML report
+primerlab run pcr --config my_pcr.yaml --report --report-format html --report-output report.html
 ```
 
 ## Mask Modes
