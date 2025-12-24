@@ -33,7 +33,7 @@ ERR_CONFIG_004
 ERR_TOOL_002
 ```
 
-### Categories:
+### Categories
 
 * `SEQ` → Sequence / Input errors
 * `CONFIG` → Configuration file issues
@@ -67,6 +67,15 @@ Below is the complete error taxonomy used in PrimerLab, split by category.
 | **ERR_SEQ_007** | Ambiguous bases not allowed for this workflow              |
 | **ERR_SEQ_008** | Sequence length exceeds workflow constraints               |
 
+## **3.1.1 Sequence Alias Codes**
+
+| Code                   | Alias For     | Meaning                                |
+| ---------------------- | ------------- | -------------------------------------- |
+| **ERR_SEQ_EMPTY**      | ERR_SEQ_002   | Sequence is empty (convenient alias)   |
+| **ERR_SEQ_READ**       | ERR_IO_001    | Failed to read sequence file           |
+| **ERR_SEQ_INVALID_CHAR** | ERR_SEQ_001 | Invalid nucleotide characters          |
+| **ERR_SEQ_TOO_SHORT**  | (new)         | Sequence too short for design (<50bp)  |
+
 ---
 
 # **3.2 Configuration Errors (CONFIG)**
@@ -81,6 +90,8 @@ Below is the complete error taxonomy used in PrimerLab, split by category.
 | **ERR_CONFIG_006** | Unknown workflow name                           |
 | **ERR_CONFIG_007** | Output directory inaccessible                   |
 | **ERR_CONFIG_008** | Unsupported config key or field                 |
+| **ERR_CONFIG_009** | Invalid preset name                             |
+| **ERR_CONFIG_010** | Preset configuration invalid                    |
 
 ---
 
@@ -96,6 +107,24 @@ Below is the complete error taxonomy used in PrimerLab, split by category.
 | **ERR_TOOL_006** | External dependency returned unexpected output |
 | **ERR_TOOL_007** | Timeout while executing external tool          |
 | **ERR_TOOL_008** | ViennaRNA or structure tool missing            |
+
+## **3.3.1 Primer3-Specific Codes (TOOL_P3)**
+
+| Code                     | Meaning                                         |
+| ------------------------ | ----------------------------------------------- |
+| **ERR_TOOL_P3_TIMEOUT**  | Primer3 process timeout (exceeded limit)        |
+| **ERR_TOOL_P3_NO_PRIMERS** | No primers found (constraints too strict)     |
+| **ERR_TOOL_P3_001**      | Primer3 execution failed                        |
+| **ERR_TOOL_P3_CRASH**    | Primer3 crashed unexpectedly                    |
+
+## **3.3.2 ViennaRNA-Specific Codes (TOOL_VR)**
+
+| Code                      | Meaning                                         |
+| ------------------------- | ----------------------------------------------- |
+| **ERR_TOOL_RNAFOLD**      | RNAfold execution failed                        |
+| **ERR_TOOL_RNAFOLD_PARSE**| RNAfold output parsing failed                   |
+| **ERR_TOOL_RNACOFOLD**    | RNAcofold execution failed                      |
+| **ERR_TOOL_RNACOFOLD_PARSE**| RNAcofold output parsing failed               |
 
 ---
 
@@ -126,6 +155,7 @@ These are “fail-hard” QC rules.
 | **ERR_WORKFLOW_003** | Incomplete workflow result object        |
 | **ERR_WORKFLOW_004** | Unsupported workflow for current config  |
 | **ERR_WORKFLOW_005** | Progress step mismatch or undefined step |
+| **ERR_WORKFLOW_SEQ** | Sequence loading failed in workflow      |
 
 ---
 
