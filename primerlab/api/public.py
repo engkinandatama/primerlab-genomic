@@ -233,3 +233,72 @@ def check_offtargets(
             "mismatch_score": combined.mismatch_score
         }
     }
+
+
+def check_multiplex_compatibility(
+    primers: list[Dict[str, str]],
+    config: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """
+    Check compatibility of multiple primer pairs for multiplexing.
+    
+    Args:
+        primers: List of dictionaries representing primer pairs.
+                 Each dict must have: 'name', 'fwd', 'rev'.
+                 Optional keys: 'tm_fwd', 'tm_rev', 'gc_fwd', 'gc_rev'.
+        config: Optional configuration dictionary override.
+        
+    Returns:
+        Dictionary with:
+        - is_valid: bool
+        - score: 0-100 float
+        - grade: A-F string
+        - matrix: interaction details
+        - warnings: list of specific issues
+        - recommendations: list of suggestions
+    """
+    from primerlab.core.multiplex.models import MultiplexPair
+    from primerlab.core.multiplex.dimer import DimerEngine
+    from primerlab.core.multiplex.scoring import MultiplexScorer
+    from primerlab.core.multiplex.validator import MultiplexValidator
+    from primerlab.core.config_loader import load_and_merge_config
+    
+    # Load config
+    full_config = load_and_merge_config("multiplex", cli_overrides=config)
+    
+    # Map input to MultiplexPair models
+    mapped_primers = []
+    for p in primers:
+        mp = MultiplexPair(
+            name=p.get('name', f"Pair_{len(mapped_primers)+1}"),
+            forward=p.get('fwd', p.get('forward', '')),
+            reverse=p.get('rev', p.get('reverse', '')),
+            tm_forward=p.get('tm_fwd', p.get('tm_forward', 0.0)),
+            tm_reverse=p.get('tm_rev', p.get('tm_reverse', 0.0)),
+            gc_forward=p.get('gc_fwd', p.get('gc_forward', 0.0)),
+            gc_reverse=p.get('gc_rev', p.get('gc_reverse', 0.0))
+        )
+        mapped_primers.append(mp)
+        
+    # 1. Calculate Dimers
+    engine = DimerEngine()
+    matrix = engine.build_matrix(mapped_primers)
+    
+    # 2. Score
+    scorer = MultiplexScorer(full_config)
+    score_result = scorer.calculate_score(matrix, mapped_primers)
+    
+    # 3. Validate
+    validator = MultiplexValidator(full_config)
+    validation_summary = validator.get_validation_summary(matrix, mapped_primers)
+    
+    return {
+        "is_valid": validation_summary["is_valid"],
+        "score": score_result.score,
+        "grade": score_result.grade,
+        "pair_count": len(mapped_primers),
+        "component_scores": score_result.component_scores,
+        "warnings": validation_summary["warnings"] + score_result.warnings,
+        "errors": validation_summary["errors"],
+        "recommendations": score_result.recommendations
+    }

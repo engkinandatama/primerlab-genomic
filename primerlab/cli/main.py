@@ -299,6 +299,17 @@ def main():
     blast_parser.add_argument("--timeout", type=int, default=300,
                              help="Timeout per query in seconds (v0.3.2)")
 
+    # --- MULTIPLEX Command (v0.4.0) ---
+    multiplex_parser = subparsers.add_parser("multiplex", help="Check multiplex compatibility of primer set (v0.4.0)")
+    multiplex_parser.add_argument("--primers", "-p", required=True,
+                                 help="Path to input file (JSON list of pairs)")
+    multiplex_parser.add_argument("--config", "-c", type=str,
+                                 help="Path to config YAML")
+    multiplex_parser.add_argument("--output", "-o", type=str, default="multiplex_output",
+                                 help="Output directory (default: multiplex_output)")
+    multiplex_parser.add_argument("--format", type=str, choices=["markdown", "json"], default="markdown",
+                                 help="Report format (default: markdown)")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -798,6 +809,96 @@ def main():
         
         else:
             print("Usage: primerlab preset [list|show <name>]")
+
+    # --- MULTIPLEX Command Handler (v0.4.0) ---
+    if args.command == "multiplex":
+        try:
+            import json as json_lib
+            from pathlib import Path as PathLib
+            from primerlab.core.multiplex.models import MultiplexPair, MultiplexResult
+            from primerlab.core.multiplex.dimer import DimerEngine
+            from primerlab.core.multiplex.scoring import MultiplexScorer
+            from primerlab.core.multiplex.validator import MultiplexValidator
+            from primerlab.core.multiplex.report import generate_markdown_report, generate_json_report
+            from primerlab.core.config_loader import load_and_merge_config
+
+            logger = setup_logger(level=logging.INFO)
+            print(f"\n🧬 Multiplex Analysis (v{__version__})")
+            print("=" * 45)
+
+            # 1. Load Primers
+            primers_path = PathLib(args.primers)
+            if not primers_path.exists():
+                print(f"❌ Input file not found: {primers_path}")
+                sys.exit(1)
+
+            print(f"📂 Loading primers from: {primers_path.name}")
+            with open(primers_path, "r") as f:
+                data = json_lib.load(f)
+
+            # Convert JSON to models
+            pairs = []
+            if isinstance(data, list):
+                for item in data:
+                    # Support both flat structure and nested pair structure
+                    pairs.append(MultiplexPair(
+                        name=item.get("name", f"Pair_{len(pairs)+1}"),
+                        forward=item.get("fwd", item.get("forward", "")),
+                        reverse=item.get("rev", item.get("reverse", "")),
+                        tm_forward=item.get("tm_fwd", item.get("tm", 0.0)),
+                        tm_reverse=item.get("tm_rev", item.get("tm", 0.0)),
+                        gc_forward=item.get("gc_fwd", item.get("gc", 0.0)), 
+                        gc_reverse=item.get("gc_rev", item.get("gc", 0.0))
+                    ))
+            else:
+                print("❌ Input JSON must be a list of objects")
+                sys.exit(1)
+            
+            print(f"✅ Loaded {len(pairs)} primer pairs")
+
+            # 2. Config
+            config = load_and_merge_config("multiplex", user_config_path=args.config)
+            mode = config.get("multiplex", {}).get("mode", "standard")
+            print(f"⚙️  Mode: {mode.upper()}")
+
+            # 3. Analyze
+            print("⏳ Calculating dimer interactions...")
+            engine = DimerEngine()
+            matrix = engine.build_matrix(pairs)
+
+            print("📊 Scoring and validating...")
+            scorer = MultiplexScorer(config)
+            score_res = scorer.calculate_score(matrix, pairs)
+            
+            validator = MultiplexValidator(config)
+            validation = validator.get_validation_summary(matrix, pairs)
+
+            # 4. Merge validation into result
+            score_res.is_valid = validation["is_valid"]
+            score_res.errors = validation["errors"]
+            score_res.warnings.extend(validation["warnings"])
+
+            # 5. Output
+            out_dir = PathLib(args.output)
+            out_dir.mkdir(parents=True, exist_ok=True)
+            
+            report_path = generate_markdown_report(score_res, out_dir)
+            json_path = generate_json_report(score_res, out_dir)
+            
+            print("\n" + "=" * 45)
+            print(f"🏁 Score: {score_res.score:.1f}/100 (Grade {score_res.grade})")
+            print(f"   Status: {'✅ COMPATIBLE' if score_res.is_valid else '❌ INCOMPATIBLE'}")
+            print(f"📁 Reports saved to: {out_dir}")
+            print(f"   • {report_path.name}")
+            print(f"   • {json_path.name}")
+            print()
+
+            sys.exit(0 if score_res.is_valid else 1)
+
+        except Exception as e:
+            print(f"\n❌ Error: {e}")
+            import traceback
+            traceback.print_exc()
             sys.exit(1)
 
     if args.command == "run":

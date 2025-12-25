@@ -166,7 +166,12 @@ class MultiplexResult:
         warnings: List of warning messages
         recommendations: List of recommendations for improvement
         config_used: Configuration parameters used (for reproducibility)
+        # Phase 3 additions (with defaults for backward compatibility):
+        is_valid: Explicit validation status
+        errors: List of error messages
+        component_scores: Breakdown of scoring components
     """
+    # Original fields (Phase 1-2) - with defaults
     pairs: List[MultiplexPair] = field(default_factory=list)
     matrix: Optional[CompatibilityMatrix] = None
     score: float = 0.0
@@ -174,6 +179,10 @@ class MultiplexResult:
     warnings: List[str] = field(default_factory=list)
     recommendations: List[str] = field(default_factory=list)
     config_used: Dict[str, Any] = field(default_factory=dict)
+    # Phase 3 additions - with defaults for backward compatibility
+    is_valid: bool = True
+    errors: List[str] = field(default_factory=list)
+    component_scores: Dict[str, float] = field(default_factory=dict)
     
     @property
     def is_compatible(self) -> bool:
@@ -185,6 +194,20 @@ class MultiplexResult:
         """Number of primer pairs in the set."""
         return len(self.pairs)
     
+    @property
+    def avg_tm(self) -> float:
+        """Average Tm of all primers in the set."""
+        if not self.pairs:
+            return 0.0
+        return sum(p.avg_tm for p in self.pairs) / len(self.pairs)
+    
+    @property
+    def avg_gc(self) -> float:
+        """Average GC content of all primers in the set."""
+        if not self.pairs:
+            return 0.0
+        return sum(p.avg_gc for p in self.pairs) / len(self.pairs)
+    
     def to_dict(self) -> Dict[str, Any]:
         """Export to dictionary for JSON serialization."""
         return {
@@ -193,9 +216,14 @@ class MultiplexResult:
             "score": self.score,
             "grade": self.grade,
             "is_compatible": self.is_compatible,
+            "is_valid": self.is_valid,
             "pair_count": self.pair_count,
+            "avg_tm": self.avg_tm,
+            "avg_gc": self.avg_gc,
             "warnings": self.warnings,
+            "errors": self.errors,
             "recommendations": self.recommendations,
+            "component_scores": self.component_scores,
             "config_used": self.config_used,
         }
 

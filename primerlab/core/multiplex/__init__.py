@@ -16,6 +16,7 @@ from primerlab.core.multiplex.models import (
 from primerlab.core.multiplex.dimer import DimerEngine
 from primerlab.core.multiplex.scoring import MultiplexScorer, MULTIPLEX_CONFIG
 from primerlab.core.multiplex.validator import MultiplexValidator
+from primerlab.core.multiplex.report import generate_json_report, generate_markdown_report
 
 __all__ = [
     # Models
@@ -33,4 +34,7 @@ __all__ = [
     # Utilities
     "score_to_grade",
     "grade_to_emoji",
+    # Reports
+    "generate_json_report",
+    "generate_markdown_report",
 ]
