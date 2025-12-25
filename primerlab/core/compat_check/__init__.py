@@ -1,8 +1,8 @@
 """
-Core Multiplex module exports.
+Primer Compatibility Check module exports.
 
-This module provides multiplex analysis functionality including
-data models, dimer calculation, scoring, and validation.
+This module provides compatibility analysis functionality including
+data models, dimer calculation, scoring, validation, and overlap detection.
 """
 
 from primerlab.core.compat_check.models import (
@@ -22,6 +22,14 @@ from primerlab.core.compat_check.report import (
     generate_excel_report,
     generate_idt_plate,
 )
+from primerlab.core.compat_check.overlap_detection import (
+    run_insilico_compat_simulation,
+    predict_amplicons_for_pairs,
+    analyze_overlaps,
+    OverlapAnalysisResult,
+    PredictedAmplicon,
+    AmpliconOverlap,
+)
 
 __all__ = [
     # Models
@@ -39,10 +47,16 @@ __all__ = [
     # Utilities
     "score_to_grade",
     "grade_to_emoji",
-    # Reports (Phase 3 + 4)
+    # Reports
     "generate_json_report",
     "generate_markdown_report",
     "generate_excel_report",
     "generate_idt_plate",
+    # Overlap Detection (v0.4.1)
+    "run_insilico_compat_simulation",
+    "predict_amplicons_for_pairs",
+    "analyze_overlaps",
+    "OverlapAnalysisResult",
+    "PredictedAmplicon",
+    "AmpliconOverlap",
 ]
-
