@@ -229,6 +229,19 @@ class TestMultiplexResult:
         assert d["score"] == 85.0
         assert d["grade"] == "A"
         assert d["is_compatible"] is True
+    
+    def test_phase3_fields(self):
+        """Test Phase 3 additional fields."""
+        result = MultiplexResult(
+            score=80.0,
+            grade="B",
+            is_valid=False,
+            errors=["Error 1"],
+            component_scores={"dimer": 90.0, "tm": 80.0}
+        )
+        assert result.is_valid is False
+        assert len(result.errors) == 1
+        assert result.component_scores["dimer"] == 90.0
 
 
 class TestScoreGrading:

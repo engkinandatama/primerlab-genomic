@@ -90,7 +90,7 @@ def validate_config(config: Dict[str, Any]):
         )
     
     # Check for valid workflow types
-    valid_workflows = ["pcr", "qpcr"]
+    valid_workflows = ["pcr", "qpcr", "multiplex"]
     if workflow.lower() not in valid_workflows:
         raise ConfigError(
             f"Unknown workflow '{workflow}'. "
@@ -98,15 +98,15 @@ def validate_config(config: Dict[str, Any]):
             "ERR_CONFIG_007"
         )
 
-    # Validate input section
-    # Validate input section
+    # Validate input section (sequence required for pcr/qpcr, not for multiplex)
     input_section = config.get("input", {})
-    if not (input_section.get("sequence") or input_section.get("sequence_path")):
-        raise ConfigError(
-            "Input sequence is missing. "
-            "Add 'input: sequence: <your_sequence>' or 'input: sequence_path: path/to/file.fasta'",
-            "ERR_CONFIG_008"
-        )
+    if workflow.lower() != "multiplex":
+        if not (input_section.get("sequence") or input_section.get("sequence_path")):
+            raise ConfigError(
+                "Input sequence is missing. "
+                "Add 'input: sequence: <your_sequence>' or 'input: sequence_path: path/to/file.fasta'",
+                "ERR_CONFIG_008"
+            )
 
     # Validate output directory
     output_section = config.get("output", {})

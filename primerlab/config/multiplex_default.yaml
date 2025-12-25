@@ -1,0 +1,39 @@
+workflow: multiplex
+
+input:
+  sequence_path: null  # Optional, mainly for primer design
+  primers_path: null   # Required for multiplex check if not passed via API
+
+output:
+  directory: ./multiplex_output
+  format: markdown # markdown, json, html
+
+# Multiplex Analysis Parameters
+multiplex:
+  mode: standard  # strict, standard, relaxed (custom allows overrides)
+  
+  # Validation Thresholds
+  dimer_dg_threshold: -6.0   # Max allowed ΔG for heterodimers (kcal/mol)
+  tm_diff_max: 5.0           # Max allowed Tm difference in set (°C) - lenient default
+  
+  # Scoring Weights (must sum to 1.0)
+  weights:
+    dimer_score: 0.40
+    tm_uniformity: 0.25
+    gc_uniformity: 0.15
+    count_penalty: 0.20
+    
+  # Penalty Factors (per unit deviation)
+  penalties:
+    dimer_per_kcal: 10.0     # Points deducted per kcal below threshold
+    tm_per_degree: 5.0       # Points deducted per degree spread
+    gc_per_percent: 2.0      # Points deducted per % spread
+
+# Standard Primer Parameters (for reference/validation)
+parameters:
+  primer_conc: 50.0  # nM
+  salt_conc: 50.0    # mM
+  tm:
+    min: 55.0
+    opt: 60.0
+    max: 65.0
