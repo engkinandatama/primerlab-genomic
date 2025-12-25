@@ -1,5 +1,5 @@
 """
-Integration tests for CLI multiplex command.
+Integration tests for CLI check-compat command.
 """
 import json
 import pytest
@@ -19,13 +19,13 @@ def primers_json(tmp_path):
         json.dump(data, f)
     return path
 
-def test_cli_multiplex_run(primers_json, tmp_path):
-    """Test 'primerlab multiplex' command runs successfully."""
+def test_cli_check_compat_run(primers_json, tmp_path):
+    """Test 'primerlab check-compat' command runs successfully."""
     output_dir = tmp_path / "cli_output"
     
     # Construct args
     args = [
-        "primerlab", "multiplex",
+        "primerlab", "check-compat",
         "--primers", str(primers_json),
         "--output", str(output_dir)
     ]
@@ -40,12 +40,12 @@ def test_cli_multiplex_run(primers_json, tmp_path):
     
     # Check output files were created
     assert output_dir.exists()
-    assert (output_dir / "multiplex_report.md").exists()
-    assert (output_dir / "multiplex_analysis.json").exists()
+    assert (output_dir / "compat_report.md").exists()
+    assert (output_dir / "compat_analysis.json").exists()
 
-def test_cli_multiplex_missing_file():
+def test_cli_check_compat_missing_file():
     """Test handling of missing input file."""
-    args = ["primerlab", "multiplex", "--primers", "nonexistent.json"]
+    args = ["primerlab", "check-compat", "--primers", "nonexistent.json"]
     with patch.object(sys, 'argv', args):
         with pytest.raises(SystemExit) as e:
             main()

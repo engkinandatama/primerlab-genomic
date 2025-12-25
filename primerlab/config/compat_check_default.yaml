@@ -1,15 +1,15 @@
-workflow: multiplex
+workflow: compat_check
 
 input:
   sequence_path: null  # Optional, mainly for primer design
-  primers_path: null   # Required for multiplex check if not passed via API
+  primers_path: null   # Required for compat check if not passed via API
 
 output:
-  directory: ./multiplex_output
+  directory: ./compat_check_output
   format: markdown # markdown, json, html
 
-# Multiplex Analysis Parameters
-multiplex:
+# Compatibility Check Parameters
+compat_check:
   mode: standard  # strict, standard, relaxed (custom allows overrides)
   
   # Validation Thresholds

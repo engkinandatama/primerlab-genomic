@@ -3,7 +3,7 @@ Unit tests for multiplex API.
 """
 import pytest
 from unittest.mock import patch, MagicMock
-from primerlab.api.public import check_multiplex_compatibility
+from primerlab.api.public import check_primer_compatibility
 
 @pytest.fixture
 def mock_primers():
@@ -12,13 +12,13 @@ def mock_primers():
         {"name": "P2", "fwd": "TTTTAAAA", "rev": "AAAATTTT", "tm_fwd": 62.0, "tm_rev": 62.0}
     ]
 
-def test_check_multiplex_compatibility_structure(mock_primers):
+def test_check_primer_compatibility_structure(mock_primers):
     """Test that API returns correct dictionary structure."""
     
     # Mock core components to avoid full logic execution
-    with patch("primerlab.core.multiplex.dimer.DimerEngine.build_matrix") as mock_build, \
-         patch("primerlab.core.multiplex.scoring.MultiplexScorer.calculate_score") as mock_score, \
-         patch("primerlab.core.multiplex.validator.MultiplexValidator.get_validation_summary") as mock_validate:
+    with patch("primerlab.core.compat_check.dimer.DimerEngine.build_matrix") as mock_build, \
+         patch("primerlab.core.compat_check.scoring.MultiplexScorer.calculate_score") as mock_score, \
+         patch("primerlab.core.compat_check.validator.MultiplexValidator.get_validation_summary") as mock_validate:
         
         # Setup mocks
         mock_build.return_value = MagicMock()
@@ -37,7 +37,7 @@ def test_check_multiplex_compatibility_structure(mock_primers):
             "errors": []
         }
         
-        result = check_multiplex_compatibility(mock_primers)
+        result = check_primer_compatibility(mock_primers)
         
         assert isinstance(result, dict)
         assert result["is_valid"] is True
@@ -47,7 +47,7 @@ def test_check_multiplex_compatibility_structure(mock_primers):
         assert "warnings" in result
         assert "recommendations" in result
 
-def test_check_multiplex_compatibility_real_run():
+def test_check_primer_compatibility_real_run():
     """Test actual API run with simple inputs."""
     primers = [
         {"name": "P1", "fwd": "AGCTAGCTAGCTAGCT", "rev": "TCGATCGATCGATCGA"}, # Very simple
@@ -56,7 +56,7 @@ def test_check_multiplex_compatibility_real_run():
     
     # We might need to mock DimerEngine if ViennaRNA is not available, 
     # but our DimerEngine has fallback built-in.
-    result = check_multiplex_compatibility(primers)
+    result = check_primer_compatibility(primers)
     
     assert isinstance(result["score"], float)
     assert isinstance(result["grade"], str)

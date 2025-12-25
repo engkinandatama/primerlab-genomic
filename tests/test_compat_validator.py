@@ -11,12 +11,12 @@ Tests:
 """
 
 import pytest
-from primerlab.core.multiplex.models import (
+from primerlab.core.compat_check.models import (
     MultiplexPair,
     DimerResult,
     CompatibilityMatrix,
 )
-from primerlab.core.multiplex.validator import MultiplexValidator
+from primerlab.core.compat_check.validator import MultiplexValidator
 
 
 class TestValidatorInit:

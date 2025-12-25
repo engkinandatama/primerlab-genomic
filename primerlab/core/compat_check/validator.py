@@ -9,11 +9,11 @@ Version: v0.4.0
 
 from typing import Dict, Any, List, Tuple, Optional
 from primerlab.core.logger import get_logger
-from primerlab.core.multiplex.models import (
+from primerlab.core.compat_check.models import (
     MultiplexPair,
     CompatibilityMatrix,
 )
-from primerlab.core.multiplex.scoring import MULTIPLEX_CONFIG
+from primerlab.core.compat_check.scoring import MULTIPLEX_CONFIG
 
 logger = get_logger()
 
@@ -37,10 +37,10 @@ class MultiplexValidator:
             config: Configuration dict with multiplex settings
         """
         config = config or {}
-        multiplex_config = config.get("multiplex", {})
+        compat_config = config.get("multiplex", {})
         
         # Get mode (default: standard)
-        mode = multiplex_config.get("mode", "standard")
+        mode = compat_config.get("mode", "standard")
         if mode not in MULTIPLEX_CONFIG:
             logger.warning(f"Unknown mode '{mode}', using 'standard'")
             mode = "standard"
@@ -50,8 +50,8 @@ class MultiplexValidator:
         
         # Apply user overrides
         for key in self.settings:
-            if key in multiplex_config:
-                self.settings[key] = multiplex_config[key]
+            if key in compat_config:
+                self.settings[key] = compat_config[key]
         
         self.mode = mode
         logger.debug(f"MultiplexValidator initialized with mode='{mode}'")

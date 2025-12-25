@@ -235,7 +235,7 @@ def check_offtargets(
     }
 
 
-def check_multiplex_compatibility(
+def check_primer_compatibility(
     primers: list[Dict[str, str]],
     config: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
@@ -257,14 +257,14 @@ def check_multiplex_compatibility(
         - warnings: list of specific issues
         - recommendations: list of suggestions
     """
-    from primerlab.core.multiplex.models import MultiplexPair
-    from primerlab.core.multiplex.dimer import DimerEngine
-    from primerlab.core.multiplex.scoring import MultiplexScorer
-    from primerlab.core.multiplex.validator import MultiplexValidator
+    from primerlab.core.compat_check.models import MultiplexPair
+    from primerlab.core.compat_check.dimer import DimerEngine
+    from primerlab.core.compat_check.scoring import MultiplexScorer
+    from primerlab.core.compat_check.validator import MultiplexValidator
     from primerlab.core.config_loader import load_and_merge_config
     
     # Load config
-    full_config = load_and_merge_config("multiplex", cli_overrides=config)
+    full_config = load_and_merge_config("compat_check", cli_overrides=config)
     
     # Map input to MultiplexPair models
     mapped_primers = []

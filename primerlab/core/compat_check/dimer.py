@@ -10,7 +10,7 @@ Version: v0.4.0
 from typing import Dict, Any, List, Tuple, Optional
 from primerlab.core.logger import get_logger
 from primerlab.core.tools.vienna_wrapper import ViennaWrapper
-from primerlab.core.multiplex.models import (
+from primerlab.core.compat_check.models import (
     MultiplexPair,
     DimerResult,
     CompatibilityMatrix,
@@ -39,10 +39,10 @@ class DimerEngine:
             config: Configuration dict with multiplex.dimer_dg_threshold
         """
         config = config or {}
-        multiplex_config = config.get("multiplex", {})
+        compat_config = config.get("multiplex", {})
         
         # Configurable threshold (more negative = more stable = worse)
-        self.threshold = multiplex_config.get("dimer_dg_threshold", -6.0)
+        self.threshold = compat_config.get("dimer_dg_threshold", -6.0)
         
         # Initialize ViennaRNA wrapper
         self.vienna = ViennaWrapper()

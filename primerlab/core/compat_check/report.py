@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 def generate_json_report(result: MultiplexResult, output_dir: Path) -> Path:
     """Saves validation result as JSON."""
-    output_path = output_dir / "multiplex_analysis.json"
+    output_path = output_dir / "compat_analysis.json"
     
     with open(output_path, "w") as f:
         json.dump(result.to_dict(), f, indent=2)
@@ -24,8 +24,8 @@ def generate_json_report(result: MultiplexResult, output_dir: Path) -> Path:
     return output_path
 
 def generate_markdown_report(result: MultiplexResult, output_dir: Path) -> Path:
-    """Generates a detailed Markdown report for multiplex analysis."""
-    output_path = output_dir / "multiplex_report.md"
+    """Generates a detailed Markdown report for primer compatibility analysis."""
+    output_path = output_dir / "compat_report.md"
     
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
@@ -35,7 +35,7 @@ def generate_markdown_report(result: MultiplexResult, output_dir: Path) -> Path:
     }.get(result.grade, "⚪")
 
     md = [
-        f"# Multiplex Compatibility Report",
+        f"# Primer Compatibility Report",
         f"**Date:** {timestamp}",
         f"**Pairs Analyzed:** {len(result.pairs)}",
         f"**Overall Status:** {'✅ COMPATIBLE' if result.is_valid else '❌ INCOMPATIBLE'}",
@@ -108,7 +108,7 @@ def generate_excel_report(result: MultiplexResult, output_dir: Path) -> Path:
         logger.warning("openpyxl not installed. Run: pip install openpyxl")
         return None
     
-    output_path = output_dir / "multiplex_analysis.xlsx"
+    output_path = output_dir / "compat_analysis.xlsx"
     wb = openpyxl.Workbook()
     
     # --- Summary Sheet ---
