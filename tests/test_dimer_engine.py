@@ -10,8 +10,8 @@ Tests:
 
 import pytest
 from unittest.mock import patch, MagicMock
-from primerlab.core.multiplex.models import MultiplexPair, DimerResult
-from primerlab.core.multiplex.dimer import DimerEngine
+from primerlab.core.compat_check.models import MultiplexPair, DimerResult
+from primerlab.core.compat_check.dimer import DimerEngine
 
 
 class TestDimerEngineBasic:

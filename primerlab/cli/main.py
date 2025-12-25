@@ -142,7 +142,7 @@ def main():
     run_parser.add_argument("--report-output", type=str, default=None,
                            help="Report output path (v0.3.3)")
     # v0.4.0 Multiplex Integration
-    run_parser.add_argument("--check-multiplex", action="store_true",
+    run_parser.add_argument("--check-compat", action="store_true",
                            help="Run multiplex compatibility check on designed primers (v0.4.0)")
 
     # --- BATCH-GENERATE Command ---
@@ -302,15 +302,15 @@ def main():
     blast_parser.add_argument("--timeout", type=int, default=300,
                              help="Timeout per query in seconds (v0.3.2)")
 
-    # --- MULTIPLEX Command (v0.4.0) ---
-    multiplex_parser = subparsers.add_parser("multiplex", help="Check multiplex compatibility of primer set (v0.4.0)")
-    multiplex_parser.add_argument("--primers", "-p", required=True,
+    # --- CHECK-COMPAT Command (v0.4.0) ---
+    compat_parser = subparsers.add_parser("check-compat", help="Check primer set compatibility (v0.4.0)")
+    compat_parser.add_argument("--primers", "-p", required=True,
                                  help="Path to input file (JSON list of pairs)")
-    multiplex_parser.add_argument("--config", "-c", type=str,
+    compat_parser.add_argument("--config", "-c", type=str,
                                  help="Path to config YAML")
-    multiplex_parser.add_argument("--output", "-o", type=str, default="multiplex_output",
-                                 help="Output directory (default: multiplex_output)")
-    multiplex_parser.add_argument("--format", type=str, choices=["markdown", "json"], default="markdown",
+    compat_parser.add_argument("--output", "-o", type=str, default="compat_check_output",
+                                 help="Output directory (default: compat_check_output)")
+    compat_parser.add_argument("--format", type=str, choices=["markdown", "json"], default="markdown",
                                  help="Report format (default: markdown)")
 
     args = parser.parse_args()
@@ -813,16 +813,16 @@ def main():
         else:
             print("Usage: primerlab preset [list|show <name>]")
 
-    # --- MULTIPLEX Command Handler (v0.4.0) ---
-    if args.command == "multiplex":
+    # --- CHECK-COMPAT Command Handler (v0.4.0) ---
+    if args.command == "check-compat":
         try:
             import json as json_lib
             from pathlib import Path as PathLib
-            from primerlab.core.multiplex.models import MultiplexPair, MultiplexResult
-            from primerlab.core.multiplex.dimer import DimerEngine
-            from primerlab.core.multiplex.scoring import MultiplexScorer
-            from primerlab.core.multiplex.validator import MultiplexValidator
-            from primerlab.core.multiplex.report import generate_markdown_report, generate_json_report
+            from primerlab.core.compat_check.models import MultiplexPair, MultiplexResult
+            from primerlab.core.compat_check.dimer import DimerEngine
+            from primerlab.core.compat_check.scoring import MultiplexScorer
+            from primerlab.core.compat_check.validator import MultiplexValidator
+            from primerlab.core.compat_check.report import generate_markdown_report, generate_json_report
             from primerlab.core.config_loader import load_and_merge_config
 
             logger = setup_logger(level=logging.INFO)
@@ -860,8 +860,8 @@ def main():
             print(f"✅ Loaded {len(pairs)} primer pairs")
 
             # 2. Config
-            config = load_and_merge_config("multiplex", user_config_path=args.config)
-            mode = config.get("multiplex", {}).get("mode", "standard")
+            config = load_and_merge_config("compat_check", user_config_path=args.config)
+            mode = config.get("compat_check", {}).get("mode", "standard")
             print(f"⚙️  Mode: {mode.upper()}")
 
             # 3. Analyze
@@ -1129,13 +1129,13 @@ def main():
                             traceback.print_exc()
 
                 # v0.4.0: Multiplex compatibility check
-                if hasattr(args, 'check_multiplex') and args.check_multiplex:
+                if hasattr(args, 'check_compat') and args.check_compat:
                     try:
-                        from primerlab.core.multiplex.models import MultiplexPair
-                        from primerlab.core.multiplex.dimer import DimerEngine
-                        from primerlab.core.multiplex.scoring import MultiplexScorer
-                        from primerlab.core.multiplex.validator import MultiplexValidator
-                        from primerlab.core.multiplex.report import generate_markdown_report, generate_json_report
+                        from primerlab.core.compat_check.models import MultiplexPair
+                        from primerlab.core.compat_check.dimer import DimerEngine
+                        from primerlab.core.compat_check.scoring import MultiplexScorer
+                        from primerlab.core.compat_check.validator import MultiplexValidator
+                        from primerlab.core.compat_check.report import generate_markdown_report, generate_json_report
                         
                         logger.info("🔬 Running multiplex compatibility check...")
                         

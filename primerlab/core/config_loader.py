@@ -90,7 +90,7 @@ def validate_config(config: Dict[str, Any]):
         )
     
     # Check for valid workflow types
-    valid_workflows = ["pcr", "qpcr", "multiplex"]
+    valid_workflows = ["pcr", "qpcr", "compat_check"]
     if workflow.lower() not in valid_workflows:
         raise ConfigError(
             f"Unknown workflow '{workflow}'. "
@@ -98,9 +98,9 @@ def validate_config(config: Dict[str, Any]):
             "ERR_CONFIG_007"
         )
 
-    # Validate input section (sequence required for pcr/qpcr, not for multiplex)
+    # Validate input section (sequence required for pcr/qpcr, not for compat_check)
     input_section = config.get("input", {})
-    if workflow.lower() != "multiplex":
+    if workflow.lower() != "compat_check":
         if not (input_section.get("sequence") or input_section.get("sequence_path")):
             raise ConfigError(
                 "Input sequence is missing. "

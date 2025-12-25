@@ -10,12 +10,12 @@ Tests:
 """
 
 import pytest
-from primerlab.core.multiplex.models import (
+from primerlab.core.compat_check.models import (
     MultiplexPair,
     DimerResult,
     CompatibilityMatrix,
 )
-from primerlab.core.multiplex.scoring import (
+from primerlab.core.compat_check.scoring import (
     MultiplexScorer,
     MULTIPLEX_CONFIG,
 )

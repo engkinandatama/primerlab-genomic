@@ -5,7 +5,7 @@ This module provides multiplex analysis functionality including
 data models, dimer calculation, scoring, and validation.
 """
 
-from primerlab.core.multiplex.models import (
+from primerlab.core.compat_check.models import (
     MultiplexPair,
     DimerResult,
     CompatibilityMatrix,
@@ -13,10 +13,10 @@ from primerlab.core.multiplex.models import (
     score_to_grade,
     grade_to_emoji,
 )
-from primerlab.core.multiplex.dimer import DimerEngine
-from primerlab.core.multiplex.scoring import MultiplexScorer, MULTIPLEX_CONFIG
-from primerlab.core.multiplex.validator import MultiplexValidator
-from primerlab.core.multiplex.report import (
+from primerlab.core.compat_check.dimer import DimerEngine
+from primerlab.core.compat_check.scoring import MultiplexScorer, MULTIPLEX_CONFIG
+from primerlab.core.compat_check.validator import MultiplexValidator
+from primerlab.core.compat_check.report import (
     generate_json_report,
     generate_markdown_report,
     generate_excel_report,
