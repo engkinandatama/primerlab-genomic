@@ -315,6 +315,8 @@ def main():
                                  help="Output directory (default: compat_check_output)")
     compat_parser.add_argument("--format", type=str, choices=["markdown", "json"], default="markdown",
                                  help="Report format (default: markdown)")
+    compat_parser.add_argument("--template", "-t", type=str, default=None,
+                                 help="Template sequence for overlap analysis (v0.4.1)")
 
     args = parser.parse_args()
 
@@ -891,12 +893,54 @@ def main():
             report_path = generate_markdown_report(score_res, out_dir)
             json_path = generate_json_report(score_res, out_dir)
             
+            # 6. Overlap analysis if template provided (v0.4.1)
+            overlap_result = None
+            if args.template:
+                print("🔬 Running overlap analysis...")
+                try:
+                    from primerlab.core.compat_check.overlap_detection import run_insilico_compat_simulation
+                    from primerlab.core.sequence import SequenceLoader
+                    
+                    # Load template
+                    template_path = PathLib(args.template)
+                    if template_path.exists():
+                        template_seq = SequenceLoader.load(str(template_path))
+                    else:
+                        template_seq = args.template  # Assume raw sequence
+                    
+                    # Convert pairs to dict format
+                    primer_dicts = [
+                        {"name": p.name, "forward": p.forward, "reverse": p.reverse}
+                        for p in pairs
+                    ]
+                    
+                    overlap_result = run_insilico_compat_simulation(
+                        template=template_seq,
+                        primer_pairs=primer_dicts,
+                        template_name="template"
+                    )
+                    
+                    # Save overlap report
+                    import json as json_module
+                    with open(out_dir / "overlap_analysis.json", "w") as f:
+                        json_module.dump(overlap_result.to_dict(), f, indent=2)
+                    
+                    if overlap_result.has_problems:
+                        print(f"   ⚠️ {len([o for o in overlap_result.overlaps if o.is_problematic])} problematic overlap(s) detected")
+                    else:
+                        print("   ✅ No problematic overlaps")
+                        
+                except Exception as e:
+                    print(f"   ⚠️ Overlap analysis failed: {e}")
+            
             print("\n" + "=" * 45)
             print(f"🏁 Score: {score_res.score:.1f}/100 (Grade {score_res.grade})")
             print(f"   Status: {'✅ COMPATIBLE' if score_res.is_valid else '❌ INCOMPATIBLE'}")
             print(f"📁 Reports saved to: {out_dir}")
             print(f"   • {report_path.name}")
             print(f"   • {json_path.name}")
+            if args.template and overlap_result:
+                print(f"   • overlap_analysis.json")
             print()
 
             sys.exit(0 if score_res.is_valid else 1)
@@ -1397,6 +1441,36 @@ def main():
                     
                     with open(result_dir / "result.json", "w") as f:
                         json.dump(result_data, f, indent=2)
+                    
+                    # Run amplicon analysis if amplicons available (v0.4.1)
+                    amplicons = result_data.get("amplicons", [])
+                    if amplicons:
+                        try:
+                            from primerlab.core.amplicon import analyze_amplicon
+                            from primerlab.core.amplicon.report import (
+                                generate_amplicon_json_report,
+                                generate_amplicon_markdown_report
+                            )
+                            
+                            # Analyze first/primary amplicon
+                            primary_amplicon = amplicons[0] if amplicons else None
+                            if primary_amplicon and primary_amplicon.get("sequence"):
+                                amplicon_result = analyze_amplicon(
+                                    primary_amplicon["sequence"]
+                                )
+                                
+                                # Save amplicon analysis
+                                generate_amplicon_json_report(amplicon_result, str(result_dir))
+                                
+                                # Add to result
+                                result_data["amplicon_analysis"] = amplicon_result.to_dict()
+                                
+                                # Update result.json with amplicon data
+                                with open(result_dir / "result.json", "w") as f:
+                                    json.dump(result_data, f, indent=2)
+                                    
+                        except Exception as amp_err:
+                            logger.debug(f"  Amplicon analysis skipped: {amp_err}")
                     
                     results.append(result_data)
                     logger.info(f"  ✅ Success - Quality Score: {result.qc.quality_score if result.qc else 'N/A'}")
