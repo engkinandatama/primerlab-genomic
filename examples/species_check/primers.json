@@ -1,0 +1,17 @@
+[
+  {
+    "name": "BRCA1_F1",
+    "forward": "ATGATTTTGAAATCAGACAACTG",
+    "reverse": "CTCTTAAGGGCAGTTGTGAG"
+  },
+  {
+    "name": "BRCA1_F2",
+    "forward": "TGCAGCCAGTTCACCATG",
+    "reverse": "AACACAGACCTCGATTCC"
+  },
+  {
+    "name": "TP53_Exon5",
+    "forward": "GTTTCTTTGCTGCCGTCTTC",
+    "reverse": "TCACTGCCATGGAGGAGC"
+  }
+]
