@@ -70,6 +70,23 @@ source ~/primerlab_venv/bin/activate  # Linux/WSL
 pip install -e .
 ```
 
+#### Optional: ViennaRNA (for Secondary Structure)
+
+For enhanced secondary structure prediction in amplicon analysis, install ViennaRNA:
+
+```bash
+# Ubuntu/Debian
+sudo apt-get install vienna-rna
+
+# macOS (Homebrew)  
+brew install viennarna
+
+# Conda (all platforms)
+conda install -c bioconda viennarna
+```
+
+Without ViennaRNA, PrimerLab uses a fallback estimation method.
+
 #### Option 2: For End Users (From GitHub Release)
 
 ```bash
