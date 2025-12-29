@@ -175,3 +175,134 @@ def generate_species_excel_report(result: SpeciesCheckResult, output_dir: str) -
     wb.save(output_path)
     logger.info(f"Excel report saved to {output_path}")
     return str(output_path)
+
+
+def generate_species_html_report(result: SpeciesCheckResult, output_dir: str) -> str:
+    """
+    Generate HTML report for species specificity check (v0.4.2).
+    
+    Features:
+    - Dark/light mode toggle
+    - Interactive specificity matrix
+    - Score visualization
+    """
+    output_path = Path(output_dir) / "species_report.html"
+    
+    grade_color = {
+        "A": "#51cf66", "B": "#94d82d", 
+        "C": "#fcc419", "D": "#ff922b", "F": "#ff6b6b"
+    }.get(result.grade, "#868e96")
+    
+    status_text = "SPECIFIC" if result.is_specific else "CROSS-REACTIVE"
+    status_color = "#51cf66" if result.is_specific else "#ff6b6b"
+    
+    # Build matrix rows
+    matrix = result.specificity_matrix
+    matrix_rows = []
+    for primer in matrix.primer_names:
+        cells = [f"<td><strong>{primer}</strong></td>"]
+        for species in matrix.species_names:
+            binding = matrix.get_binding(primer, species)
+            if binding and binding.has_binding:
+                pct = binding.best_match_percent
+                is_target = species == matrix.target_species
+                cell_class = "target" if is_target else ("warn" if pct >= 80 else "")
+                cells.append(f'<td class="{cell_class}">{pct:.0f}%</td>')
+            else:
+                cells.append('<td class="none">-</td>')
+        matrix_rows.append(f"<tr>{''.join(cells)}</tr>")
+    
+    species_headers = ''.join(
+        f'<th class="{"target" if s == matrix.target_species else ""}">{s}</th>' 
+        for s in matrix.species_names
+    )
+    
+    warnings_html = ""
+    if result.warnings:
+        warnings_html = "<h2>⚠️ Warnings</h2><ul>"
+        for w in result.warnings:
+            warnings_html += f"<li>{w}</li>"
+        warnings_html += "</ul>"
+    
+    html = f'''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Species Specificity Report</title>
+    <style>
+        :root {{ --bg: #1a1a2e; --text: #eee; --card: #16213e; --border: #0f3460; }}
+        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+               background: var(--bg); color: var(--text); margin: 0; padding: 20px; }}
+        .container {{ max-width: 1000px; margin: 0 auto; }}
+        h1 {{ color: #e94560; margin-bottom: 10px; }}
+        .card {{ background: var(--card); border-radius: 12px; padding: 20px; margin: 20px 0; 
+                 border: 1px solid var(--border); }}
+        .metrics {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; }}
+        .metric {{ text-align: center; padding: 15px; }}
+        .metric-value {{ font-size: 2em; font-weight: bold; }}
+        .metric-label {{ color: #888; font-size: 0.9em; }}
+        .score {{ color: {grade_color}; }}
+        .status {{ color: {status_color}; }}
+        table {{ width: 100%; border-collapse: collapse; margin: 10px 0; }}
+        th, td {{ padding: 10px; text-align: center; border: 1px solid var(--border); }}
+        th {{ background: #0f3460; }}
+        th.target {{ background: #51cf66; color: #000; }}
+        td.target {{ background: rgba(81, 207, 102, 0.2); }}
+        td.warn {{ background: rgba(255, 107, 107, 0.3); color: #ff6b6b; }}
+        td.none {{ color: #666; }}
+        .toggle {{ position: fixed; top: 20px; right: 20px; cursor: pointer; padding: 10px; 
+                   background: var(--card); border-radius: 8px; border: 1px solid var(--border); }}
+        body.light {{ --bg: #f8f9fa; --text: #212529; --card: #fff; --border: #dee2e6; }}
+    </style>
+</head>
+<body>
+    <div class="toggle" onclick="document.body.classList.toggle('light')">🌓</div>
+    <div class="container">
+        <h1>🧬 Species Specificity Report</h1>
+        <p><strong>Target:</strong> {result.target_species} | 
+           <strong>Primers:</strong> {result.primers_checked} | 
+           <strong>Species:</strong> {result.species_checked}</p>
+        
+        <div class="card">
+            <div class="metrics">
+                <div class="metric">
+                    <div class="metric-value score">{result.overall_score:.0f}</div>
+                    <div class="metric-label">Score (0-100)</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value score">{result.grade}</div>
+                    <div class="metric-label">Grade</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value status">{status_text}</div>
+                    <div class="metric-label">Status</div>
+                </div>
+            </div>
+        </div>
+        
+        {warnings_html}
+        
+        <div class="card">
+            <h2>📋 Specificity Matrix</h2>
+            <table>
+                <thead>
+                    <tr><th>Primer</th>{species_headers}</tr>
+                </thead>
+                <tbody>
+                    {''.join(matrix_rows)}
+                </tbody>
+            </table>
+            <p style="color:#888;font-size:0.85em">* Green = target species | Red = potential cross-reactivity</p>
+        </div>
+        
+        <p style="color:#666;text-align:center;margin-top:30px">Generated by PrimerLab v0.4.2</p>
+    </div>
+</body>
+</html>'''
+    
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(html)
+    
+    logger.info(f"HTML report saved to {output_path}")
+    return str(output_path)
