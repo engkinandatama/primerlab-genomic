@@ -29,6 +29,12 @@ from .binding import (
     compare_binding_across_species,
     check_species_specificity,
 )
+from .scoring import (
+    CrossReactivityScore,
+    calculate_cross_reactivity_score,
+    generate_specificity_matrix_table,
+    detect_offtarget_species,
+)
 
 __all__ = [
     # Models
@@ -52,4 +58,9 @@ __all__ = [
     "analyze_primer_binding",
     "compare_binding_across_species",
     "check_species_specificity",
+    # Scoring (v0.4.2)
+    "CrossReactivityScore",
+    "calculate_cross_reactivity_score",
+    "generate_specificity_matrix_table",
+    "detect_offtarget_species",
 ]

@@ -1,0 +1,39 @@
+workflow: species_check
+
+input:
+  primers_path: null      # Path to primers JSON
+  target_template: null   # Path to target species FASTA
+  offtarget_templates: [] # List of paths to off-target FASTA files
+
+output:
+  directory: ./species_output
+  format: markdown # markdown, json, html
+
+# Species Specificity Parameters
+species_check:
+  # Binding Detection
+  min_match_percent: 70.0   # Minimum match % to consider binding
+  max_mismatches: 5         # Maximum mismatches to consider binding
+  
+  # Off-target Thresholds
+  offtarget_threshold: 80.0  # % binding to flag as problematic off-target
+  warning_threshold: 70.0    # % binding to show as warning
+  
+  # Scoring Weights
+  scoring:
+    target_weight: 0.6       # Weight for target binding in score
+    specificity_weight: 0.4  # Weight for lack of off-target binding
+  
+  # Grade Thresholds
+  grades:
+    A: 90  # Score >= 90 = A
+    B: 80  # Score >= 80 = B
+    C: 70  # Score >= 70 = C
+    D: 60  # Score >= 60 = D
+    # Below 60 = F
+
+# Report Options
+report:
+  include_matrix: true       # Include specificity matrix in report
+  include_details: true      # Include binding site details
+  max_offtargets_shown: 10   # Max off-target species to show in detail
