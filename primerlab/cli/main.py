@@ -330,7 +330,7 @@ def main():
                                 help="Path to config YAML")
     species_parser.add_argument("--output", "-o", type=str, default="species_output",
                                 help="Output directory (default: species_output)")
-    species_parser.add_argument("--format", type=str, choices=["markdown", "json", "excel"], 
+    species_parser.add_argument("--format", type=str, choices=["markdown", "json", "excel", "html"], 
                                 default="markdown", help="Report format")
 
     args = parser.parse_args()
@@ -982,6 +982,7 @@ def main():
                 generate_species_json_report,
                 generate_species_markdown_report,
                 generate_species_excel_report,
+                generate_species_html_report,
             )
 
             logger = setup_logger(level=logging.INFO)
@@ -1041,6 +1042,9 @@ def main():
             
             if args.format == "excel":
                 excel_path = generate_species_excel_report(result, str(out_dir))
+            
+            if args.format == "html":
+                html_path = generate_species_html_report(result, str(out_dir))
 
             # 6. Output summary
             print("\n" + "=" * 50)
