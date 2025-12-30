@@ -5,9 +5,9 @@ A modular bioinformatics framework for automated **primer and probe design**, bu
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-BSD%203--Clause-green.svg)](LICENSE)
 [![Tests](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml/badge.svg)](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml)
-[![Status](https://img.shields.io/badge/status-v0.4.2-blue.svg)](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.4.2)
+[![Status](https://img.shields.io/badge/status-v0.4.3-blue.svg)](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.4.3)
 
-> 🔰 **Latest Release**: [**v0.4.2 - Species Specificity**](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.4.2) 🎉
+> 🔰 **Latest Release**: [**v0.4.3 - Tm Gradient & Batch Enhancements**](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.4.3) 🎉
 
 ---
 
@@ -47,6 +47,8 @@ PrimerLab focuses on **deterministic, transparent bioinformatics**, following st
 * **Excel/IDT Export** (v0.4.0): Export compatibility matrix to Excel, IDT plate format for ordering
 * **Amplicon Analysis** (v0.4.1): Secondary structure, GC profile, quality scoring
 * **Species Specificity** (v0.4.2): Cross-reactivity check, multi-species template comparison, specificity scoring
+* **Tm Gradient Simulation** (v0.4.3): Optimal annealing temperature prediction, temperature sensitivity analysis
+* **Batch Species-Check** (v0.4.3): Parallel processing, SQLite caching, CSV batch export
 
 ---
 
@@ -92,7 +94,7 @@ Without ViennaRNA, PrimerLab uses a fallback estimation method.
 
 ```bash
 # Install directly from GitHub (latest release)
-pip install git+https://github.com/engkinandatama/primerlab-genomic.git@v0.3.5
+pip install git+https://github.com/engkinandatama/primerlab-genomic.git@v0.4.3
 ```
 
 Once installed, verify the installation:
