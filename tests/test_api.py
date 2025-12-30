@@ -69,3 +69,48 @@ def test_api_simulate_tm_gradient_custom_params():
     assert result["range_min"] <= result["optimal"]
     assert result["range_max"] >= result["optimal"]
 
+
+# ===== v0.5.0 API Tests =====
+
+def test_api_predict_melt_curve():
+    """Tests predict_melt_curve_api function."""
+    from primerlab.api import predict_melt_curve_api
+    
+    amplicon = "ATGC" * 25  # 100bp
+    
+    result = predict_melt_curve_api(amplicon)
+    
+    assert "predicted_tm" in result
+    assert "melt_curve" in result
+    assert "is_single_peak" in result
+    assert "grade" in result
+    assert result["predicted_tm"] > 0
+
+
+def test_api_validate_qpcr_amplicon():
+    """Tests validate_qpcr_amplicon_api function."""
+    from primerlab.api import validate_qpcr_amplicon_api
+    
+    amplicon = "ATGC" * 25  # 100bp, 50% GC
+    
+    result = validate_qpcr_amplicon_api(amplicon)
+    
+    assert "amplicon_length" in result
+    assert "gc_content" in result
+    assert "length_ok" in result
+    assert "gc_ok" in result
+    assert "quality_score" in result
+    assert "grade" in result
+    assert result["amplicon_length"] == 100
+
+
+def test_api_validate_qpcr_amplicon_short():
+    """Tests validation warnings for short amplicon."""
+    from primerlab.api import validate_qpcr_amplicon_api
+    
+    short_amplicon = "ATGC" * 10  # 40bp
+    
+    result = validate_qpcr_amplicon_api(short_amplicon)
+    
+    assert result["length_ok"] == False
+    assert any("short" in w.lower() for w in result["warnings"])

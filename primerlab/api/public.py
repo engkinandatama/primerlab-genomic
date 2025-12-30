@@ -615,3 +615,87 @@ def simulate_probe_binding_api(
         output["position"] = position_result.to_dict()
     
     return output
+
+
+def predict_melt_curve_api(
+    amplicon_sequence: str,
+    na_concentration: float = 50.0,
+    min_temp: float = 65.0,
+    max_temp: float = 95.0,
+    step: float = 0.2,
+) -> Dict:
+    """
+    Predict SYBR Green melt curve for an amplicon (v0.5.0).
+    
+    Args:
+        amplicon_sequence: Amplicon DNA sequence
+        na_concentration: Na+ concentration (mM)
+        min_temp: Minimum temperature (°C)
+        max_temp: Maximum temperature (°C)
+        step: Temperature step (°C)
+        
+    Returns:
+        Dict with:
+        - predicted_tm: Melting temperature
+        - tm_range: (min, max) expected Tm
+        - peaks: List of detected peaks
+        - melt_curve: Temperature vs -dF/dT data
+        - is_single_peak: Boolean
+        - quality_score: 0-100 score
+        - grade: A-F grade
+        - warnings: List of warnings
+    """
+    from primerlab.core.qpcr.melt_curve import predict_melt_curve
+    
+    result = predict_melt_curve(
+        amplicon_sequence=amplicon_sequence,
+        na_concentration=na_concentration,
+        min_temp=min_temp,
+        max_temp=max_temp,
+        step=step,
+    )
+    
+    return result.to_dict()
+
+
+def validate_qpcr_amplicon_api(
+    amplicon_sequence: str,
+    min_length: int = 70,
+    max_length: int = 150,
+    gc_min: float = 40.0,
+    gc_max: float = 60.0,
+) -> Dict:
+    """
+    Validate amplicon for qPCR suitability (v0.5.0).
+    
+    Args:
+        amplicon_sequence: Amplicon DNA sequence
+        min_length: Minimum acceptable length (bp)
+        max_length: Maximum acceptable length (bp)
+        gc_min: Minimum GC percentage
+        gc_max: Maximum GC percentage
+        
+    Returns:
+        Dict with:
+        - amplicon_length: Sequence length
+        - gc_content: GC percentage
+        - gc_ok: Boolean
+        - length_ok: Boolean  
+        - secondary_structure_ok: Boolean
+        - tm_amplicon: Predicted Tm
+        - quality_score: 0-100 score
+        - grade: A-F grade
+        - warnings: List of issues
+        - recommendations: List of suggestions
+    """
+    from primerlab.core.qpcr.amplicon_qc import validate_qpcr_amplicon
+    
+    result = validate_qpcr_amplicon(
+        amplicon_sequence=amplicon_sequence,
+        min_length=min_length,
+        max_length=max_length,
+        gc_min=gc_min,
+        gc_max=gc_max,
+    )
+    
+    return result.to_dict()
