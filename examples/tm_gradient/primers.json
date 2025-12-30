@@ -1,0 +1,17 @@
+[
+    {
+        "name": "BRCA1_Exon10",
+        "forward": "ATGCGATCGATCGATCGATCG",
+        "reverse": "GCTAGCTAGCTAGCTAGCTAG"
+    },
+    {
+        "name": "TP53_Exon5",
+        "forward": "GCGCTAGCTAGCTAGCTAGC",
+        "reverse": "ATATATGCGCATATATGCGC"
+    },
+    {
+        "name": "KRAS_Exon2",
+        "forward": "CGATCGATCGATCGATCGAT",
+        "reverse": "TAGCTAGCTAGCTAGCTAGC"
+    }
+]
