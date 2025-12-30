@@ -202,13 +202,57 @@ Types: `INFO`, `CHANGE`, `FIX`, `TODO`, `WARN`, `ERR`
 [2025-12-24 23:00] CHANGE  Created v0.4.0 implementation plan (Multiplex Analysis)
 [2025-12-24 23:05] CHANGE  Copied full task list (1329 lines) to task.md artifact
 [2025-12-24 23:20] INFO    CI passing: 337 tests, 0 skipped
+
+# ===== v0.4.0 Release (2025-12-25) =====
+[2025-12-25 10:00] INFO    Started v0.4.0 - Primer Compatibility Check
+[2025-12-25 11:00] CHANGE  Created core/compat_check/ module (cross-dimer, Tm uniformity)
+[2025-12-25 12:00] CHANGE  Created primerlab check-compat CLI command
+[2025-12-25 13:00] CHANGE  Added Excel and IDT plate export for primer sets
+[2025-12-25 14:00] CHANGE  Created docs/features/compat_check.md
+[2025-12-25 15:00] INFO    Tagged v0.4.0, 420 tests passing
+
+# ===== v0.4.1 Release (2025-12-26) =====
+[2025-12-26 10:00] INFO    Started v0.4.1 - Amplicon Analysis
+[2025-12-26 11:00] CHANGE  Created core/amplicon/ module (secondary structure, GC profile)
+[2025-12-26 12:00] CHANGE  Added --amplicon-analysis flag to primerlab run
+[2025-12-26 13:00] CHANGE  Added --template flag to check-compat (overlap analysis)
+[2025-12-26 14:00] CHANGE  Created analyze_amplicon() and run_overlap_simulation() APIs
+[2025-12-26 15:00] INFO    Tagged v0.4.1, 442 tests passing
+
+# ===== v0.4.2 Release (2025-12-29) =====
+[2025-12-29 16:00] INFO    Started v0.4.2 - Species Specificity
+[2025-12-29 17:00] CHANGE  Created core/species/ module (loader, alignment, binding)
+[2025-12-29 18:00] CHANGE  Created scoring.py (cross-reactivity 0-100 scale)
+[2025-12-29 19:00] CHANGE  Created primerlab species-check CLI command
+[2025-12-29 20:00] CHANGE  Created check_species_specificity_api() function
+[2025-12-29 21:00] CHANGE  Created species reports (JSON, Markdown, Excel, HTML)
+[2025-12-29 22:00] CHANGE  Created docs/features/species-specificity.md
+[2025-12-29 22:30] CHANGE  Updated README.md badges to v0.4.2
+[2025-12-29 22:45] CHANGE  Updated CHANGELOG.md with v0.4.0-v0.4.2 entries
+[2025-12-29 23:00] CHANGE  Created examples/species_check/ (4 files)
+[2025-12-29 23:15] CHANGE  Created docs/tutorials/species-check.md
+[2025-12-29 23:30] INFO    Tagged v0.4.2, 471 tests passing
+
+# ===== v0.4.3 Development (2025-12-29 - 2025-12-30) =====
+[2025-12-30 00:00] INFO    Started v0.4.3 - Tm Gradient & Batch Enhancements
+[2025-12-30 00:15] CHANGE  Created core/tm_gradient/ module (models, engine, prediction)
+[2025-12-30 00:30] CHANGE  Added nearest-neighbor thermodynamic Tm calculation
+[2025-12-30 00:45] CHANGE  Added predict_optimal_annealing() function
+[2025-12-30 00:50] CHANGE  Added analyze_temperature_sensitivity() function
+[2025-12-30 00:55] CHANGE  Created tests/test_tm_gradient.py (14 tests)
+[2025-12-30 01:00] INFO    Phase 1 Complete, 485 tests passing
+[2025-12-30 01:05] CHANGE  Created core/species/batch/ module (batch_loader, cache, parallel)
+[2025-12-30 01:10] CHANGE  Added SQLite alignment cache with TTL
+[2025-12-30 01:12] CHANGE  Added ThreadPoolExecutor parallel analysis
+[2025-12-30 01:13] CHANGE  Created tests/test_species_batch.py (14 tests)
+[2025-12-30 01:15] INFO    Phase 2 Complete, 499 tests passing
 ```
 
 ---
 
 ## Context Notes (Update when major state changes)
 
-Last updated: 2025-12-24
+Last updated: 2025-12-30
 
 ### Release Status
 
@@ -217,25 +261,26 @@ Last updated: 2025-12-24
 | v0.1.0 - v0.1.6 | ✅ COMPLETE | Core, smart features, stabilization |
 | v0.2.0 - v0.2.5 | ✅ RELEASED | In-silico PCR, degenerate, circular |
 | v0.3.0 - v0.3.5 | ✅ RELEASED | BLAST, off-target, reporting, docs |
-| v0.4.0 | 🔄 NEXT | Multiplex Analysis |
+| v0.4.0 | ✅ RELEASED | Primer Compatibility Check |
+| v0.4.1 | ✅ RELEASED | Amplicon Analysis |
+| v0.4.2 | ✅ TAGGED | Species Specificity |
+| v0.4.3 | 🔄 IN PROGRESS | Tm Gradient & Batch Enhancements |
 
-### v0.3.5 Checklist
+### v0.4.3 Checklist
 
-- [x] Tutorials (quick-start, pcr, qpcr, offtarget)
-- [x] API docs (public, insilico, report, models)
-- [x] Troubleshooting guide
-- [x] README.md updates (337 tests, v0.3.5)
-- [x] All 19 tags pushed to GitHub
-- [x] CI passing with 0 skips
+- [x] Phase 1: Tm Gradient Core (5 items)
+- [x] Phase 2: Batch Species-Check (4 items)
+- [ ] Phase 3: CLI & API Integration (4 items)
+- [ ] Phase 4: Documentation & Polish (4 items)
 
 ### Test Coverage
 
-- **Total Tests**: 337
+- **Total Tests**: 499
 - **Skipped**: 0
 - **CI Status**: ✅ Passing
 
 ### Next Steps
 
-1. Begin v0.4.0 Multiplex Analysis (Phase 1: Models + Dimer Engine)
-2. Plan for v1.0.0 stable release
-3. Zenodo archive at v1.0.0
+1. Complete v0.4.3 Phase 3-4 (CLI, API, Docs)
+2. Tag v0.4.3
+3. Begin v0.5.0 (qPCR Customization)
