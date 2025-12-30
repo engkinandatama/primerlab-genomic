@@ -5,6 +5,54 @@ All notable changes to PrimerLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2024-12-30
+
+### Added
+
+- **qPCR Probe Binding Simulation** (`core/qpcr/probe_binding.py`)
+  - Nearest-neighbor thermodynamic Tm calculation for probes
+  - Binding efficiency simulation across temperature range
+  - Optimal annealing temperature prediction
+  - 5' G quenching warning
+
+- **Probe Position Optimization** (`core/qpcr/probe_position.py`)
+  - Position analysis within amplicon
+  - Distance from primers validation
+  - Position scoring and recommendations
+
+- **qPCR Amplicon Validation** (`core/qpcr/amplicon_qc.py`)
+  - Length validation (70-150 bp optimal)
+  - GC content validation (40-60%)
+  - Secondary structure penalty estimation
+  - Enhanced efficiency scoring
+
+- **SYBR Melt Curve Prediction** (`core/qpcr/melt_curve.py`)
+  - Amplicon Tm prediction
+  - Melt curve shape simulation
+  - Multiple peak detection
+  - Quality grading (A-F)
+
+- **Melt Curve Reports** (`core/qpcr/melt_report.py`)
+  - Markdown report generation
+  - CSV data export
+  - JSON output
+
+- **Public API Functions**
+  - `simulate_probe_binding_api()` - Probe binding simulation
+  - `predict_melt_curve_api()` - Melt curve prediction
+  - `validate_qpcr_amplicon_api()` - Amplicon validation
+
+- **Documentation**
+  - `docs/features/probe-binding.md`
+  - `docs/features/melt-curve.md`
+  - `docs/tutorials/qpcr-advanced.md`
+  - `examples/qpcr_taqman/`
+  - `examples/qpcr_sybr/`
+
+- **60 new unit tests** for qPCR module
+
+---
+
 ## [0.4.3] - 2024-12-30
 
 ### Added
