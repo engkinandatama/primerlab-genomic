@@ -320,7 +320,7 @@ primerlab-genomic/
 │   │   └── qpcr/         # qPCR workflow
 │   ├── api/              # Public API
 │   └── config/           # Default configurations
-├── tests/                # 337 automated tests
+├── tests/                # 506 automated tests
 ├── docs/                 # User documentation
 ├── examples/             # Example files
 │   └── insilico/         # In-silico PCR examples
@@ -331,17 +331,17 @@ primerlab-genomic/
 
 ## 📌 Development Status
 
-### ✅ **v0.3.5** (Current)
+### ✅ **v0.4.3** (Current)
 
-* **In-silico PCR Simulation** (`primerlab insilico`):
-  * Virtual PCR engine with binding site analysis
-  * IUPAC degenerate base support
-  * Circular template support (`--circular`)
-  * Primer-dimer detection
-  * Extension time estimation
-* **Integrated Validation** (`--validate`):
-  * Auto in-silico after primer design
-* **337 Tests** - Comprehensive test coverage
+* **Tm Gradient Simulation** (`primerlab tm-gradient`):
+  * Optimal annealing temperature prediction
+  * Temperature sensitivity analysis
+  * Markdown/CSV/JSON reports
+* **Batch Species-Check**:
+  * Parallel processing with ThreadPoolExecutor
+  * SQLite alignment caching
+  * Directory-based primer loading
+* **506 Tests** - Comprehensive test coverage
 
 ### v0.1.6 Features
 
