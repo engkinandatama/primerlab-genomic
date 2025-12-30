@@ -5,9 +5,9 @@ A modular bioinformatics framework for automated **primer and probe design**, bu
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-BSD%203--Clause-green.svg)](LICENSE)
 [![Tests](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml/badge.svg)](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml)
-[![Status](https://img.shields.io/badge/status-v0.4.3-blue.svg)](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.4.3)
+[![Status](https://img.shields.io/badge/status-v0.5.0-blue.svg)](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.5.0)
 
-> 🔰 **Latest Release**: [**v0.4.3 - Tm Gradient & Batch Enhancements**](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.4.3) 🎉
+> 🔰 **Latest Release**: [**v0.5.0 - qPCR Customization**](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.5.0) 🎉
 
 ---
 
@@ -49,6 +49,12 @@ PrimerLab focuses on **deterministic, transparent bioinformatics**, following st
 * **Species Specificity** (v0.4.2): Cross-reactivity check, multi-species template comparison, specificity scoring
 * **Tm Gradient Simulation** (v0.4.3): Optimal annealing temperature prediction, temperature sensitivity analysis
 * **Batch Species-Check** (v0.4.3): Parallel processing, SQLite caching, CSV batch export
+
+#### 🆕 v0.5.0 Features
+
+* **Probe Binding Simulation** (v0.5.0): TaqMan probe Tm calculation, binding efficiency, position optimization
+* **qPCR Amplicon Validation** (v0.5.0): Length/GC validation, secondary structure scoring, efficiency prediction
+* **SYBR Melt Curve Prediction** (v0.5.0): Tm prediction, multi-peak detection, quality grading
 
 ---
 
