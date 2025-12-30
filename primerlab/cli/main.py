@@ -320,8 +320,10 @@ def main():
 
     # --- SPECIES-CHECK Command (v0.4.2) ---
     species_parser = subparsers.add_parser("species-check", help="Check primer species specificity (v0.4.2)")
-    species_parser.add_argument("--primers", "-p", required=True,
+    species_parser.add_argument("--primers", "-p", type=str, default=None,
                                 help="Path to primers JSON file")
+    species_parser.add_argument("--primers-dir", type=str, default=None,
+                                help="Directory containing multiple primer JSON files (v0.4.3 batch)")
     species_parser.add_argument("--target", "-t", required=True,
                                 help="Path to target species FASTA template")
     species_parser.add_argument("--offtargets", type=str, default=None,
@@ -332,6 +334,27 @@ def main():
                                 help="Output directory (default: species_output)")
     species_parser.add_argument("--format", type=str, choices=["markdown", "json", "excel", "html"], 
                                 default="markdown", help="Report format")
+    species_parser.add_argument("--parallel", type=int, default=4,
+                                help="Number of parallel threads for batch (v0.4.3, default: 4)")
+    species_parser.add_argument("--no-cache", action="store_true",
+                                help="Disable alignment cache (v0.4.3)")
+
+    # --- TM-GRADIENT Command (v0.4.3) ---
+    tm_parser = subparsers.add_parser("tm-gradient", help="Simulate Tm gradient for optimal annealing (v0.4.3)")
+    tm_parser.add_argument("--primers", "-p", required=True,
+                           help="Path to primers JSON file")
+    tm_parser.add_argument("--template", "-t", type=str, default=None,
+                           help="Optional template FASTA for context")
+    tm_parser.add_argument("--min-temp", type=float, default=50.0,
+                           help="Minimum temperature (°C, default: 50)")
+    tm_parser.add_argument("--max-temp", type=float, default=72.0,
+                           help="Maximum temperature (°C, default: 72)")
+    tm_parser.add_argument("--step", type=float, default=0.5,
+                           help="Temperature step (°C, default: 0.5)")
+    tm_parser.add_argument("--output", "-o", type=str, default="tm_gradient_output",
+                           help="Output directory (default: tm_gradient_output)")
+    tm_parser.add_argument("--format", type=str, choices=["markdown", "json", "csv"],
+                           default="markdown", help="Report format")
 
     args = parser.parse_args()
 
@@ -1067,6 +1090,96 @@ def main():
 
             sys.exit(0 if result.is_specific else 1)
 
+        except Exception as e:
+            print(f"\n❌ Error: {e}")
+            import traceback
+            traceback.print_exc()
+            sys.exit(1)
+
+    # ===== TM-GRADIENT Command Handler (v0.4.3) =====
+    if args.command == "tm-gradient":
+        try:
+            import json
+            from pathlib import Path as PathLib
+            from primerlab.core.tm_gradient import (
+                TmGradientConfig,
+                simulate_tm_gradient,
+                predict_optimal_annealing,
+                analyze_temperature_sensitivity,
+            )
+            
+            logger = setup_logger(level=logging.INFO)
+            
+            print("\n🌡️ Tm Gradient Simulation (v0.4.3)")
+            print("=" * 50)
+            
+            # 1. Load primers
+            print(f"📂 Loading primers: {args.primers}")
+            with open(args.primers, "r") as f:
+                primers = json.load(f)
+            
+            # 2. Configure gradient
+            config = TmGradientConfig(
+                min_temp=args.min_temp,
+                max_temp=args.max_temp,
+                step_size=args.step
+            )
+            
+            print(f"🔬 Temperature range: {config.min_temp}°C - {config.max_temp}°C (step {config.step_size}°C)")
+            print(f"\n⏳ Simulating Tm gradient for {len(primers)} primers...")
+            
+            # 3. Run simulations
+            results = []
+            for primer in primers:
+                name = primer.get("name", "Unknown")
+                seq = primer.get("forward", primer.get("sequence", ""))
+                
+                if seq:
+                    result = simulate_tm_gradient(seq, f"{name}_fwd", config=config)
+                    results.append(result)
+                
+                rev = primer.get("reverse", "")
+                if rev:
+                    result = simulate_tm_gradient(rev, f"{name}_rev", config=config)
+                    results.append(result)
+            
+            # 4. Predict optimal
+            optimal = predict_optimal_annealing(primers, config)
+            
+            # 5. Output
+            out_dir = PathLib(args.output)
+            out_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Save JSON
+            json_output = {
+                "config": {
+                    "min_temp": config.min_temp,
+                    "max_temp": config.max_temp,
+                    "step_size": config.step_size
+                },
+                "optimal": optimal,
+                "primers": [r.to_dict() for r in results]
+            }
+            
+            json_path = out_dir / "tm_gradient.json"
+            with open(json_path, "w") as f:
+                json.dump(json_output, f, indent=2)
+            
+            # Summary
+            print("\n" + "=" * 50)
+            print(f"🎯 Optimal Annealing Temperature: {optimal['optimal']:.1f}°C")
+            print(f"   Recommended Range: {optimal['range_min']:.1f}°C - {optimal['range_max']:.1f}°C")
+            print(f"\n📊 Per-Primer Results:")
+            
+            for r in results[:6]:  # Show first 6
+                print(f"   {r.primer_name}: Tm={r.calculated_tm:.1f}°C, Optimal={r.optimal_annealing_temp:.1f}°C (Grade {r.grade})")
+            
+            if len(results) > 6:
+                print(f"   ... and {len(results) - 6} more")
+            
+            print(f"\n📁 Report saved to: {json_path}")
+            sys.exit(0)
+            
         except Exception as e:
             print(f"\n❌ Error: {e}")
             import traceback

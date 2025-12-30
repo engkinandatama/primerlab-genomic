@@ -1,0 +1,32 @@
+# Tm Gradient Configuration (v0.4.3)
+# Default configuration for Tm gradient simulation
+
+# Temperature Range
+temperature:
+  min: 50.0      # Minimum temperature (°C)
+  max: 72.0      # Maximum temperature (°C)
+  step: 0.5      # Temperature step (°C)
+
+# Salt Concentrations
+salt:
+  na_concentration: 50.0     # Na+ concentration (mM)
+  mg_concentration: 1.5      # Mg2+ concentration (mM)
+  k_concentration: 0.0       # K+ concentration (mM)
+
+# Primer Concentration
+primer:
+  concentration: 0.25        # Primer concentration (µM)
+
+# Thresholds
+thresholds:
+  optimal_efficiency: 90.0   # Minimum efficiency for optimal temp
+  acceptable_efficiency: 80.0 # Minimum efficiency for acceptable range
+  narrow_window: 4.0         # °C range considered "narrow"
+
+# Scoring
+scoring:
+  grade_a_min: 90   # Score >= 90 = Grade A
+  grade_b_min: 80   # Score >= 80 = Grade B
+  grade_c_min: 70   # Score >= 70 = Grade C
+  grade_d_min: 60   # Score >= 60 = Grade D
+                    # Score < 60 = Grade F

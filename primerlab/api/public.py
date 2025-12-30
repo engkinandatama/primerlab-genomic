@@ -425,3 +425,135 @@ def check_species_specificity_api(
     result = _check(primers, target, offtargets, config)
     
     return result.to_dict()
+
+
+# ===== Tm Gradient API (v0.4.3) =====
+
+def simulate_tm_gradient_api(
+    primers: list,
+    min_temp: float = 50.0,
+    max_temp: float = 72.0,
+    step_size: float = 0.5,
+    na_concentration: float = 50.0,
+    primer_concentration: float = 0.25
+) -> Dict[str, Any]:
+    """
+    Simulate Tm gradient for optimal annealing temperature prediction.
+    
+    Args:
+        primers: List of primer dicts with 'name', 'forward', 'reverse' keys
+        min_temp: Minimum temperature (°C)
+        max_temp: Maximum temperature (°C)
+        step_size: Temperature step (°C)
+        na_concentration: Na+ concentration (mM)
+        primer_concentration: Primer concentration (µM)
+        
+    Returns:
+        Dictionary containing:
+        - optimal: optimal annealing temperature
+        - range_min/range_max: recommended temperature range
+        - primers: per-primer Tm and sensitivity data
+    """
+    from primerlab.core.tm_gradient import (
+        TmGradientConfig,
+        simulate_tm_gradient,
+        predict_optimal_annealing,
+    )
+    
+    config = TmGradientConfig(
+        min_temp=min_temp,
+        max_temp=max_temp,
+        step_size=step_size,
+        na_concentration=na_concentration,
+        primer_concentration=primer_concentration
+    )
+    
+    # Run simulations
+    results = []
+    for primer in primers:
+        name = primer.get("name", "Unknown")
+        fwd = primer.get("forward", primer.get("sequence", ""))
+        rev = primer.get("reverse", "")
+        
+        if fwd:
+            result = simulate_tm_gradient(fwd, f"{name}_fwd", config=config)
+            results.append(result.to_dict())
+        
+        if rev:
+            result = simulate_tm_gradient(rev, f"{name}_rev", config=config)
+            results.append(result.to_dict())
+    
+    # Calculate optimal
+    optimal = predict_optimal_annealing(primers, config)
+    
+    return {
+        "optimal": optimal["optimal"],
+        "range_min": optimal["range_min"],
+        "range_max": optimal["range_max"],
+        "primers": results
+    }
+
+
+def batch_species_check_api(
+    primer_files: list = None,
+    primer_dir: str = None,
+    target_name: str = "Target",
+    target_template: str = "",
+    offtarget_templates: Optional[Dict[str, str]] = None,
+    max_workers: int = 4,
+    config: Optional[Dict] = None
+) -> Dict[str, Any]:
+    """
+    Run batch species-check on multiple primer files.
+    
+    Args:
+        primer_files: List of paths to primer JSON files
+        primer_dir: Directory containing primer JSON files (alternative to primer_files)
+        target_name: Name of target species
+        target_template: Target species template sequence
+        offtarget_templates: Dict mapping species names to sequences
+        max_workers: Number of parallel threads
+        config: Optional configuration
+        
+    Returns:
+        Dictionary containing:
+        - total_files: number of files processed
+        - passed/failed: counts
+        - pass_rate: percentage
+        - results: per-file results
+    """
+    from primerlab.core.species import SpeciesTemplate
+    from primerlab.core.species.batch import (
+        load_primers_from_directory,
+        load_primer_files,
+        run_parallel_species_check,
+    )
+    from primerlab.core.species.batch.batch_loader import load_primer_files
+    
+    # Load primers
+    if primer_dir:
+        batch_input = load_primers_from_directory(primer_dir)
+    elif primer_files:
+        batch_input = load_primer_files(primer_files)
+    else:
+        raise ValueError("Must provide either primer_files or primer_dir")
+    
+    # Create templates
+    target = SpeciesTemplate(species_name=target_name, sequence=target_template)
+    
+    offtargets = {}
+    if offtarget_templates:
+        for name, seq in offtarget_templates.items():
+            offtargets[name] = SpeciesTemplate(species_name=name, sequence=seq)
+    
+    # Run parallel check
+    result = run_parallel_species_check(
+        batch_input=batch_input,
+        target_template=target,
+        offtarget_templates=offtargets,
+        config=config,
+        max_workers=max_workers
+    )
+    
+    return result.to_dict()
+
