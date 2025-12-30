@@ -1165,6 +1165,32 @@ def main():
             with open(json_path, "w") as f:
                 json.dump(json_output, f, indent=2)
             
+            # Generate additional reports based on format
+            from primerlab.core.tm_gradient.report import (
+                generate_tm_gradient_markdown,
+                generate_tm_gradient_csv,
+            )
+            
+            report_files = [str(json_path)]
+            
+            if args.format == "markdown":
+                md_path = generate_tm_gradient_markdown(
+                    json_output["primers"],
+                    optimal,
+                    json_output["config"],
+                    str(out_dir / "tm_gradient_report.md")
+                )
+                report_files.append(md_path)
+            
+            if args.format == "csv":
+                csv_path = generate_tm_gradient_csv(
+                    json_output["primers"],
+                    optimal,
+                    json_output["config"],
+                    str(out_dir / "tm_gradient.csv")
+                )
+                report_files.append(csv_path)
+            
             # Summary
             print("\n" + "=" * 50)
             print(f"🎯 Optimal Annealing Temperature: {optimal['optimal']:.1f}°C")
@@ -1177,7 +1203,9 @@ def main():
             if len(results) > 6:
                 print(f"   ... and {len(results) - 6} more")
             
-            print(f"\n📁 Report saved to: {json_path}")
+            print(f"\n📁 Reports saved to: {out_dir}")
+            for rf in report_files:
+                print(f"   • {PathLib(rf).name}")
             sys.exit(0)
             
         except Exception as e:
