@@ -23,6 +23,8 @@ from .public import (
     
     # v0.5.0 functions
     simulate_probe_binding_api,
+    predict_melt_curve_api,
+    validate_qpcr_amplicon_api,
 )
 
 __all__ = [
@@ -37,4 +39,6 @@ __all__ = [
     "simulate_tm_gradient_api",
     "batch_species_check_api",
     "simulate_probe_binding_api",
+    "predict_melt_curve_api",
+    "validate_qpcr_amplicon_api",
 ]
