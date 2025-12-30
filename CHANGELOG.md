@@ -5,6 +5,41 @@ All notable changes to PrimerLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.3] - 2024-12-30
+
+### Added
+
+- **Tm Gradient Simulation Module** (`core/tm_gradient/`)
+  - Nearest-neighbor thermodynamic Tm calculation
+  - Temperature gradient simulation engine
+  - Optimal annealing temperature prediction
+  - Temperature sensitivity analysis
+  - Binding efficiency curves
+
+- **Batch Species-Check Enhancements** (`core/species/batch/`)
+  - Batch input loader (directory, multi-FASTA)
+  - SQLite alignment caching with TTL
+  - Parallel species analysis (ThreadPoolExecutor)
+  - CSV batch export and summary reports
+
+- **CLI Commands**
+  - `primerlab tm-gradient` for temperature simulation
+  - `--primers-dir`, `--parallel`, `--no-cache` for species-check
+
+- **Public API**
+  - `simulate_tm_gradient_api()` function
+  - `batch_species_check_api()` function
+
+- **Configuration**
+  - `tm_gradient_default.yaml`
+
+- **Documentation**
+  - `docs/features/tm-gradient.md`
+  - `docs/tutorials/tm-gradient.md`
+  - `examples/tm_gradient/`
+
+---
+
 ## [0.4.2] - 2024-12-29
 
 ### Added
