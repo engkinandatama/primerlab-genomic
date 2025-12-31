@@ -29,6 +29,11 @@ from .melt_report import (
     generate_melt_csv,
     generate_melt_json,
 )
+from .melt_plot import (
+    generate_melt_svg,
+    generate_melt_png,
+    annotate_peaks,
+)
 
 __all__ = [
     # Probe binding
@@ -49,4 +54,9 @@ __all__ = [
     "generate_melt_markdown",
     "generate_melt_csv",
     "generate_melt_json",
+    # Melt plot (v0.6.0)
+    "generate_melt_svg",
+    "generate_melt_png",
+    "annotate_peaks",
 ]
+
