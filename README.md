@@ -226,6 +226,43 @@ primerlab amplicon-qc --amplicon ATGCGATCGATCGATCGATCGATCGATCGATCG
 primerlab run qpcr --config design.yaml --plot-melt --plot-format png
 ```
 
+**PCR Variants (v0.7.0):**
+
+```bash
+# Design Nested PCR primers
+primerlab nested-design --sequence "ATGC..." --outer-size 400-600 --inner-size 150-250
+
+# Design Semi-Nested PCR (shared forward primer)
+primerlab seminested-design --sequence "ATGC..." --shared forward
+```
+
+**Analysis Tools (v0.7.1):**
+
+```bash
+# Analyze primer dimer matrix
+primerlab dimer-matrix --primers primers.json --format svg
+
+# Compare batch design runs
+primerlab compare-batch result1.json result2.json --format markdown
+```
+
+**Visualization (v0.7.2):**
+
+```bash
+# Generate coverage map
+primerlab coverage-map --result result.json --format svg
+```
+
+**qPCR Efficiency (v0.7.4):**
+
+```bash
+# Calculate efficiency from standard curve
+primerlab qpcr-efficiency calculate --data curve.json
+
+# Predict primer efficiency
+primerlab qpcr-efficiency predict --forward "ATGCATGC..." --reverse "GCATGCAT..."
+```
+
 ### Programmatic API (Python)
 
 For integration into your own Python scripts:
@@ -263,7 +300,7 @@ Full documentation is available in the [`docs/`](docs/) directory:
 | Section | Description |
 |---------|-------------|
 | [Getting Started](docs/getting-started.md) | Installation and first steps |
-| [CLI Reference](docs/cli/README.md) | All 19 commands |
+| [CLI Reference](docs/cli/README.md) | All 25+ commands |
 | [Configuration](docs/configuration/README.md) | YAML config reference |
 | [Presets](docs/configuration/presets.md) | Pre-configured parameter sets |
 | [API Reference](docs/api/README.md) | Programmatic interface |
