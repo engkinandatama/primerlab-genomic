@@ -152,6 +152,11 @@ def main():
                            help="Generate melt curve plot for qPCR amplicons (v0.6.1)")
     run_parser.add_argument("--plot-format", type=str, choices=["svg", "png"],
                            default="svg", help="Melt curve plot format (v0.6.1)")
+    # v0.7.3 CLI Improvements
+    run_parser.add_argument("--dry-run", action="store_true",
+                           help="Preview configuration without running workflow (v0.7.3)")
+    run_parser.add_argument("--verbose", "-v", action="store_true",
+                           help="Enable verbose output with progress info (v0.7.3)")
 
     # --- BATCH-GENERATE Command ---
     batch_parser = subparsers.add_parser("batch-generate", help="Generate multiple configs from CSV")
