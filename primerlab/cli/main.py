@@ -120,7 +120,6 @@ def main():
     run_parser.add_argument("--config", "-c", type=str, help="Path to user config YAML file")
     run_parser.add_argument("--out", "-o", type=str, help="Override output directory")
     run_parser.add_argument("--debug", action="store_true", help="Enable debug logging")
-    run_parser.add_argument("--dry-run", action="store_true", help="Validate config without running workflow")
     run_parser.add_argument("--export", "-e", type=str, 
                            help="Export formats: comma-separated (e.g., --export idt,sigma,thermo)")
     run_parser.add_argument("--mask", "-m", type=str, default=None,
@@ -483,6 +482,32 @@ def main():
                               help="SVG width (default: 800)")
     covmap_parser.add_argument("--height", type=int, default=200,
                               help="SVG height (default: 200)")
+
+    # --- QPCR-EFFICIENCY Command (v0.7.4) ---
+    eff_parser = subparsers.add_parser("qpcr-efficiency", help="Calculate/predict qPCR efficiency (v0.7.4)")
+    eff_subparsers = eff_parser.add_subparsers(dest="eff_action", help="Efficiency actions")
+    
+    # qpcr-efficiency calculate
+    calc_parser = eff_subparsers.add_parser("calculate", help="Calculate efficiency from standard curve")
+    calc_parser.add_argument("--data", "-d", type=str, required=True,
+                            help="JSON file with {concentrations: [], ct_values: []}")
+    calc_parser.add_argument("--output", "-o", type=str, default=None,
+                            help="Output file (default: stdout)")
+    calc_parser.add_argument("--format", type=str, choices=["text", "json"],
+                            default="text", help="Output format")
+    
+    # qpcr-efficiency predict
+    pred_parser = eff_subparsers.add_parser("predict", help="Predict efficiency from primer properties")
+    pred_parser.add_argument("--forward", "-f", type=str, required=True,
+                            help="Forward primer sequence")
+    pred_parser.add_argument("--reverse", "-r", type=str, required=True,
+                            help="Reverse primer sequence")
+    pred_parser.add_argument("--amplicon-length", type=int, default=100,
+                            help="Amplicon length (default: 100)")
+    pred_parser.add_argument("--output", "-o", type=str, default=None,
+                            help="Output file (default: stdout)")
+    pred_parser.add_argument("--format", type=str, choices=["text", "json"],
+                            default="text", help="Output format")
 
     args = parser.parse_args()
 
@@ -2846,6 +2871,96 @@ qc:
             output = "\n".join(lines)
         
         if args.output:
+            with open(args.output, 'w') as f:
+                f.write(output)
+            print(f"✅ Output saved to {args.output}")
+        else:
+            print(output)
+        sys.exit(0)
+
+    # --- QPCR-EFFICIENCY Command Handler (v0.7.4) ---
+    if args.command == "qpcr-efficiency":
+        from primerlab.core.qpcr.efficiency import (
+            calculate_efficiency,
+            predict_primer_efficiency,
+        )
+        import json
+        import primer3
+        
+        if args.eff_action == "calculate":
+            # Load data from JSON
+            with open(args.data, 'r') as f:
+                data = json.load(f)
+            
+            concentrations = data.get("concentrations", [])
+            ct_values = data.get("ct_values", [])
+            
+            result = calculate_efficiency(concentrations, ct_values)
+            
+            if args.format == "json":
+                output = json.dumps(result.to_dict(), indent=2)
+            else:
+                lines = [
+                    "═══════════════════════════════════════════════════════",
+                    "         QPCR EFFICIENCY ANALYSIS (v0.7.4)",
+                    "═══════════════════════════════════════════════════════",
+                    f"Data Points:     {len(concentrations)}",
+                    f"Slope:           {result.slope:.3f}",
+                    f"Intercept:       {result.intercept:.2f}",
+                    f"R²:              {result.r_squared:.4f}",
+                    "",
+                    f"Efficiency:      {result.efficiency:.1f}%",
+                    f"Grade:           {result.grade}",
+                    f"Acceptable:      {'✅ Yes' if result.is_acceptable else '❌ No'}",
+                    "",
+                    f"Dynamic Range:   {result.dynamic_range:.1f} log10",
+                    "═══════════════════════════════════════════════════════",
+                ]
+                output = "\n".join(lines)
+        
+        elif args.eff_action == "predict":
+            # Calculate Tm and GC
+            fwd_tm = primer3.calc_tm(args.forward)
+            rev_tm = primer3.calc_tm(args.reverse)
+            fwd_gc = sum(1 for c in args.forward.upper() if c in 'GC') / len(args.forward) * 100
+            rev_gc = sum(1 for c in args.reverse.upper() if c in 'GC') / len(args.reverse) * 100
+            
+            result = predict_primer_efficiency(
+                args.forward, args.reverse,
+                fwd_tm, rev_tm, fwd_gc, rev_gc,
+                args.amplicon_length,
+            )
+            
+            if args.format == "json":
+                output = json.dumps(result.to_dict(), indent=2)
+            else:
+                lines = [
+                    "═══════════════════════════════════════════════════════",
+                    "       EFFICIENCY PREDICTION (v0.7.4)",
+                    "═══════════════════════════════════════════════════════",
+                    f"Forward:         {args.forward}",
+                    f"Reverse:         {args.reverse}",
+                    f"Amplicon:        {args.amplicon_length} bp",
+                    "",
+                    f"Predicted Eff:   {result.predicted_efficiency:.1f}%",
+                    f"Confidence:      {result.confidence:.0%}",
+                    "",
+                    "FACTORS:",
+                ]
+                for k, v in result.factors.items():
+                    lines.append(f"  {k}: {v:+.1f}")
+                if result.recommendations:
+                    lines.append("")
+                    lines.append("RECOMMENDATIONS:")
+                    for r in result.recommendations:
+                        lines.append(f"  → {r}")
+                lines.append("═══════════════════════════════════════════════════════")
+                output = "\n".join(lines)
+        else:
+            print("Usage: primerlab qpcr-efficiency [calculate|predict]")
+            sys.exit(1)
+        
+        if hasattr(args, 'output') and args.output:
             with open(args.output, 'w') as f:
                 f.write(output)
             print(f"✅ Output saved to {args.output}")
