@@ -415,6 +415,126 @@ print(f"Grade: {result['grade']}")
 
 ---
 
+## score_genotyping_primer_api() (v0.6.0)
+
+Score primers for SNP genotyping / allele discrimination assays.
+
+### Signature
+
+```python
+def score_genotyping_primer_api(
+    primer_sequence: str,
+    snp_position: int,
+    ref_allele: str,
+    alt_allele: str,
+    na_concentration: float = 50.0,
+) -> Dict
+```
+
+### Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `primer_sequence` | str | - | Primer sequence (5'→3') |
+| `snp_position` | int | - | SNP position from 3' end (0 = terminal) |
+| `ref_allele` | str | - | Reference allele (A/T/C/G) |
+| `alt_allele` | str | - | Alternative allele (A/T/C/G) |
+| `na_concentration` | float | 50.0 | Na+ concentration in mM |
+
+### Returns
+
+Dict containing:
+
+- `combined_score`: Overall discrimination score (0-100)
+- `grade`: Quality grade (A-F)
+- `is_discriminating`: Boolean if score >= threshold
+- `tm_matched`: Tm for matched allele
+- `tm_mismatched`: Tm for mismatched allele
+- `delta_tm`: Tm difference
+- `specificity`: Estimated allele specificity
+- `warnings`: List of warnings
+- `recommendations`: List of recommendations
+
+### Example
+
+```python
+from primerlab.api import score_genotyping_primer_api
+
+result = score_genotyping_primer_api(
+    primer_sequence="ATGCGATCGATCGATCGATCG",
+    snp_position=0,  # Terminal position
+    ref_allele="G",
+    alt_allele="A",
+)
+
+print(f"Score: {result['combined_score']}")
+print(f"Grade: {result['grade']}")
+print(f"ΔTm: {result['delta_tm']:.1f}°C")
+```
+
+---
+
+## validate_rtpcr_primers_api() (v0.6.0)
+
+Validate RT-qPCR primers for exon junction spanning and gDNA risk.
+
+### Signature
+
+```python
+def validate_rtpcr_primers_api(
+    fwd_sequence: str,
+    fwd_start: int,
+    rev_sequence: str,
+    rev_start: int,
+    exon_boundaries: List[Tuple[int, int]],
+    genomic_intron_sizes: List[int] = None,
+    min_junction_overlap: int = 5,
+) -> Dict
+```
+
+### Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `fwd_sequence` | str | - | Forward primer sequence |
+| `fwd_start` | int | - | Forward primer start position |
+| `rev_sequence` | str | - | Reverse primer sequence |
+| `rev_start` | int | - | Reverse primer start position |
+| `exon_boundaries` | List[Tuple] | - | List of (start, end) exon coordinates |
+| `genomic_intron_sizes` | List[int] | None | Intron sizes for gDNA risk |
+| `min_junction_overlap` | int | 5 | Min bp overlap on each side of junction |
+
+### Returns
+
+Dict containing:
+
+- `fwd_junction`: Forward primer junction analysis
+- `rev_junction`: Reverse primer junction analysis
+- `gdna_risk`: gDNA contamination risk assessment
+- `is_rt_specific`: Boolean if primers are RT-specific
+- `grade`: Quality grade (A-F)
+- `warnings`: List of warnings
+- `recommendations`: List of recommendations
+
+### Example
+
+```python
+from primerlab.api import validate_rtpcr_primers_api
+
+exons = [(0, 100), (100, 200), (200, 300)]
+
+result = validate_rtpcr_primers_api(
+    fwd_sequence="ATGCGATCGATCGATCGATCG",
+    fwd_start=90,  # Spans exon1-exon2 junction
+    rev_sequence="ATGCGATCGATCGATCG",
+    rev_start=150,
+    exon_boundaries=exons,
+)
+
+print(f"RT-specific: {result['is_rt_specific']}")
+print(f"gDNA Risk: {result['gdna_risk']['risk_level']}")
+```
+
 ## Error Handling
 
 ```python
