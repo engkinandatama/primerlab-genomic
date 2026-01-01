@@ -464,6 +464,21 @@ def main():
     compbatch_parser.add_argument("--format", type=str, choices=["text", "json", "markdown"],
                                  default="text", help="Output format")
 
+    # --- COVERAGE-MAP Command (v0.7.2) ---
+    covmap_parser = subparsers.add_parser("coverage-map", help="Generate amplicon coverage map (v0.7.2)")
+    covmap_parser.add_argument("--result", "-r", type=str, required=True,
+                              help="Path to result.json file")
+    covmap_parser.add_argument("--sequence-length", "-l", type=int, default=None,
+                              help="Sequence length (auto-detected from result if not provided)")
+    covmap_parser.add_argument("--output", "-o", type=str, default=None,
+                              help="Output file (default: stdout)")
+    covmap_parser.add_argument("--format", type=str, choices=["text", "json", "svg"],
+                              default="svg", help="Output format (default: svg)")
+    covmap_parser.add_argument("--width", type=int, default=800,
+                              help="SVG width (default: 800)")
+    covmap_parser.add_argument("--height", type=int, default=200,
+                              help="SVG height (default: 200)")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -2756,6 +2771,72 @@ qc:
                     sev = {"high": "🔴", "medium": "🟡", "low": "🟢"}.get(diff["severity"], "⚪")
                     lines.append(f"  {sev} {diff['description']}")
             
+            lines.append("═══════════════════════════════════════════════════════")
+            output = "\n".join(lines)
+        
+        if args.output:
+            with open(args.output, 'w') as f:
+                f.write(output)
+            print(f"✅ Output saved to {args.output}")
+        else:
+            print(output)
+        sys.exit(0)
+
+    # --- COVERAGE-MAP Command Handler (v0.7.2) ---
+    if args.command == "coverage-map":
+        from primerlab.core.visualization import CoverageMapGenerator, create_coverage_map
+        import json
+        
+        # Load result file
+        with open(args.result, 'r') as f:
+            result_data = json.load(f)
+        
+        # Extract primer pairs from result
+        primers = result_data.get("primers", {})
+        amplicons = result_data.get("amplicons", [])
+        
+        primer_pairs = []
+        if primers:
+            fwd = primers.get("forward", {})
+            rev = primers.get("reverse", {})
+            if fwd and rev:
+                primer_pairs.append({
+                    "name": "Primary",
+                    "forward": {"start": fwd.get("start", 0), "end": fwd.get("end", 0)},
+                    "reverse": {"start": rev.get("start", 0), "end": rev.get("end", 0)},
+                })
+        
+        # Get sequence length
+        seq_len = args.sequence_length
+        if seq_len is None and amplicons:
+            seq_len = max(a.get("end", 0) for a in amplicons) + 100
+        if seq_len is None:
+            seq_len = 1000  # Default
+        
+        # Create coverage map
+        generator = CoverageMapGenerator()
+        result = generator.create_map(seq_len, primer_pairs)
+        
+        if args.format == "json":
+            output = json.dumps(result.to_dict(), indent=2)
+        elif args.format == "svg":
+            output = generator.generate_svg(result, width=args.width, height=args.height)
+        else:
+            # Text format
+            lines = [
+                "═══════════════════════════════════════════════════════",
+                "           AMPLICON COVERAGE MAP (v0.7.2)",
+                "═══════════════════════════════════════════════════════",
+                f"Sequence Length: {result.sequence_length} bp",
+                f"Primer Count:    {len(result.primers)}",
+                f"Amplicon Count:  {len(result.amplicons)}",
+                f"Coverage:        {result.total_coverage:.1f}%",
+                "",
+                "AMPLICONS:",
+                "─────────────────────────────────────",
+            ]
+            for amp in result.amplicons:
+                lines.append(f"  {amp.name}: {amp.start}-{amp.end} ({amp.length} bp)")
             lines.append("═══════════════════════════════════════════════════════")
             output = "\n".join(lines)
         
