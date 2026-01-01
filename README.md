@@ -108,7 +108,7 @@ Without ViennaRNA, PrimerLab uses a fallback estimation method.
 
 ```bash
 # Install directly from GitHub (latest release)
-pip install git+https://github.com/engkinandatama/primerlab-genomic.git@v0.4.3
+pip install git+https://github.com/engkinandatama/primerlab-genomic.git@v0.6.2
 ```
 
 Once installed, verify the installation:
