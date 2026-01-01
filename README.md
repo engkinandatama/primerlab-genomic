@@ -196,6 +196,22 @@ Example `primer_set.json`:
 ]
 ```
 
+**qPCR Analysis Commands (v0.6.0):**
+
+```bash
+# Check TaqMan probe binding
+primerlab probe-check --probe ATGCGATCGATCGATCGATCG
+
+# Predict SYBR melt curve
+primerlab melt-curve --amplicon ATGCGATCGATCGATCGATCGATCGATCGATCG --format svg
+
+# Validate qPCR amplicon quality
+primerlab amplicon-qc --amplicon ATGCGATCGATCGATCGATCGATCGATCGATCG
+
+# Generate melt plot during workflow (v0.6.1)
+primerlab run qpcr --config design.yaml --plot-melt --plot-format png
+```
+
 ### Programmatic API (Python)
 
 For integration into your own Python scripts:
@@ -233,7 +249,7 @@ Full documentation is available in the [`docs/`](docs/) directory:
 | Section | Description |
 |---------|-------------|
 | [Getting Started](docs/getting-started.md) | Installation and first steps |
-| [CLI Reference](docs/cli/README.md) | All 13 commands |
+| [CLI Reference](docs/cli/README.md) | All 19 commands |
 | [Configuration](docs/configuration/README.md) | YAML config reference |
 | [Presets](docs/configuration/presets.md) | Pre-configured parameter sets |
 | [API Reference](docs/api/README.md) | Programmatic interface |
@@ -334,7 +350,7 @@ primerlab-genomic/
 │   │   └── qpcr/         # qPCR workflow
 │   ├── api/              # Public API
 │   └── config/           # Default configurations
-├── tests/                # 506 automated tests
+├── tests/                # 613 automated tests
 ├── docs/                 # User documentation
 ├── examples/             # Example files
 │   └── insilico/         # In-silico PCR examples
@@ -345,34 +361,40 @@ primerlab-genomic/
 
 ## 📌 Development Status
 
-### ✅ **v0.4.3** (Current)
+### ✅ **v0.6.2** (Current)
 
-* **Tm Gradient Simulation** (`primerlab tm-gradient`):
-  * Optimal annealing temperature prediction
-  * Temperature sensitivity analysis
-  * Markdown/CSV/JSON reports
-* **Batch Species-Check**:
-  * Parallel processing with ThreadPoolExecutor
-  * SQLite alignment caching
-  * Directory-based primer loading
-* **506 Tests** - Comprehensive test coverage
+* **Allele Discrimination** (`core/genotyping/`):
+  * SNP genotyping primer scoring
+  * 3' end position analysis
+  * Mismatch Tm calculation
+* **RT-qPCR Validation** (`core/rtpcr/`):
+  * Exon junction detection
+  * gDNA contamination risk assessment
+* **Melt Curve Visualization**:
+  * SVG/PNG melt curve plots
+  * Multi-peak annotation
+* **New CLI Commands**: `probe-check`, `melt-curve`, `amplicon-qc`
+* **`--plot-melt` Option**: Generate melt curve plots during workflow
+* **613 Tests** - Comprehensive test coverage
 
-### v0.1.6 Features
+### v0.5.0 Features
 
-* Sequence Analysis (`primerlab stats`)
-* IUPAC & RNA auto-conversion
-* Quiet mode (`--quiet`)
-* Version check in `primerlab health`
+* Probe Binding Simulation (TaqMan Tm calculation)
+* qPCR Amplicon Validation (Length/GC/structure)
+* SYBR Melt Curve Prediction
 
-### v0.1.5 Features
+### v0.4.x Features
 
-* Batch Run Command (`primerlab batch-run`)
-* GC Profile Visualization (`primerlab plot`)
-* Primer Database (`primerlab history`)
-* Region Masking (`--mask` flag)
-* Auto Parameter Suggestion
+* Primer Compatibility Check (v0.4.0)
+* Amplicon Analysis (v0.4.1)
+* Species Specificity (v0.4.2)
+* Tm Gradient Simulation (v0.4.3)
 
----
+### Earlier Versions
+
+* v0.3.x: BLAST off-target, reporting, Tm correction
+* v0.2.x: In-silico PCR simulation
+* v0.1.x: Core design, stats, batch processing
 
 ## 🛠️ Requirements
 
