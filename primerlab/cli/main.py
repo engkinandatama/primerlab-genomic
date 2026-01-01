@@ -423,6 +423,27 @@ def main():
     nested_parser.add_argument("--format", type=str, choices=["text", "json", "markdown"],
                               default="text", help="Output format")
 
+    # --- SEMINESTED-DESIGN Command (v0.7.0) ---
+    seminested_parser = subparsers.add_parser("seminested-design", help="Design semi-nested PCR primers (v0.7.0)")
+    seminested_parser.add_argument("--sequence", "-s", type=str, required=True,
+                                  help="Template sequence or FASTA file")
+    seminested_parser.add_argument("--outer-min", type=int, default=400,
+                                  help="Minimum outer amplicon size (bp, default: 400)")
+    seminested_parser.add_argument("--outer-max", type=int, default=600,
+                                  help="Maximum outer amplicon size (bp, default: 600)")
+    seminested_parser.add_argument("--inner-min", type=int, default=150,
+                                  help="Minimum inner amplicon size (bp, default: 150)")
+    seminested_parser.add_argument("--inner-max", type=int, default=300,
+                                  help="Maximum inner amplicon size (bp, default: 300)")
+    seminested_parser.add_argument("--shared", type=str, choices=["forward", "reverse"],
+                                  default="forward", help="Which primer is shared (default: forward)")
+    seminested_parser.add_argument("--tm", type=float, default=60.0,
+                                  help="Optimal primer Tm (°C, default: 60)")
+    seminested_parser.add_argument("--output", "-o", type=str, default=None,
+                                  help="Output file (default: stdout)")
+    seminested_parser.add_argument("--format", type=str, choices=["text", "json", "markdown"],
+                                  default="text", help="Output format")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -2483,6 +2504,107 @@ qc:
                 lines.append("\nRECOMMENDATIONS:")
                 for r in result.recommendations:
                     lines.append(f"  → {r}")
+            lines.append("═══════════════════════════════════════════════════════")
+            output = "\n".join(lines)
+        
+        if args.output:
+            with open(args.output, 'w') as f:
+                f.write(output)
+            print(f"✅ Output saved to {args.output}")
+        else:
+            print(output)
+        sys.exit(0)
+
+    # --- SEMINESTED-DESIGN Command Handler (v0.7.0) ---
+    if args.command == "seminested-design":
+        from primerlab.core.sequence import SequenceLoader
+        from primerlab.core.variants import design_seminested_primers
+        import json
+        
+        # Load sequence
+        sequence = args.sequence
+        if Path(sequence).exists():
+            sequence = SequenceLoader.load(sequence)
+        
+        # Design semi-nested primers
+        result = design_seminested_primers(
+            sequence=sequence,
+            outer_size_range=(args.outer_min, args.outer_max),
+            inner_size_range=(args.inner_min, args.inner_max),
+            shared_position=args.shared,
+            tm_opt=args.tm,
+        )
+        
+        if args.format == "json":
+            output = json.dumps(result.to_dict(), indent=2)
+        elif args.format == "markdown":
+            lines = [
+                "# Semi-Nested PCR Design Result (v0.7.0)",
+                "",
+                f"**Status:** {'✅ Success' if result.success else '❌ Failed'}",
+                f"**Sequence Length:** {result.sequence_length} bp",
+                f"**Shared Primer:** {args.shared.capitalize()}",
+                "",
+            ]
+            if result.primer_set:
+                ps = result.primer_set
+                lines.extend([
+                    "## Outer Primers",
+                    f"- **Forward:** `{ps.outer_forward}`",
+                    f"- **Reverse:** `{ps.outer_reverse}`",
+                    f"- **Product Size:** {ps.outer_product_size} bp",
+                    "",
+                    "## Inner Primers",
+                    f"- **Forward:** `{ps.inner_forward}` {'(SHARED)' if args.shared == 'forward' else ''}",
+                    f"- **Reverse:** `{ps.inner_reverse}` {'(SHARED)' if args.shared == 'reverse' else ''}",
+                    f"- **Product Size:** {ps.inner_product_size} bp",
+                    "",
+                    "## Quality",
+                    f"- **Grade:** {ps.grade}",
+                    f"- **Score:** {ps.combined_score:.1f}/100",
+                ])
+            if result.warnings:
+                lines.append("\n## Warnings")
+                for w in result.warnings:
+                    lines.append(f"- ⚠ {w}")
+            output = "\n".join(lines)
+        else:
+            # Text format
+            lines = [
+                "═══════════════════════════════════════════════════════",
+                "           SEMI-NESTED PCR DESIGN (v0.7.0)",
+                "═══════════════════════════════════════════════════════",
+                f"Status:          {'SUCCESS' if result.success else 'FAILED'}",
+                f"Sequence Length: {result.sequence_length} bp",
+                f"Shared Primer:   {args.shared.capitalize()}",
+                "",
+            ]
+            if result.primer_set:
+                ps = result.primer_set
+                shared_fwd = " (SHARED)" if args.shared == "forward" else ""
+                shared_rev = " (SHARED)" if args.shared == "reverse" else ""
+                lines.extend([
+                    "OUTER PRIMERS",
+                    "─────────────────────────────────────",
+                    f"  Forward:     {ps.outer_forward}",
+                    f"  Reverse:     {ps.outer_reverse}",
+                    f"  Product:     {ps.outer_product_size} bp",
+                    "",
+                    "INNER PRIMERS",
+                    "─────────────────────────────────────",
+                    f"  Forward:     {ps.inner_forward}{shared_fwd}",
+                    f"  Reverse:     {ps.inner_reverse}{shared_rev}",
+                    f"  Product:     {ps.inner_product_size} bp",
+                    "",
+                    "QUALITY",
+                    "─────────────────────────────────────",
+                    f"  Grade:       {ps.grade}",
+                    f"  Score:       {ps.combined_score:.1f}/100",
+                ])
+            if result.warnings:
+                lines.append("\nWARNINGS:")
+                for w in result.warnings:
+                    lines.append(f"  ⚠ {w}")
             lines.append("═══════════════════════════════════════════════════════")
             output = "\n".join(lines)
         
