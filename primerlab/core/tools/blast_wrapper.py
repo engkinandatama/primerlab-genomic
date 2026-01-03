@@ -230,7 +230,7 @@ class BlastWrapper:
             # Cleanup temp file
             try:
                 os.unlink(query_file)
-            except:
+            except OSError:
                 pass
     
     def _parse_blast_output(self, output: str) -> List[BlastHit]:

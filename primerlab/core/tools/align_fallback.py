@@ -277,7 +277,8 @@ class BiopythonAligner:
                 return (str(alignment.query), str(alignment.target))
             
             return (query_aligned, subject_aligned)
-        except:
+        except (AttributeError, IndexError, ValueError) as e:
+            logger.debug(f"Failed to extract aligned sequences: {e}")
             return ("", "")
     
     def _get_coordinates(self, alignment) -> tuple:
@@ -295,8 +296,8 @@ class BiopythonAligner:
                 subject_end = max(subject_coords)
                 
                 return (query_start, query_end, subject_start, subject_end)
-        except:
-            pass
+        except (AttributeError, IndexError, TypeError) as e:
+            logger.debug(f"Failed to get alignment coordinates: {e}")
         
         return (0, 0, 0, 0)
     

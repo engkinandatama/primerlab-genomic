@@ -37,7 +37,7 @@ def load_yaml(path: str) -> Dict[str, Any]:
                     problem_line = lines[line_num - 1].rstrip()
                     error_msg += f"\n  → Content: {problem_line}"
                     error_msg += f"\n  → " + " " * col_num + "^"
-            except Exception:
+            except (IOError, IndexError, UnicodeDecodeError):
                 pass
         
         if hasattr(e, 'problem') and e.problem:
