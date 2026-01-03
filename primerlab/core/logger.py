@@ -42,7 +42,6 @@ class WorkflowContextFormatter(logging.Formatter):
     
     def format(self, record):
         # Get workflow context if set
-        global _workflow_context
         context = f"[{_workflow_context}] " if _workflow_context else ""
         
         # Format timestamp per spec
@@ -60,7 +59,6 @@ class FileFormatter(logging.Formatter):
     """
     
     def format(self, record):
-        global _workflow_context
         context = f"[{_workflow_context}] " if _workflow_context else ""
         timestamp = self.formatTime(record, "%Y-%m-%d %H:%M:%S")
         level = record.levelname

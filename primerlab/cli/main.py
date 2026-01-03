@@ -1,5 +1,6 @@
 import argparse
 import sys
+import os
 import logging
 from pathlib import Path
 from primerlab.core.logger import setup_logger
