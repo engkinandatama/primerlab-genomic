@@ -5,6 +5,50 @@ All notable changes to PrimerLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-01-04 - Code Quality Foundation
+
+### Added
+
+- **Type Checking Infrastructure**
+  - Created `mypy.ini` configuration for gradual typing adoption
+  - Added `py.typed` marker for PEP 561 compliance
+  - Fixed 7 type errors in core modules (exceptions, public, database, sequence)
+
+- **Exception Testing**
+  - Added 20 comprehensive unit tests for all exception classes
+  - Full coverage for PrimerLabException, ConfigError, SequenceError, etc.
+
+- **API Documentation**
+  - Added `Example:` sections to 6 public API docstrings
+  - Functions: validate_primers, design_pcr/qpcr, check_offtargets, analyze_amplicon
+
+### Changed
+
+- **Technical Debt Cleanup**
+  - Refactored `visualization.py` → `core/visualization/gc_profile.py` (proper package structure)
+  - Replaced bare `except:` handlers with specific exception types
+  - Fixed missing `os` import in cli/main.py
+  - Removed unnecessary `global` statements in logger.py
+
+### Fixed
+
+- **Flake8 Style Issues**
+  - Fixed 5,162 W391 (trailing blank lines) errors
+  - Fixed 3,526 W293 (blank whitespace) errors
+  - Zero critical flake8 errors (E9, F63, F7, F82)
+
+### Tests
+
+- All 731 tests passing
+- +20 exception tests
+
+### Notes
+
+- 206 mypy type errors deferred to pre-release (documented in mypy.ini)
+- Backward compatible, no breaking API changes
+
+---
+
 ## [0.7.4] - 2026-01-02
 
 ### Added
