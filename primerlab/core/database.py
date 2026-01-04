@@ -267,7 +267,7 @@ class PrimerDatabase:
         ))
 
         self.conn.commit()
-        record_id = cursor.lastrowid
+        record_id = cursor.lastrowid or 0
         logger.info(f"Saved design to database: ID={record_id}, gene={gene_name}")
         return record_id
 
@@ -292,8 +292,8 @@ class PrimerDatabase:
         Returns:
             List of matching design records
         """
-        conditions = []
-        params = []
+        conditions: List[str] = []
+        params: List[Any] = []
 
         if gene:
             conditions.append("gene_name LIKE ?")
