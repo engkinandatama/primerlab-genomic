@@ -53,14 +53,14 @@ def print_primer_summary(result):
     if not result.primers:
         print_warning("No primers were designed.")
         return
-    
+
     table = Table(title="[title]Primer Summary[/title]", show_header=True)
     table.add_column("Primer", style="cyan")
     table.add_column("Sequence", style="green")
     table.add_column("Tm (°C)", justify="right")
     table.add_column("GC%", justify="right")
     table.add_column("Length", justify="right")
-    
+
     for name, primer in result.primers.items():
         table.add_row(
             name.capitalize(),
@@ -69,7 +69,7 @@ def print_primer_summary(result):
             f"{primer.gc:.1f}%",
             f"{primer.length} bp"
         )
-    
+
     console.print(table)
 
 
@@ -78,9 +78,9 @@ def print_qc_status(result):
     if not result.qc:
         print_info("QC data not available.")
         return
-    
+
     qc = result.qc
-    
+
     if qc.errors:
         print_error(f"QC Status: FAIL ({len(qc.errors)} errors)")
         for err in qc.errors:

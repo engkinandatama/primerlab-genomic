@@ -21,7 +21,7 @@ class BatchInput:
     template_files: List[Path] = field(default_factory=list)
     total_primers: int = 0
     total_templates: int = 0
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "primer_files": [str(p) for p in self.primer_files],
@@ -48,14 +48,14 @@ def load_primers_from_directory(
     dir_path = Path(directory)
     if not dir_path.exists():
         raise FileNotFoundError(f"Directory not found: {directory}")
-    
+
     batch = BatchInput()
-    
+
     for file_path in sorted(dir_path.glob(pattern)):
         try:
             with open(file_path, "r") as f:
                 primers = json.load(f)
-            
+
             if isinstance(primers, list):
                 # Normalize primer format
                 normalized = []
@@ -65,16 +65,16 @@ def load_primers_from_directory(
                         "forward": p.get("forward", p.get("fwd", "")),
                         "reverse": p.get("reverse", p.get("rev", ""))
                     })
-                
+
                 batch.primer_files.append(file_path)
                 batch.primer_data[file_path.name] = normalized
                 batch.total_primers += len(normalized)
-                
+
                 logger.info(f"Loaded {len(normalized)} primers from {file_path.name}")
-        
+
         except Exception as e:
             logger.warning(f"Failed to load {file_path}: {e}")
-    
+
     return batch
 
 
@@ -91,11 +91,11 @@ def load_multi_fasta_templates(fasta_path: str) -> Dict[str, str]:
     path = Path(fasta_path)
     if not path.exists():
         raise FileNotFoundError(f"FASTA file not found: {fasta_path}")
-    
+
     templates = {}
     current_name = None
     current_seq = []
-    
+
     with open(path, "r") as f:
         for line in f:
             line = line.strip()
@@ -103,18 +103,18 @@ def load_multi_fasta_templates(fasta_path: str) -> Dict[str, str]:
                 # Save previous sequence
                 if current_name and current_seq:
                     templates[current_name] = "".join(current_seq).upper()
-                
+
                 # Start new sequence
                 header = line[1:].split()[0]  # Take first word after >
                 current_name = header
                 current_seq = []
             else:
                 current_seq.append(line)
-    
+
     # Save last sequence
     if current_name and current_seq:
         templates[current_name] = "".join(current_seq).upper()
-    
+
     logger.info(f"Loaded {len(templates)} templates from {path.name}")
     return templates
 
@@ -130,17 +130,17 @@ def load_primer_files(file_paths: List[str]) -> BatchInput:
         BatchInput with all loaded primers
     """
     batch = BatchInput()
-    
+
     for file_path in file_paths:
         path = Path(file_path)
         if not path.exists():
             logger.warning(f"File not found: {file_path}")
             continue
-        
+
         try:
             with open(path, "r") as f:
                 primers = json.load(f)
-            
+
             if isinstance(primers, list):
                 normalized = []
                 for i, p in enumerate(primers):
@@ -149,12 +149,12 @@ def load_primer_files(file_paths: List[str]) -> BatchInput:
                         "forward": p.get("forward", p.get("fwd", "")),
                         "reverse": p.get("reverse", p.get("rev", ""))
                     })
-                
+
                 batch.primer_files.append(path)
                 batch.primer_data[path.name] = normalized
                 batch.total_primers += len(normalized)
-        
+
         except Exception as e:
             logger.warning(f"Failed to load {path}: {e}")
-    
+
     return batch

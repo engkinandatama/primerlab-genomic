@@ -20,7 +20,7 @@ class MeltPeak:
     height: float  # Relative peak height (0-1)
     width: float   # Peak width at half maximum
     is_primary: bool = True
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "temperature": round(self.temperature, 1),
@@ -42,7 +42,7 @@ class MeltCurveResult:
     quality_score: float
     grade: str
     warnings: List[str] = field(default_factory=list)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "amplicon_sequence": self.amplicon_sequence[:50] + "..." if len(self.amplicon_sequence) > 50 else self.amplicon_sequence,
@@ -77,17 +77,17 @@ def calculate_amplicon_tm(
     """
     if len(sequence) == 0:
         return 0.0
-    
+
     seq = sequence.upper()
     gc_count = seq.count('G') + seq.count('C')
     gc_percent = (gc_count / len(seq)) * 100
     length = len(seq)
-    
+
     # Convert mM to M for log
     na_m = na_concentration / 1000.0
-    
+
     tm = 81.5 + 16.6 * math.log10(na_m) + 0.41 * gc_percent - 675 / length
-    
+
     return tm
 
 
@@ -115,18 +115,18 @@ def generate_melt_curve(
     """
     curve = []
     temp = min_temp
-    
+
     while temp <= max_temp:
         # Gaussian curve for -dF/dT
         derivative = math.exp(-0.5 * ((temp - tm) / width) ** 2)
-        
+
         curve.append({
             "temperature": round(temp, 1),
             "derivative": round(derivative, 4),
         })
-        
+
         temp += step
-    
+
     return curve
 
 
@@ -154,27 +154,27 @@ def detect_secondary_peaks(
         width=2.0,
         is_primary=True,
     )]
-    
+
     # Check for potential secondary products
     seq = sequence.upper()
     length = len(seq)
-    
+
     if length < 20:
         return peaks
-    
+
     # Analyze sequence regions for GC variation
     window_size = min(30, length // 3)
     gc_values = []
-    
+
     for i in range(0, length - window_size, window_size):
         window = seq[i:i + window_size]
         gc = (window.count('G') + window.count('C')) / len(window) * 100
         gc_values.append(gc)
-    
+
     # Check for significant GC variation (potential secondary structure)
     if len(gc_values) >= 2:
         gc_variation = max(gc_values) - min(gc_values)
-        
+
         if gc_variation > 20:  # Significant variation
             # May produce secondary peak
             secondary_tm = primary_tm - (gc_variation * 0.3)
@@ -184,7 +184,7 @@ def detect_secondary_peaks(
                 width=3.0,   # Broader
                 is_primary=False,
             ))
-    
+
     # Check for self-complementary regions (potential primer-dimer artifact)
     # Simple check: look for inverted repeats
     half = length // 2
@@ -205,7 +205,7 @@ def detect_secondary_peaks(
                     is_primary=False,
                 ))
                 break
-    
+
     return peaks
 
 
@@ -230,19 +230,19 @@ def predict_melt_curve(
         MeltCurveResult with predicted curve and analysis
     """
     warnings = []
-    
+
     # Calculate primary Tm
     primary_tm = calculate_amplicon_tm(amplicon_sequence, na_concentration)
-    
+
     # Tm range (typical variation ±2°C)
     tm_range = (primary_tm - 2.0, primary_tm + 2.0)
-    
+
     # Detect peaks (primary and potential secondary)
     peaks = detect_secondary_peaks(amplicon_sequence, primary_tm)
-    
+
     # Generate composite melt curve
     curve = generate_melt_curve(primary_tm, min_temp=min_temp, max_temp=max_temp, step=step)
-    
+
     # Add secondary peaks to curve if present
     for peak in peaks[1:]:  # Skip primary
         secondary_curve = generate_melt_curve(
@@ -256,18 +256,18 @@ def predict_melt_curve(
         for i, point in enumerate(curve):
             if i < len(secondary_curve):
                 point["derivative"] += secondary_curve[i]["derivative"] * peak.height
-    
+
     # Normalize curve
     max_deriv = max(p["derivative"] for p in curve)
     if max_deriv > 0:
         for point in curve:
             point["derivative"] = round(point["derivative"] / max_deriv, 4)
-    
+
     # Evaluate quality
     is_single_peak = len(peaks) == 1
-    
+
     score = 100.0
-    
+
     # Amplicon length check
     amp_len = len(amplicon_sequence)
     if amp_len < 70:
@@ -276,18 +276,18 @@ def predict_melt_curve(
     elif amp_len > 200:
         warnings.append(f"Amplicon long ({amp_len} bp). Broader melt peak expected.")
         score -= 5
-    
+
     # GC content check
     gc = (amplicon_sequence.upper().count('G') + amplicon_sequence.upper().count('C')) / amp_len * 100
     if gc < 30 or gc > 70:
         warnings.append(f"Extreme GC content ({gc:.1f}%). Tm prediction may be less accurate.")
         score -= 10
-    
+
     # Multiple peaks
     if not is_single_peak:
         warnings.append(f"Multiple peaks predicted ({len(peaks)}). May indicate non-specific products.")
         score -= 20
-    
+
     # Tm check
     if primary_tm < 75:
         warnings.append(f"Low Tm ({primary_tm:.1f}°C). Increase amplicon length or GC content.")
@@ -295,9 +295,9 @@ def predict_melt_curve(
     elif primary_tm > 90:
         warnings.append(f"High Tm ({primary_tm:.1f}°C). GC-rich amplicon may be difficult to melt.")
         score -= 5
-    
+
     score = max(0.0, min(100.0, score))
-    
+
     # Grade
     if score >= 90:
         grade = "A"
@@ -309,7 +309,7 @@ def predict_melt_curve(
         grade = "D"
     else:
         grade = "F"
-    
+
     return MeltCurveResult(
         amplicon_sequence=amplicon_sequence,
         predicted_tm=primary_tm,

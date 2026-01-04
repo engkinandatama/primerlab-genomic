@@ -28,14 +28,14 @@ class ReportGenerator:
     Aggregates results from design, validation, and off-target analysis
     into a single unified report.
     """
-    
+
     def __init__(self):
         """Initialize report generator."""
         self.report = PrimerReport(
             primerlab_version=__version__,
             created_at=datetime.now()
         )
-    
+
     def from_workflow_result(self, result: Any) -> "ReportGenerator":
         """
         Build report from PCR workflow result.
@@ -50,7 +50,7 @@ class ReportGenerator:
         if hasattr(result, "primers") and result.primers:
             fwd = result.primers.get("forward")
             rev = result.primers.get("reverse")
-            
+
             self.report.design = DesignSummary(
                 forward_primer=PrimerInfo(
                     name="Forward",
@@ -71,7 +71,7 @@ class ReportGenerator:
                 product_size=result.product_size if hasattr(result, "product_size") else None,
                 quality_score=result.quality_score if hasattr(result, "quality_score") else 0.0
             )
-        
+
         # Validation summary
         if hasattr(result, "validation") and result.validation:
             val = result.validation
@@ -81,7 +81,7 @@ class ReportGenerator:
                 primary_product_size=val.get("product_size"),
                 pcr_success_probability=val.get("success_probability", 0.0)
             )
-        
+
         # Off-target summary
         if hasattr(result, "offtarget_check") and result.offtarget_check:
             ot = result.offtarget_check
@@ -92,12 +92,12 @@ class ReportGenerator:
                 specificity_score=ot.get("specificity_score", 0.0),
                 combined_grade=ot.get("grade", "?")
             )
-        
+
         # Calculate overall grade
         self.report.calculate_overall_grade()
-        
+
         return self
-    
+
     def add_design(
         self,
         forward_seq: str,
@@ -131,7 +131,7 @@ class ReportGenerator:
             quality_score=quality_score
         )
         return self
-    
+
     def add_validation(
         self,
         amplicons: int = 0,
@@ -146,7 +146,7 @@ class ReportGenerator:
             pcr_success_probability=success_probability
         )
         return self
-    
+
     def add_offtarget(
         self,
         database: str = "",
@@ -165,17 +165,17 @@ class ReportGenerator:
             specificity_score=score
         )
         return self
-    
+
     def generate(self) -> PrimerReport:
         """Generate and return the report."""
         self.report.calculate_overall_grade()
         return self.report
-    
+
     def to_markdown(self) -> str:
         """Generate markdown report."""
         report = self.report
         lines = []
-        
+
         # Header
         lines.append(f"# 🧬 PrimerLab Report")
         lines.append(f"")
@@ -183,26 +183,26 @@ class ReportGenerator:
         lines.append(f"**Version:** PrimerLab v{report.primerlab_version}")
         lines.append(f"**Overall Grade:** **{report.overall_grade}** ({report.overall_score:.1f}/100)")
         lines.append(f"")
-        
+
         # Design Summary
         if report.design.has_primers:
             lines.append(f"## 🔬 Design Summary")
             lines.append(f"")
             lines.append(f"| Primer | Sequence | Length | Tm | GC% |")
             lines.append(f"|--------|----------|--------|-----|-----|")
-            
+
             fwd = report.design.forward_primer
             rev = report.design.reverse_primer
-            
+
             lines.append(f"| Forward | `{fwd.sequence}` | {fwd.length}bp | {fwd.tm:.1f}°C | {fwd.gc_percent:.1f}% |")
             lines.append(f"| Reverse | `{rev.sequence}` | {rev.length}bp | {rev.tm:.1f}°C | {rev.gc_percent:.1f}% |")
-            
+
             if report.design.product_size:
                 lines.append(f"")
                 lines.append(f"**Product Size:** {report.design.product_size}bp")
-            
+
             lines.append(f"")
-        
+
         # Validation Summary
         if report.validation.validated:
             lines.append(f"## ✅ Validation")
@@ -212,7 +212,7 @@ class ReportGenerator:
                 lines.append(f"- **Primary Product:** {report.validation.primary_product_size}bp")
             lines.append(f"- **PCR Success:** {report.validation.pcr_success_probability*100:.0f}%")
             lines.append(f"")
-        
+
         # Off-target Summary
         if report.offtarget.checked:
             lines.append(f"## 🎯 Off-target Analysis")
@@ -222,7 +222,7 @@ class ReportGenerator:
             lines.append(f"- **Reverse Hits:** {report.offtarget.reverse_hits}")
             lines.append(f"- **Specificity Grade:** **{report.offtarget.combined_grade}** ({report.offtarget.specificity_score:.1f}/100)")
             lines.append(f"")
-        
+
         # Warnings
         if report.warnings:
             lines.append(f"## ⚠️ Warnings")
@@ -230,7 +230,7 @@ class ReportGenerator:
             for w in report.warnings:
                 lines.append(f"- {w}")
             lines.append(f"")
-        
+
         # Recommendations
         if report.recommendations:
             lines.append(f"## 💡 Recommendations")
@@ -238,16 +238,16 @@ class ReportGenerator:
             for r in report.recommendations:
                 lines.append(f"- {r}")
             lines.append(f"")
-        
+
         lines.append(f"---")
         lines.append(f"*Generated by PrimerLab v{report.primerlab_version}*")
-        
+
         return "\n".join(lines)
-    
+
     def to_json(self) -> str:
         """Generate JSON report."""
         return json.dumps(self.report.to_dict(), indent=2, default=str)
-    
+
     def save(self, path: str, format: ReportFormat = ReportFormat.MARKDOWN):
         """
         Save report to file.
@@ -257,7 +257,7 @@ class ReportGenerator:
             format: Report format
         """
         content = ""
-        
+
         if format == ReportFormat.MARKDOWN:
             content = self.to_markdown()
         elif format == ReportFormat.JSON:
@@ -265,7 +265,7 @@ class ReportGenerator:
         elif format == ReportFormat.HTML:
             # TODO: Implement in Phase 3
             content = f"<html><body><pre>{self.to_markdown()}</pre></body></html>"
-        
+
         Path(path).write_text(content, encoding="utf-8")
 
 

@@ -15,24 +15,24 @@ from .gc_profile import generate_ascii_plot
 def generate_amplicon_json_report(result: AmpliconAnalysisResult, output_dir: str) -> str:
     """Generate JSON report for amplicon analysis."""
     output_path = Path(output_dir) / "amplicon_analysis.json"
-    
+
     with open(output_path, "w") as f:
         json.dump(result.to_dict(), f, indent=2)
-    
+
     return str(output_path)
 
 
 def generate_amplicon_markdown_report(result: AmpliconAnalysisResult, output_dir: str) -> str:
     """Generate Markdown report for amplicon analysis."""
     output_path = Path(output_dir) / "amplicon_report.md"
-    
+
     lines = [
         "# Amplicon Quality Report",
         "",
         f"**Length:** {result.length} bp",
         "",
     ]
-    
+
     # Quality Score
     if result.quality:
         lines.extend([
@@ -49,14 +49,14 @@ def generate_amplicon_markdown_report(result: AmpliconAnalysisResult, output_dir
             f"| Tm Sharpness | {result.quality.tm_sharpness_score:.1f} |",
             "",
         ])
-        
+
         if result.quality.warnings:
             lines.append("### Warnings")
             lines.append("")
             for w in result.quality.warnings:
                 lines.append(f"- ⚠️ {w}")
             lines.append("")
-    
+
     # Secondary Structure
     if result.secondary_structure:
         ss = result.secondary_structure
@@ -68,7 +68,7 @@ def generate_amplicon_markdown_report(result: AmpliconAnalysisResult, output_dir
             f"**ΔG:** {ss.delta_g:.2f} kcal/mol",
             "",
         ])
-    
+
     # GC Profile
     if result.gc_profile:
         gp = result.gc_profile
@@ -84,7 +84,7 @@ def generate_amplicon_markdown_report(result: AmpliconAnalysisResult, output_dir
             "```",
             "",
         ])
-    
+
     # Melting Temperature
     if result.amplicon_tm:
         lines.extend([
@@ -94,7 +94,7 @@ def generate_amplicon_markdown_report(result: AmpliconAnalysisResult, output_dir
             f"**Method:** {result.amplicon_tm.method}",
             "",
         ])
-    
+
     # Restriction Sites
     if result.restriction_sites:
         lines.append("## Restriction Sites")
@@ -104,10 +104,10 @@ def generate_amplicon_markdown_report(result: AmpliconAnalysisResult, output_dir
         for rs in result.restriction_sites:
             lines.append(f"| {rs.enzyme} | {rs.position} | {rs.recognition_seq} |")
         lines.append("")
-    
+
     with open(output_path, "w") as f:
         f.write("\n".join(lines))
-    
+
     return str(output_path)
 
 
@@ -126,24 +126,24 @@ def generate_amplicon_excel_report(result: AmpliconAnalysisResult, output_dir: s
         from openpyxl.utils import get_column_letter
     except ImportError:
         return None
-    
+
     output_path = Path(output_dir) / "amplicon_analysis.xlsx"
     wb = openpyxl.Workbook()
-    
+
     header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
     header_font = Font(bold=True, color="FFFFFF")
-    
+
     # --- Summary Sheet ---
     ws = wb.active
     ws.title = "Summary"
-    
+
     summary_data = [
         ["Amplicon Quality Report", ""],
         ["", ""],
         ["Metric", "Value"],
         ["Length", f"{result.length} bp"],
     ]
-    
+
     if result.quality:
         summary_data.extend([
             ["Quality Score", f"{result.quality.score:.1f}/100"],
@@ -156,7 +156,7 @@ def generate_amplicon_excel_report(result: AmpliconAnalysisResult, output_dir: s
             ["Length Score", f"{result.quality.length_score:.1f}"],
             ["Tm Sharpness", f"{result.quality.tm_sharpness_score:.1f}"],
         ])
-    
+
     for row_idx, row_data in enumerate(summary_data, 1):
         for col_idx, value in enumerate(row_data, 1):
             cell = ws.cell(row=row_idx, column=col_idx, value=value)
@@ -165,23 +165,23 @@ def generate_amplicon_excel_report(result: AmpliconAnalysisResult, output_dir: s
             elif row_idx == 3 or row_idx == 8:
                 cell.fill = header_fill
                 cell.font = header_font
-    
+
     ws.column_dimensions['A'].width = 25
     ws.column_dimensions['B'].width = 20
-    
+
     # --- GC Profile Sheet ---
     if result.gc_profile:
         ws_gc = wb.create_sheet("GC Profile")
-        
+
         headers = ["Position", "GC %"]
         for col_idx, h in enumerate(headers, 1):
             cell = ws_gc.cell(row=1, column=col_idx, value=h)
             cell.fill = header_fill
             cell.font = header_font
-        
+
         for row_idx, (pos, gc) in enumerate(zip(result.gc_profile.positions, result.gc_profile.gc_values), 2):
             ws_gc.cell(row=row_idx, column=1, value=pos)
             ws_gc.cell(row=row_idx, column=2, value=round(gc, 1))
-    
+
     wb.save(output_path)
     return str(output_path)

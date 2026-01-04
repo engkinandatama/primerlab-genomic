@@ -39,14 +39,14 @@ def calculate_gc_profile(
     seq = sequence.upper()
     positions = []
     gc_values = []
-    
+
     # Sliding window
     for i in range(0, len(seq) - window_size + 1, step_size):
         window = seq[i:i + window_size]
         gc = calculate_gc_content(window)
         positions.append(i + window_size // 2)  # Center of window
         gc_values.append(gc)
-    
+
     if not gc_values:
         # Sequence too short for window
         gc = calculate_gc_content(seq)
@@ -60,16 +60,16 @@ def calculate_gc_profile(
             max_gc=gc,
             avg_gc=gc
         )
-    
+
     min_gc = min(gc_values)
     max_gc = max(gc_values)
     avg_gc = sum(gc_values) / len(gc_values)
-    
+
     # Calculate uniformity score
     # Penalize for spread and deviation from ideal range
     spread = max_gc - min_gc
     spread_penalty = min(spread * 2, 50)  # Max 50 points penalty
-    
+
     # Penalty for values outside ideal range
     outside_penalty = 0
     for gc in gc_values:
@@ -78,9 +78,9 @@ def calculate_gc_profile(
         elif gc > ideal_max:
             outside_penalty += (gc - ideal_max) * 0.5
     outside_penalty = min(outside_penalty, 50)  # Max 50 points
-    
+
     uniformity_score = max(0, 100 - spread_penalty - outside_penalty)
-    
+
     return GCProfile(
         positions=positions,
         gc_values=gc_values,
@@ -97,31 +97,31 @@ def generate_ascii_plot(profile: GCProfile, width: int = 60, height: int = 10) -
     """Generate ASCII plot of GC profile for reports."""
     if not profile.gc_values:
         return "No data"
-    
+
     lines = []
     lines.append(f"GC Profile (window={profile.window_size}bp)")
     lines.append("=" * width)
-    
+
     min_val = max(0, profile.min_gc - 10)
     max_val = min(100, profile.max_gc + 10)
     range_val = max_val - min_val
-    
+
     # Create grid
     for row in range(height, -1, -1):
         threshold = min_val + (row / height) * range_val
         line = f"{threshold:5.1f}% |"
-        
+
         for gc in profile.gc_values:
             if gc >= threshold:
                 line += "█"
             else:
                 line += " "
-        
+
         lines.append(line)
-    
+
     # X-axis
     lines.append("       +" + "-" * len(profile.gc_values))
     lines.append(f"        Position (0-{profile.positions[-1] if profile.positions else 0}bp)")
     lines.append(f"        Avg: {profile.avg_gc:.1f}% | Range: {profile.min_gc:.1f}-{profile.max_gc:.1f}%")
-    
+
     return "\n".join(lines)

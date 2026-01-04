@@ -39,9 +39,9 @@ class ParallelBlastRunner:
     
     Uses ThreadPoolExecutor for concurrent execution.
     """
-    
+
     DEFAULT_THREADS = 4
-    
+
     def __init__(
         self,
         blast_func: Callable,
@@ -59,7 +59,7 @@ class ParallelBlastRunner:
         self.blast_func = blast_func
         self.max_threads = max_threads
         self.timeout = timeout
-    
+
     def run(
         self,
         tasks: List[ParallelBlastTask],
@@ -77,24 +77,24 @@ class ParallelBlastRunner:
         """
         if not tasks:
             return []
-        
+
         results: Dict[str, ParallelBlastResult] = {}
         completed = 0
         total = len(tasks)
-        
+
         logger.info(f"Running {total} BLAST tasks with {self.max_threads} threads")
-        
+
         with ThreadPoolExecutor(max_workers=self.max_threads) as executor:
             # Submit all tasks
             future_to_task = {
                 executor.submit(self._run_task, task): task
                 for task in tasks
             }
-            
+
             # Collect results
             for future in as_completed(future_to_task):
                 task = future_to_task[future]
-                
+
                 try:
                     result = future.result(timeout=self.timeout)
                     results[task.task_id] = result
@@ -104,38 +104,38 @@ class ParallelBlastRunner:
                         result=None,
                         error=str(e)
                     )
-                
+
                 completed += 1
                 if progress_callback:
                     progress_callback(completed, total)
-        
+
         # Return in original order
         return [results.get(task.task_id) for task in tasks]
-    
+
     def _run_task(self, task: ParallelBlastTask) -> ParallelBlastResult:
         """Run a single BLAST task."""
         import time
         start_time = time.time()
-        
+
         try:
             result = self.blast_func(
                 task.query_seq,
                 task.database,
                 task.params or {}
             )
-            
+
             elapsed = time.time() - start_time
-            
+
             return ParallelBlastResult(
                 task_id=task.task_id,
                 result=result,
                 elapsed_time=elapsed
             )
-            
+
         except Exception as e:
             elapsed = time.time() - start_time
             logger.error(f"Task {task.task_id} failed: {e}")
-            
+
             return ParallelBlastResult(
                 task_id=task.task_id,
                 result=None,
@@ -172,12 +172,12 @@ def run_parallel_blast(
         )
         for i, q in enumerate(queries)
     ]
-    
+
     runner = ParallelBlastRunner(
         blast_func=blast_func,
         max_threads=max_threads
     )
-    
+
     results = runner.run(tasks, progress_callback)
-    
+
     return [r.result if r else None for r in results]

@@ -26,7 +26,7 @@ class AmpliconOverlap:
     overlap_length: int
     is_problematic: bool  # True if overlap may cause issues
     warning: Optional[str] = None
-    
+
     def to_dict(self) -> Dict:
         return {
             "pair1_name": self.pair1_name,
@@ -52,7 +52,7 @@ class PredictedAmplicon:
     reverse_primer: str
     success: bool
     error: Optional[str] = None
-    
+
     def to_dict(self) -> Dict:
         return {
             "pair_name": self.pair_name,
@@ -73,7 +73,7 @@ class OverlapAnalysisResult:
     overlaps: List[AmpliconOverlap]
     has_problems: bool
     warnings: List[str] = field(default_factory=list)
-    
+
     def to_dict(self) -> Dict:
         return {
             "template_name": self.template_name,
@@ -97,7 +97,7 @@ def check_overlap(
     """
     overlap_start = max(start1, start2)
     overlap_end = min(end1, end2)
-    
+
     if overlap_start < overlap_end:
         return True, overlap_start, overlap_end, overlap_end - overlap_start
     return False, 0, 0, 0
@@ -124,15 +124,15 @@ def predict_amplicons_for_pairs(
     except ImportError:
         logger.warning("InsilicoPCR engine not available")
         return []
-    
+
     amplicons = []
     engine = InsilicoPCR()
-    
+
     for pair in primer_pairs:
         name = pair.get("name", f"Pair_{len(amplicons)+1}")
         forward = pair.get("forward", "")
         reverse = pair.get("reverse", "")
-        
+
         if not forward or not reverse:
             amplicons.append(PredictedAmplicon(
                 pair_name=name,
@@ -144,10 +144,10 @@ def predict_amplicons_for_pairs(
                 error="Missing primer sequence"
             ))
             continue
-        
+
         try:
             result = engine.run(template, forward, reverse, template_name)
-            
+
             if result.products:
                 # Take primary/first product
                 product = result.products[0]
@@ -171,7 +171,7 @@ def predict_amplicons_for_pairs(
                     success=False,
                     error="No amplicon predicted"
                 ))
-                
+
         except Exception as e:
             amplicons.append(PredictedAmplicon(
                 pair_name=name,
@@ -182,7 +182,7 @@ def predict_amplicons_for_pairs(
                 success=False,
                 error=str(e)
             ))
-    
+
     return amplicons
 
 
@@ -202,24 +202,24 @@ def analyze_overlaps(
     """
     overlaps = []
     successful = [a for a in amplicons if a.success]
-    
+
     for i in range(len(successful)):
         for j in range(i + 1, len(successful)):
             a1 = successful[i]
             a2 = successful[j]
-            
+
             has_overlap, o_start, o_end, o_len = check_overlap(
                 a1.start, a1.end,
                 a2.start, a2.end
             )
-            
+
             if has_overlap:
                 is_problematic = o_len >= min_overlap_warning
                 warning = None
-                
+
                 if is_problematic:
                     warning = f"Significant overlap ({o_len}bp) may cause competition"
-                
+
                 overlaps.append(AmpliconOverlap(
                     pair1_name=a1.pair_name,
                     pair2_name=a2.pair_name,
@@ -233,7 +233,7 @@ def analyze_overlaps(
                     is_problematic=is_problematic,
                     warning=warning
                 ))
-    
+
     return overlaps
 
 
@@ -256,25 +256,25 @@ def run_insilico_compat_simulation(
         OverlapAnalysisResult with all predictions and overlap analysis
     """
     logger.info(f"Running in-silico compat simulation for {len(primer_pairs)} pairs")
-    
+
     # Predict amplicons
     amplicons = predict_amplicons_for_pairs(template, primer_pairs, template_name)
-    
+
     # Analyze overlaps
     overlaps = analyze_overlaps(amplicons, min_overlap_warning)
-    
+
     # Compile warnings
     warnings = []
     failed_pairs = [a.pair_name for a in amplicons if not a.success]
     if failed_pairs:
         warnings.append(f"Failed to predict amplicons for: {', '.join(failed_pairs)}")
-    
+
     problematic_overlaps = [o for o in overlaps if o.is_problematic]
     if problematic_overlaps:
         warnings.append(f"{len(problematic_overlaps)} overlapping amplicon pair(s) detected")
-    
+
     has_problems = len(problematic_overlaps) > 0
-    
+
     return OverlapAnalysisResult(
         template_name=template_name,
         template_length=len(template),

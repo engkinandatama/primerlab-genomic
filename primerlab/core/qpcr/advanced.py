@@ -52,7 +52,7 @@ class HRMOptimizationResult:
     resolution_score: float  # 0-100
     snp_discrimination: bool
     recommendations: List[str] = field(default_factory=list)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "amplicon_length": self.amplicon_length,
@@ -77,7 +77,7 @@ class InternalControlResult:
     tm_reverse: float
     compatible_with_target: bool
     notes: List[str] = field(default_factory=list)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "control_type": self.control_type,
@@ -98,7 +98,7 @@ class QuencherRecommendation:
     excitation: int
     emission: int
     notes: List[str] = field(default_factory=list)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "reporter": self.reporter,
@@ -118,7 +118,7 @@ class DPCRCompatibilityResult:
     concentration_range: Tuple[float, float]  # copies/μL
     warnings: List[str] = field(default_factory=list)
     recommendations: List[str] = field(default_factory=list)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "amplicon_length": self.amplicon_length,
@@ -133,7 +133,7 @@ class AdvancedQPCRTools:
     """
     Advanced qPCR tools for specialized applications.
     """
-    
+
     # Common endogenous controls
     ENDOGENOUS_CONTROLS = {
         "human": [
@@ -146,11 +146,11 @@ class AdvancedQPCRTools:
             {"gene": "Actb", "fwd": "GGCTGTATTCCCCTCCATCG", "rev": "CCAGTTGGTAACAATGCCATGT", "size": 154},
         ],
     }
-    
+
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         """Initialize tools."""
         self.config = config or {}
-    
+
     def optimize_for_hrm(
         self,
         amplicon_seq: str,
@@ -169,18 +169,18 @@ class AdvancedQPCRTools:
         length = len(amplicon_seq)
         gc_count = sum(1 for c in amplicon_seq.upper() if c in 'GC')
         gc_content = gc_count / length * 100 if length > 0 else 0
-        
+
         # Predict Tm (simplified)
         predicted_tm = 64.9 + 41 * (gc_count - 16.4) / length if length > 0 else 0
-        
+
         # Melt range estimation
         melt_low = predicted_tm - 5
         melt_high = predicted_tm + 5
-        
+
         # Resolution score based on length and GC
         resolution = 100
         recommendations = []
-        
+
         # Optimal HRM length: 50-300bp
         if length < 50:
             resolution -= 30
@@ -190,19 +190,19 @@ class AdvancedQPCRTools:
             recommendations.append(f"Consider shorter amplicon for better resolution ({length}bp)")
         elif 80 <= length <= 150:
             resolution += 10  # Optimal range
-        
+
         # GC content affects resolution
         if gc_content < 30 or gc_content > 70:
             resolution -= 15
             recommendations.append(f"Extreme GC content ({gc_content:.0f}%) may affect melt curve")
-        
+
         # SNP discrimination
         snp_ok = True
         if target_snp_position:
             if target_snp_position < 10 or target_snp_position > length - 10:
                 snp_ok = False
                 recommendations.append("SNP too close to amplicon ends")
-        
+
         return HRMOptimizationResult(
             amplicon_length=length,
             gc_content=gc_content,
@@ -212,7 +212,7 @@ class AdvancedQPCRTools:
             snp_discrimination=snp_ok,
             recommendations=recommendations,
         )
-    
+
     def recommend_internal_control(
         self,
         species: str = "human",
@@ -230,21 +230,21 @@ class AdvancedQPCRTools:
         """
         controls = self.ENDOGENOUS_CONTROLS.get(species.lower(), [])
         results = []
-        
+
         for ctrl in controls:
             # Simple Tm calculation
             fwd_tm = 2 * (ctrl["fwd"].count('A') + ctrl["fwd"].count('T')) + \
-                     4 * (ctrl["fwd"].count('G') + ctrl["fwd"].count('C'))
+                4 * (ctrl["fwd"].count('G') + ctrl["fwd"].count('C'))
             rev_tm = 2 * (ctrl["rev"].count('A') + ctrl["rev"].count('T')) + \
                      4 * (ctrl["rev"].count('G') + ctrl["rev"].count('C'))
-            
+
             # Check compatibility (Tm within 3°C)
             compatible = abs(fwd_tm - target_tm) <= 5 and abs(rev_tm - target_tm) <= 5
-            
+
             notes = []
             if not compatible:
                 notes.append(f"Tm mismatch: Fwd={fwd_tm}°C, Rev={rev_tm}°C")
-            
+
             results.append(InternalControlResult(
                 control_type="endogenous",
                 gene_name=ctrl["gene"],
@@ -256,9 +256,9 @@ class AdvancedQPCRTools:
                 compatible_with_target=compatible,
                 notes=notes,
             ))
-        
+
         return results
-    
+
     def recommend_quencher(self, reporter: str) -> QuencherRecommendation:
         """
         Recommend quencher for a reporter dye.
@@ -270,7 +270,7 @@ class AdvancedQPCRTools:
             QuencherRecommendation
         """
         reporter = reporter.upper()
-        
+
         if reporter not in REPORTER_QUENCHER_MATRIX:
             # Default recommendation
             return QuencherRecommendation(
@@ -281,10 +281,10 @@ class AdvancedQPCRTools:
                 emission=0,
                 notes=[f"Unknown reporter '{reporter}', using default BHQ-1"],
             )
-        
+
         info = REPORTER_QUENCHER_MATRIX[reporter]
         alternates = [q for q in info["compatible"] if q != info["optimal"]]
-        
+
         return QuencherRecommendation(
             reporter=reporter,
             recommended_quencher=info["optimal"],
@@ -292,7 +292,7 @@ class AdvancedQPCRTools:
             excitation=info["wavelength"]["excitation"],
             emission=info["wavelength"]["emission"],
         )
-    
+
     def check_dpcr_compatibility(
         self,
         amplicon_seq: str,
@@ -309,12 +309,12 @@ class AdvancedQPCRTools:
         length = len(amplicon_seq)
         gc_count = sum(1 for c in amplicon_seq.upper() if c in 'GC')
         gc_content = gc_count / length * 100 if length > 0 else 0
-        
+
         warnings = []
         recommendations = []
         is_compatible = True
         efficiency = 95.0
-        
+
         # Optimal dPCR amplicon: 60-200bp
         if length < 60:
             warnings.append(f"Amplicon too short ({length}bp)")
@@ -324,16 +324,16 @@ class AdvancedQPCRTools:
             warnings.append(f"Amplicon long for dPCR ({length}bp)")
             efficiency -= 10
             recommendations.append("Consider shorter amplicon for better partitioning")
-        
+
         # GC extremes
         if gc_content < 35 or gc_content > 65:
             warnings.append(f"GC content ({gc_content:.0f}%) may affect amplification")
             efficiency -= 5
-        
+
         # Concentration range for dPCR (typical)
         conc_low = 10  # copies/μL
         conc_high = 100000  # copies/μL
-        
+
         return DPCRCompatibilityResult(
             amplicon_length=length,
             gc_content=gc_content,

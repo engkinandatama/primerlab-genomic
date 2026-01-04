@@ -23,14 +23,14 @@ def generate_html_report(result: WorkflowResult) -> str:
     workflow = result.workflow.upper()
     timestamp = result.metadata.timestamp if result.metadata else "N/A"
     version = result.metadata.version if result.metadata else "N/A"
-    
+
     # Quality score
     quality_html = ""
     if result.qc and result.qc.quality_score is not None:
         score = result.qc.quality_score
         category = result.qc.quality_category or ""
         emoji = result.qc.quality_category_emoji or ""
-        
+
         # Color based on score
         if score >= 85:
             color = "#28a745"
@@ -40,14 +40,14 @@ def generate_html_report(result: WorkflowResult) -> str:
             color = "#ffc107"
         else:
             color = "#dc3545"
-        
+
         quality_html = f'''
         <div class="quality-score" style="border-left-color: {color};">
             <div class="score-value" style="color: {color};">{score}/100</div>
             <div class="score-category">{emoji} {category}</div>
         </div>
         '''
-    
+
     # Primers table
     primers_html = ""
     if result.primers:
@@ -55,7 +55,7 @@ def generate_html_report(result: WorkflowResult) -> str:
         for name, primer in result.primers.items():
             tm_class = "good" if 58 <= primer.tm <= 62 else "warn"
             gc_class = "good" if 40 <= primer.gc <= 60 else "warn"
-            
+
             hairpin_val = f"{primer.hairpin_dg:.2f}" if primer.hairpin_dg else "N/A"
             rows.append(f'''
                 <tr>
@@ -67,7 +67,7 @@ def generate_html_report(result: WorkflowResult) -> str:
                     <td>{hairpin_val}</td>
                 </tr>
             ''')
-        
+
         primers_html = f'''
         <table class="primers-table">
             <thead>
@@ -85,7 +85,7 @@ def generate_html_report(result: WorkflowResult) -> str:
             </tbody>
         </table>
         '''
-    
+
     # QC Summary
     qc_html = ""
     if result.qc:
@@ -112,7 +112,7 @@ def generate_html_report(result: WorkflowResult) -> str:
             </table>
         </div>
         '''
-    
+
     # Rationale section
     rationale_html = ""
     if hasattr(result, 'rationale') and result.rationale:
@@ -122,7 +122,7 @@ def generate_html_report(result: WorkflowResult) -> str:
             f"<li>{item['count']} failed: {item['reason']}</li>" 
             for item in r.get("rejection_summary", [])[:5]
         ])
-        
+
         rationale_html = f'''
         <div class="rationale">
             <h3>Why This Primer?</h3>
@@ -136,7 +136,7 @@ def generate_html_report(result: WorkflowResult) -> str:
             <ul>{rejection_items}</ul>
         </div>
         '''
-    
+
     # Amplicon info
     amplicon_html = ""
     if result.amplicons:
@@ -148,7 +148,7 @@ def generate_html_report(result: WorkflowResult) -> str:
             <p><strong>Position:</strong> {amp.start} - {amp.end}</p>
         </div>
         '''
-    
+
     # Build complete HTML
     html = f'''<!DOCTYPE html>
 <html lang="en">
@@ -311,5 +311,5 @@ def generate_html_report(result: WorkflowResult) -> str:
     </script>
 </body>
 </html>'''
-    
+
     return html

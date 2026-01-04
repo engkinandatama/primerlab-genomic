@@ -34,7 +34,7 @@ class SpecificityScore:
     grade: str = "A"
     is_acceptable: bool = True
     details: Dict[str, Any] = field(default_factory=dict)
-    
+
     def __post_init__(self):
         """Calculate grade based on overall score."""
         if self.overall_score >= 90:
@@ -47,7 +47,7 @@ class SpecificityScore:
             self.grade = "D"
         else:
             self.grade = "F"
-        
+
         self.is_acceptable = self.overall_score >= 70
 
 
@@ -63,21 +63,21 @@ class SpecificityScorer:
     - Potential off-target products
     - E-value and identity distribution
     """
-    
+
     # Scoring weights
     WEIGHTS = {
         "binding": 0.5,    # Weight for off-target binding
         "mismatch": 0.3,   # Weight for 3' mismatch analysis
         "product": 0.2,    # Weight for potential products
     }
-    
+
     # Penalties per off-target by risk level
     PENALTIES = {
         "high": 20.0,
         "medium": 10.0,
         "low": 3.0,
     }
-    
+
     def __init__(self, threshold: float = 70.0):
         """
         Initialize scorer.
@@ -86,7 +86,7 @@ class SpecificityScorer:
             threshold: Minimum acceptable score
         """
         self.threshold = threshold
-    
+
     def score_primer(self, offtarget_result: OfftargetResult) -> SpecificityScore:
         """
         Score a single primer's specificity.
@@ -99,23 +99,23 @@ class SpecificityScorer:
         """
         # Calculate binding score
         binding_score = self._calculate_binding_score(offtarget_result.offtargets)
-        
+
         # Calculate mismatch score (based on 3' considerations)
         mismatch_score = self._calculate_mismatch_score(offtarget_result.offtargets)
-        
+
         # No product score for single primer
         product_score = 100.0
-        
+
         # Weighted average
         overall = (
             binding_score * self.WEIGHTS["binding"] +
             mismatch_score * self.WEIGHTS["mismatch"] +
             product_score * self.WEIGHTS["product"]
         )
-        
+
         # Normalize to 0-100
         overall = min(100.0, max(0.0, overall))
-        
+
         return SpecificityScore(
             overall_score=round(overall, 1),
             binding_score=round(binding_score, 1),
@@ -128,7 +128,7 @@ class SpecificityScorer:
                 "high_risk_count": sum(1 for ot in offtarget_result.offtargets if ot.risk_level == "high"),
             }
         )
-    
+
     def score_primer_pair(
         self,
         pair_result: PrimerPairOfftargetResult
@@ -145,16 +145,16 @@ class SpecificityScorer:
         # Score individual primers
         fwd_score = self.score_primer(pair_result.forward_result)
         rev_score = self.score_primer(pair_result.reverse_result)
-        
+
         # Calculate combined with product penalty
         product_score = self._calculate_product_score(pair_result.potential_products)
-        
+
         combined_overall = (
             fwd_score.overall_score * 0.4 +
             rev_score.overall_score * 0.4 +
             product_score * 0.2
         )
-        
+
         combined = SpecificityScore(
             overall_score=round(combined_overall, 1),
             binding_score=round((fwd_score.binding_score + rev_score.binding_score) / 2, 1),
@@ -167,20 +167,20 @@ class SpecificityScorer:
                 "potential_products": pair_result.potential_products,
             }
         )
-        
+
         return (fwd_score, rev_score, combined)
-    
+
     def _calculate_binding_score(self, offtargets: List[OfftargetHit]) -> float:
         """Calculate score based on off-target binding sites."""
         if not offtargets:
             return 100.0
-        
+
         penalty = 0.0
         for ot in offtargets:
             penalty += self.PENALTIES.get(ot.risk_level, 5.0)
-        
+
         return max(0.0, 100.0 - penalty)
-    
+
     def _calculate_mismatch_score(self, offtargets: List[OfftargetHit]) -> float:
         """
         Calculate score based on 3' mismatch patterns.
@@ -189,7 +189,7 @@ class SpecificityScorer:
         """
         if not offtargets:
             return 100.0
-        
+
         # Penalize more for off-targets with few mismatches
         # (meaning they could still extend)
         penalty = 0.0
@@ -202,9 +202,9 @@ class SpecificityScorer:
                 penalty += 4.0
             else:
                 penalty += 1.0
-        
+
         return max(0.0, 100.0 - penalty)
-    
+
     def _calculate_product_score(self, potential_products: int) -> float:
         """Calculate score based on potential off-target products."""
         if potential_products == 0:

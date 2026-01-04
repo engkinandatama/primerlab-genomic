@@ -12,11 +12,11 @@ from pathlib import Path
 @dataclass
 class Exon:
     """Single exon definition."""
-    
+
     exon_number: int
     start: int  # 0-indexed
     end: int    # Exclusive
-    
+
     @property
     def length(self) -> int:
         return self.end - self.start
@@ -25,46 +25,46 @@ class Exon:
 @dataclass
 class Transcript:
     """Transcript with exon structure."""
-    
+
     transcript_id: str
     gene_name: str
     chromosome: str
     strand: str  # '+' or '-'
-    
+
     exons: List[Exon] = field(default_factory=list)
-    
+
     @property
     def exon_count(self) -> int:
         return len(self.exons)
-    
+
     @property
     def cds_length(self) -> int:
         """Total length of coding sequence (all exons)."""
         return sum(e.length for e in self.exons)
-    
+
     def get_exon_boundaries(self) -> List[Tuple[int, int]]:
         """Get list of (start, end) for each exon in transcript coordinates."""
         boundaries = []
         current_pos = 0
-        
+
         for exon in sorted(self.exons, key=lambda e: e.exon_number):
             boundaries.append((current_pos, current_pos + exon.length))
             current_pos += exon.length
-        
+
         return boundaries
-    
+
     def get_junction_positions(self) -> List[int]:
         """Get positions of exon-exon junctions in transcript coordinates."""
         junctions = []
         current_pos = 0
-        
+
         for i, exon in enumerate(sorted(self.exons, key=lambda e: e.exon_number)):
             current_pos += exon.length
             if i < len(self.exons) - 1:  # Not last exon
                 junctions.append(current_pos)
-        
+
         return junctions
-    
+
     def to_dict(self) -> Dict:
         """Convert to dictionary."""
         return {
@@ -90,26 +90,26 @@ def parse_gtf_line(line: str) -> Optional[Dict]:
     """
     if line.startswith("#"):
         return None
-    
+
     parts = line.strip().split("\t")
     if len(parts) < 9:
         return None
-    
+
     feature = parts[2]
     if feature != "exon":
         return None
-    
+
     # Parse attributes
     attrs = {}
     for attr in parts[8].split(";"):
         attr = attr.strip()
         if not attr:
             continue
-        
+
         if " " in attr:
             key, value = attr.split(" ", 1)
             attrs[key] = value.strip('"')
-    
+
     return {
         "chromosome": parts[0],
         "start": int(parts[3]) - 1,  # Convert to 0-indexed
@@ -150,31 +150,31 @@ def load_transcript_bed(
         List of Transcript objects
     """
     transcripts = []
-    
+
     path = Path(bed_path)
     if not path.exists():
         return []
-    
+
     with open(path, 'r') as f:
         for line in f:
             if line.startswith("#") or line.startswith("track"):
                 continue
-            
+
             parts = line.strip().split("\t")
             if len(parts) < 12:
                 continue
-            
+
             tid = parts[3]
             if transcript_id and tid != transcript_id:
                 continue
-            
+
             chrom = parts[0]
             chrom_start = int(parts[1])
             strand = parts[5]
             block_count = int(parts[9])
             block_sizes = [int(x) for x in parts[10].rstrip(",").split(",") if x]
             block_starts = [int(x) for x in parts[11].rstrip(",").split(",") if x]
-            
+
             # Build exons
             exons = []
             for i in range(block_count):
@@ -185,7 +185,7 @@ def load_transcript_bed(
                     start=exon_start,
                     end=exon_end,
                 ))
-            
+
             transcript = Transcript(
                 transcript_id=tid,
                 gene_name=parts[3].split(".")[0] if "." in parts[3] else parts[3],
@@ -193,7 +193,7 @@ def load_transcript_bed(
                 strand=strand,
                 exons=exons,
             )
-            
+
             transcripts.append(transcript)
-    
+
     return transcripts

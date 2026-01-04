@@ -12,14 +12,14 @@ def run_pcr_workflow(config: Dict[str, Any]) -> WorkflowResult:
     Executes the PCR workflow.
     """
     logger.info("Starting PCR Workflow execution...")
-    
+
     # 1. Parse Input
     input_config = config.get("input", {})
     raw_sequence = input_config.get("sequence")
     seq_path = input_config.get("sequence_path")
-    
+
     from primerlab.core.sequence import SequenceLoader
-    
+
     try:
         if seq_path:
             sequence = SequenceLoader.load(seq_path)
@@ -29,51 +29,51 @@ def run_pcr_workflow(config: Dict[str, Any]) -> WorkflowResult:
             raise WorkflowError("No sequence provided in input (sequence or sequence_path).", "ERR_WORKFLOW_001")
     except Exception as e:
         raise WorkflowError(f"Sequence loading failed: {e}", "ERR_WORKFLOW_SEQ")
-    
+
     logger.info(f"Input sequence length: {len(sequence)} bp")
 
     # 2. Run Primer3
     p3_wrapper = Primer3Wrapper()
     raw_results = p3_wrapper.design_primers(sequence, config)
-    
+
     num_returned = raw_results.get('PRIMER_LEFT_NUM_RETURNED', 0)
     logger.info(f"Primer3 returned {num_returned} pairs.")
 
     # 3. Multi-Candidate Re-ranking (v0.1.3)
     from primerlab.core.reranking import RerankingEngine
-    
+
     reranker = RerankingEngine(config)
     best_candidate, alternatives = reranker.select_best(raw_results)
-    
+
     # 4. Parse Best Candidate into Data Models
     primers = {}
     amplicons = []
-    
+
     if best_candidate:
         idx = best_candidate["index"]
-        
+
         # v0.1.5: Primer Naming Convention
         # Priority: config > FASTA header > filename > default
         naming_config = config.get("parameters", {}).get("primer_naming", {})
         gene_name = naming_config.get("gene_name")
-        
+
         if not gene_name:
             # Try to get from sequence loader (FASTA header or filename)
             gene_name = SequenceLoader.get_last_sequence_name()
-        
+
         if not gene_name:
             gene_name = "primer"
-        
+
         # Clean gene name for use in primer IDs
         gene_name = gene_name.replace(" ", "_").replace("-", "_")[:20]
-        
+
         # Custom naming pattern or default
         fwd_pattern = naming_config.get("forward_pattern", "{gene}_F{idx}")
         rev_pattern = naming_config.get("reverse_pattern", "{gene}_R{idx}")
-        
+
         fwd_id = fwd_pattern.format(gene=gene_name, idx=idx + 1)
         rev_id = rev_pattern.format(gene=gene_name, idx=idx + 1)
-        
+
         # Forward Primer
         fwd_start, fwd_len = best_candidate["fwd_pos"]
         fwd_primer = Primer(
@@ -110,7 +110,7 @@ def run_pcr_workflow(config: Dict[str, Any]) -> WorkflowResult:
         # v0.1.5: Extract actual amplicon sequence from template
         amp_start = fwd_start
         amp_end = rev_start
-        
+
         # Extract amplicon sequence (fwd_start to rev_start inclusive)
         if 0 <= amp_start < len(sequence) and amp_start < amp_end <= len(sequence):
             amplicon_seq = sequence[amp_start:amp_end]
@@ -121,7 +121,7 @@ def run_pcr_workflow(config: Dict[str, Any]) -> WorkflowResult:
             amplicon_seq = "N/A"
             amplicon_gc = 0.0
             logger.warning(f"Could not extract amplicon sequence: positions {amp_start}-{amp_end}")
-        
+
         amplicon = Amplicon(
             start=amp_start,
             end=amp_end,
@@ -132,7 +132,7 @@ def run_pcr_workflow(config: Dict[str, Any]) -> WorkflowResult:
             tm_reverse=best_candidate["rev_tm"]
         )
         amplicons.append(amplicon)
-        
+
         # Log selection info
         if best_candidate["passes_qc"]:
             logger.info(f"Selected primer pair #{idx} (passes ViennaRNA QC)")
@@ -143,18 +143,18 @@ def run_pcr_workflow(config: Dict[str, Any]) -> WorkflowResult:
     # 4. Run QC
     from primerlab.workflows.pcr.qc import PCRQC
     qc_engine = PCRQC(config)
-    
+
     qc_result = None
     if primers:
         qc_result = qc_engine.evaluate_pair(primers["forward"], primers["reverse"])
-        
+
         # v0.1.4: Add quality score from best candidate
         if best_candidate:
             qc_result.quality_score = best_candidate.get("quality_score")
             qc_result.quality_category = best_candidate.get("quality_category")
             qc_result.quality_category_emoji = best_candidate.get("quality_category_emoji")
             qc_result.quality_penalties = best_candidate.get("quality_penalties")
-        
+
         # Add QC warnings to main result warnings
         if qc_result.warnings:
             logger.warning(f"QC Warnings: {qc_result.warnings}")
@@ -165,7 +165,7 @@ def run_pcr_workflow(config: Dict[str, Any]) -> WorkflowResult:
     if best_candidate:
         rationale = reranker.get_rationale(best_candidate)
         rationale_md = reranker.get_rationale_markdown(best_candidate)
-    
+
     # 5. Create Metadata
     from primerlab import __version__
     metadata = RunMetadata(
@@ -185,15 +185,15 @@ def run_pcr_workflow(config: Dict[str, Any]) -> WorkflowResult:
         alternatives=alternatives if best_candidate else [],
         raw=raw_results
     )
-    
+
     # v0.1.4: Add rationale to result
     result.rationale = rationale
     result.rationale_md = rationale_md
-    
+
     # v0.1.4: Create audit log
     from primerlab.core.audit import create_audit_log
     from pathlib import Path
-    
+
     output_dir = Path(config.get("output", {}).get("directory", "output"))
     try:
         create_audit_log(
@@ -213,16 +213,16 @@ def run_pcr_workflow(config: Dict[str, Any]) -> WorkflowResult:
         )
     except Exception as e:
         logger.warning(f"Failed to create audit log: {e}")
-    
+
     # v0.2.4: Auto-validate if enabled
     advanced = config.get("advanced", {})
     if advanced.get("auto_validate", False) and primers:
         try:
             from primerlab.core.insilico import run_insilico_pcr
-            
+
             fwd_primer = primers.get("forward")
             rev_primer = primers.get("reverse")
-            
+
             if fwd_primer and rev_primer:
                 validation_result = run_insilico_pcr(
                     template=sequence,
@@ -230,7 +230,7 @@ def run_pcr_workflow(config: Dict[str, Any]) -> WorkflowResult:
                     reverse_primer=rev_primer.sequence,
                     template_name="auto_validation"
                 )
-                
+
                 # Add validation summary to result
                 result.insilico_validation = {
                     "success": validation_result.success,
@@ -240,33 +240,33 @@ def run_pcr_workflow(config: Dict[str, Any]) -> WorkflowResult:
                 logger.info(f"Auto-validation: {'PASS' if validation_result.success else 'FAIL'} - {len(validation_result.products)} product(s)")
         except Exception as e:
             logger.warning(f"Auto-validation failed: {e}")
-    
+
     # v0.3.1: Auto off-target check if enabled
     offtarget_config = config.get("offtarget", {})
     if offtarget_config.get("enabled", False) and primers:
         try:
             from primerlab.core.offtarget.finder import OfftargetFinder
             from primerlab.core.offtarget.scorer import SpecificityScorer
-            
+
             database = offtarget_config.get("database")
             if database:
                 fwd_primer = primers.get("forward")
                 rev_primer = primers.get("reverse")
-                
+
                 if fwd_primer and rev_primer:
                     finder = OfftargetFinder(
                         database=database,
                         mode=offtarget_config.get("mode", "auto")
                     )
-                    
+
                     offtarget_result = finder.find_primer_pair_offtargets(
                         forward_primer=fwd_primer.sequence,
                         reverse_primer=rev_primer.sequence
                     )
-                    
+
                     scorer = SpecificityScorer()
                     _, _, combined_score = scorer.score_primer_pair(offtarget_result)
-                    
+
                     # Add to result
                     result.offtarget_check = {
                         "forward_offtargets": offtarget_result.forward_result.offtarget_count,
@@ -280,6 +280,5 @@ def run_pcr_workflow(config: Dict[str, Any]) -> WorkflowResult:
                 logger.warning("Off-target enabled but no database specified")
         except Exception as e:
             logger.warning(f"Off-target check failed: {e}")
-    
-    return result
 
+    return result

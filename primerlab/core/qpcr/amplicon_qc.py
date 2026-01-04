@@ -26,7 +26,7 @@ class QpcrAmpliconQC:
     grade: str
     warnings: List[str] = field(default_factory=list)
     recommendations: List[str] = field(default_factory=list)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "amplicon_length": self.amplicon_length,
@@ -70,14 +70,14 @@ def estimate_amplicon_tm(sequence: str) -> float:
     """
     if len(sequence) == 0:
         return 0.0
-    
+
     gc_percent = calculate_gc_content(sequence)
     length = len(sequence)
-    
+
     # Marmur-Doty with 50mM Na+ correction
     # log10(0.05) ≈ -1.3
     tm = 81.5 + 16.6 * (-1.3) + 0.41 * gc_percent - 675 / length
-    
+
     return max(0.0, tm)
 
 
@@ -90,23 +90,23 @@ def estimate_secondary_structure_dg(sequence: str) -> float:
     """
     if len(sequence) < 10:
         return 0.0
-    
+
     gc_percent = calculate_gc_content(sequence)
-    
+
     # Higher GC = more stable secondary structures
     base_dg = -0.5 * (gc_percent / 100) * len(sequence) * 0.1
-    
+
     # Check for simple self-complementary patterns
     seq = sequence.upper()
     penalty = 0.0
-    
+
     # Check for GC-rich regions (potential hairpins)
     for i in range(len(seq) - 5):
         window = seq[i:i+6]
         gc_in_window = window.count('G') + window.count('C')
         if gc_in_window >= 5:  # 5 or more GC in 6bp
             penalty -= 0.5
-    
+
     return base_dg + penalty
 
 
@@ -132,12 +132,12 @@ def validate_qpcr_amplicon(
     """
     warnings = []
     recommendations = []
-    
+
     length = len(amplicon_sequence)
     gc_content = calculate_gc_content(amplicon_sequence)
     tm = estimate_amplicon_tm(amplicon_sequence)
     dg = estimate_secondary_structure_dg(amplicon_sequence)
-    
+
     # Validate length
     length_ok = min_length <= length <= max_length
     if not length_ok:
@@ -147,7 +147,7 @@ def validate_qpcr_amplicon(
         else:
             warnings.append(f"Amplicon too long ({length} bp). Maximum {max_length} bp for optimal qPCR.")
             recommendations.append("Use closer primer positions for shorter amplicon.")
-    
+
     # Validate GC content
     gc_ok = gc_min <= gc_content <= gc_max
     if not gc_ok:
@@ -157,17 +157,17 @@ def validate_qpcr_amplicon(
         else:
             warnings.append(f"GC content too high ({gc_content:.1f}%). Maximum {gc_max}%.")
             recommendations.append("Avoid GC-rich regions which may form secondary structures.")
-    
+
     # Validate secondary structure
     # More negative ΔG = more stable = problematic
     secondary_structure_ok = dg > -5.0
     if not secondary_structure_ok:
         warnings.append(f"Potential stable secondary structure (ΔG = {dg:.1f} kcal/mol).")
         recommendations.append("Check for hairpin-forming sequences and consider alternative regions.")
-    
+
     # Calculate quality score (0-100)
     score = 100.0
-    
+
     # Length score
     if length_ok:
         # Bonus for optimal length (around 100bp)
@@ -175,22 +175,22 @@ def validate_qpcr_amplicon(
         score -= length_deviation * 10
     else:
         score -= 25
-    
+
     # GC score
     if gc_ok:
         gc_deviation = abs(gc_content - QPCR_GC_OPTIMAL) / QPCR_GC_OPTIMAL
         score -= gc_deviation * 10
     else:
         score -= 20
-    
+
     # Secondary structure score
     if secondary_structure_ok:
         score -= abs(dg) * 2
     else:
         score -= 20
-    
+
     score = max(0.0, min(100.0, score))
-    
+
     # Grade
     if score >= 90:
         grade = "A"
@@ -202,7 +202,7 @@ def validate_qpcr_amplicon(
         grade = "D"
     else:
         grade = "F"
-    
+
     return QpcrAmpliconQC(
         amplicon_length=length,
         gc_content=gc_content,
@@ -239,7 +239,7 @@ def score_qpcr_efficiency(
         Estimated efficiency (0-110%)
     """
     base = 100.0
-    
+
     # Amplicon length factor
     # Optimal around 100bp, efficiency drops for longer amplicons
     if amplicon_length <= 100:
@@ -248,11 +248,11 @@ def score_qpcr_efficiency(
         length_factor = (amplicon_length - 100) * 0.1
     else:
         length_factor = 5.0 + (amplicon_length - 150) * 0.05
-    
+
     # Primer Tm balance
     # Best if within 1°C
     tm_factor = min(abs(primer_tm_diff) * 2, 10.0)
-    
+
     # Probe Tm (for TaqMan)
     # Should be 8-10°C higher than primers
     probe_factor = 0.0
@@ -261,9 +261,9 @@ def score_qpcr_efficiency(
             probe_factor = 5 - probe_tm_diff  # Too close
         elif probe_tm_diff > 12:
             probe_factor = probe_tm_diff - 12  # Too far
-    
+
     # Calculate efficiency
     efficiency = base - length_factor - tm_factor - probe_factor - hairpin_penalty - dimer_penalty
-    
+
     # Clamp to realistic range
     return max(70.0, min(110.0, efficiency))

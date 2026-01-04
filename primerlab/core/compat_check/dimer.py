@@ -30,7 +30,7 @@ class DimerEngine:
         threshold: ΔG threshold below which a dimer is problematic (kcal/mol)
         vienna: ViennaRNA wrapper instance
     """
-    
+
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         """
         Initialize DimerEngine with configuration.
@@ -40,19 +40,19 @@ class DimerEngine:
         """
         config = config or {}
         compat_config = config.get("multiplex", {})
-        
+
         # Configurable threshold (more negative = more stable = worse)
         self.threshold = compat_config.get("dimer_dg_threshold", -6.0)
-        
+
         # Initialize ViennaRNA wrapper
         self.vienna = ViennaWrapper()
-        
+
         # Cache for dimer results: (seq1, seq2) -> DimerResult
         self._cache: Dict[Tuple[str, str], DimerResult] = {}
-        
+
         # Track ViennaRNA availability
         self._vienna_available: Optional[bool] = None
-    
+
     def _check_vienna(self) -> bool:
         """Check if ViennaRNA is available (cached)."""
         if self._vienna_available is None:
@@ -64,14 +64,14 @@ class DimerEngine:
                     "ViennaRNA not available. Dimer calculations will return ΔG=0."
                 )
         return self._vienna_available
-    
+
     def _get_cache_key(self, seq1: str, seq2: str) -> Tuple[str, str]:
         """Get normalized cache key (order-independent for same pair)."""
         # Sort to ensure (A,B) and (B,A) use same key
         if seq1 <= seq2:
             return (seq1, seq2)
         return (seq2, seq1)
-    
+
     def check_dimer(
         self,
         seq1: str,
@@ -96,7 +96,7 @@ class DimerEngine:
         """
         seq1 = seq1.upper()
         seq2 = seq2.upper()
-        
+
         # Check cache first
         cache_key = self._get_cache_key(seq1, seq2)
         if cache_key in self._cache:
@@ -111,7 +111,7 @@ class DimerEngine:
                 structure=cached.structure,
                 is_problematic=cached.is_problematic,
             )
-        
+
         # Check ViennaRNA availability
         if not self._check_vienna():
             # Fallback: return neutral result
@@ -126,16 +126,16 @@ class DimerEngine:
             )
             self._cache[cache_key] = result
             return result
-        
+
         # Calculate dimer using ViennaRNA
         cofold_result = self.vienna.cofold(seq1, seq2)
-        
+
         delta_g = cofold_result.get("mfe", 0.0)
         structure = cofold_result.get("structure", "")
-        
+
         # Check if problematic (ΔG below threshold)
         is_problematic = delta_g < self.threshold
-        
+
         result = DimerResult(
             primer1_name=name1,
             primer2_name=name2,
@@ -145,12 +145,12 @@ class DimerEngine:
             structure=structure,
             is_problematic=is_problematic,
         )
-        
+
         # Cache the result
         self._cache[cache_key] = result
-        
+
         return result
-    
+
     def build_matrix(self, pairs: List[MultiplexPair]) -> CompatibilityMatrix:
         """
         Build NxN compatibility matrix for all primers in the multiplex set.
@@ -169,38 +169,38 @@ class DimerEngine:
         """
         # Collect all primers with their identifiers
         primers: List[Tuple[str, str]] = []  # (name, sequence)
-        
+
         for pair in pairs:
             primers.append((f"{pair.name}_F", pair.forward))
             primers.append((f"{pair.name}_R", pair.reverse))
-        
+
         # Build matrix
         matrix: Dict[Tuple[str, str], DimerResult] = {}
         worst_dimer: Optional[DimerResult] = None
         worst_dg = float('inf')
         problematic_count = 0
-        
+
         n = len(primers)
         total_checks = 0
-        
+
         # Check all unique pairs (including homodimers)
         for i in range(n):
             for j in range(i, n):
                 name1, seq1 = primers[i]
                 name2, seq2 = primers[j]
-                
+
                 result = self.check_dimer(seq1, seq2, name1, name2)
                 matrix[(name1, name2)] = result
                 total_checks += 1
-                
+
                 if result.is_problematic:
                     problematic_count += 1
-                
+
                 # Track worst dimer
                 if result.delta_g < worst_dg:
                     worst_dg = result.delta_g
                     worst_dimer = result
-        
+
         return CompatibilityMatrix(
             primer_names=[name for name, _ in primers],
             matrix=matrix,
@@ -208,7 +208,7 @@ class DimerEngine:
             total_dimers=total_checks,
             problematic_count=problematic_count,
         )
-    
+
     def get_problematic_pairs(
         self,
         matrix: CompatibilityMatrix
@@ -224,7 +224,7 @@ class DimerEngine:
         """
         problematic = matrix.get_problematic_dimers()
         return sorted(problematic, key=lambda d: d.delta_g)
-    
+
     def clear_cache(self):
         """Clear the dimer calculation cache."""
         self._cache.clear()

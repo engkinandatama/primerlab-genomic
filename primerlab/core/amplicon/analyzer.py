@@ -30,7 +30,7 @@ class AmpliconAnalyzer:
     - Restriction site mapping
     - Overall quality scoring
     """
-    
+
     def __init__(self, config: dict = None):
         """
         Initialize analyzer with configuration.
@@ -40,10 +40,10 @@ class AmpliconAnalyzer:
         """
         self.config = config or {}
         self.analysis_config = self.config.get("amplicon_analysis", {})
-        
+
         # Initialize sub-analyzers
         self.structure_analyzer = SecondaryStructureAnalyzer(config)
-    
+
     def analyze(
         self,
         sequence: str,
@@ -71,19 +71,19 @@ class AmpliconAnalyzer:
         """
         seq = sequence.upper()
         logger.info(f"Analyzing amplicon: {len(seq)}bp")
-        
+
         result = AmpliconAnalysisResult(
             sequence=seq,
             length=len(seq)
         )
-        
+
         # 1. Secondary structure
         if include_structure:
             ss_config = self.analysis_config.get("secondary_structure", {})
             if ss_config.get("enabled", True):
                 logger.debug("Predicting secondary structure...")
                 result.secondary_structure = self.structure_analyzer.predict(seq)
-        
+
         # 2. GC profile
         if include_gc_profile:
             gc_config = self.analysis_config.get("gc_profile", {})
@@ -96,7 +96,7 @@ class AmpliconAnalyzer:
                     ideal_min=gc_config.get("ideal_min", 40.0),
                     ideal_max=gc_config.get("ideal_max", 60.0)
                 )
-        
+
         # 3. GC clamp
         if include_gc_clamp:
             clamp_config = self.analysis_config.get("gc_clamp", {})
@@ -108,7 +108,7 @@ class AmpliconAnalyzer:
                     min_gc=clamp_config.get("min_gc", 1),
                     max_gc=clamp_config.get("max_gc", 3)
                 )
-        
+
         # 4. Tm prediction
         if include_tm:
             tm_config = self.analysis_config.get("tm_prediction", {})
@@ -118,7 +118,7 @@ class AmpliconAnalyzer:
                     seq,
                     na_concentration=tm_config.get("na_concentration", 50.0)
                 )
-        
+
         # 5. Restriction sites
         if include_restriction_sites:
             rs_config = self.analysis_config.get("restriction_sites", {})
@@ -126,13 +126,13 @@ class AmpliconAnalyzer:
                 logger.debug("Mapping restriction sites...")
                 enzymes = rs_config.get("enzymes")
                 result.restriction_sites = find_restriction_sites(seq, enzymes)
-        
+
         # 6. Quality score
         if include_quality_score:
             qs_config = self.analysis_config.get("quality_score", {})
             if qs_config.get("enabled", True):
                 logger.debug("Calculating quality score...")
-                
+
                 length_config = qs_config.get("optimal_length", {})
                 result.quality = calculate_quality_score(
                     seq,
@@ -144,7 +144,7 @@ class AmpliconAnalyzer:
                     optimal_length_max=length_config.get("max", 500),
                     weights=qs_config.get("weights")
                 )
-        
+
         logger.info(f"Analysis complete. Quality: {result.quality.score if result.quality else 'N/A'}")
         return result
 

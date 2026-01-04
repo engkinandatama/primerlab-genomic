@@ -31,10 +31,10 @@ def check_gc_clamp(sequence: str, window: int = 5, min_gc: int = 1, max_gc: int 
     """
     if len(sequence) < window:
         window = len(sequence)
-    
+
     three_prime = sequence[-window:].upper()
     gc_count = three_prime.count('G') + three_prime.count('C')
-    
+
     if gc_count < min_gc:
         msg = f"Weak 3' GC clamp ({gc_count} G/C in last {window} bases)"
         explanation = ("Too few G/C at 3'-end may cause poor annealing and extension. "
@@ -67,20 +67,20 @@ def check_poly_x(sequence: str, max_run: int = 4) -> Tuple[bool, str]:
         Tuple of (passes_check, message)
     """
     sequence = sequence.upper()
-    
+
     # Find all runs of identical bases
     pattern = r'(.)\1+'
     matches = re.finditer(pattern, sequence)
-    
+
     longest_run = 0
     longest_base = ""
-    
+
     for match in matches:
         run_length = len(match.group())
         if run_length > longest_run:
             longest_run = run_length
             longest_base = match.group()[0]
-    
+
     if longest_run > max_run:
         return False, f"Poly-{longest_base} run detected ({longest_run} consecutive, max: {max_run})"
     elif longest_run > 0:
@@ -100,7 +100,7 @@ def check_3prime_stability(sequence: str) -> Tuple[bool, str]:
         Tuple of (passes_check, message)
     """
     last_base = sequence[-1].upper()
-    
+
     if last_base in ['G', 'C']:
         return True, f"3'-end {last_base} (optimal)"
     else:
@@ -119,7 +119,7 @@ def run_sequence_qc(sequence: str, config: Dict[str, Any] = None) -> Dict[str, A
         Dict with check results and overall status
     """
     config = config or {}
-    
+
     results = {
         "sequence": sequence,
         "length": len(sequence),
@@ -128,31 +128,31 @@ def run_sequence_qc(sequence: str, config: Dict[str, Any] = None) -> Dict[str, A
         "warnings": [],
         "errors": []
     }
-    
+
     # GC Clamp check - now returns (passed, message, explanation)
     gc_window = config.get("gc_clamp_window", 5)
     gc_min = config.get("gc_clamp_min", 1)
     gc_max = config.get("gc_clamp_max", 5)
-    
+
     gc_ok, gc_msg, gc_explain = check_gc_clamp(sequence, gc_window, gc_min, gc_max)
     results["checks"]["gc_clamp"] = {"passed": gc_ok, "message": gc_msg, "explanation": gc_explain}
     if not gc_ok:
         results["warnings"].append(f"{gc_msg} - {gc_explain}")
     elif "Strong" in gc_msg:
         results["warnings"].append(f"{gc_msg} - {gc_explain}")
-    
+
     # Poly-X check
     max_run = config.get("poly_x_max", 4)
     poly_ok, poly_msg = check_poly_x(sequence, max_run)
     results["checks"]["poly_x"] = {"passed": poly_ok, "message": poly_msg}
     if not poly_ok:
         results["warnings"].append(poly_msg)
-    
+
     # 3' stability check
     stability_ok, stability_msg = check_3prime_stability(sequence)
     results["checks"]["3prime_stability"] = {"passed": stability_ok, "message": stability_msg}
-    
+
     # Overall status - only fail on actual failures, not warnings
     results["passes_all"] = gc_ok and poly_ok and stability_ok
-    
+
     return results

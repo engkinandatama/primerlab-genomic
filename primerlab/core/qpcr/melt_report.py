@@ -33,7 +33,7 @@ def generate_melt_markdown(result: MeltCurveResult) -> str:
         f"| Grade | {result.grade} |",
         "",
     ]
-    
+
     # Peaks section
     if len(result.peaks) > 0:
         lines.extend([
@@ -48,7 +48,7 @@ def generate_melt_markdown(result: MeltCurveResult) -> str:
                 f"| {i} | {peak.temperature:.1f}°C | {peak.height:.2f} | {peak.width:.1f}°C | {peak_type} |"
             )
         lines.append("")
-    
+
     # Warnings
     if result.warnings:
         lines.extend([
@@ -58,22 +58,22 @@ def generate_melt_markdown(result: MeltCurveResult) -> str:
         for warning in result.warnings:
             lines.append(f"- ⚠️ {warning}")
         lines.append("")
-    
+
     # Interpretation
     lines.extend([
         "## Interpretation",
         "",
     ])
-    
+
     if result.is_single_peak and result.grade in ["A", "B"]:
         lines.append("✅ **Excellent**: Single clean melt peak indicates specific amplification.")
     elif result.is_single_peak:
         lines.append("👍 **Good**: Single peak detected. Check warnings for potential issues.")
     else:
         lines.append("⚠️ **Review Required**: Multiple peaks suggest non-specific products or primer-dimers.")
-    
+
     lines.append("")
-    
+
     return "\n".join(lines)
 
 
@@ -88,10 +88,10 @@ def generate_melt_csv(result: MeltCurveResult) -> str:
         CSV formatted string
     """
     lines = ["Temperature (°C),-dF/dT"]
-    
+
     for point in result.melt_curve:
         lines.append(f"{point['temperature']},{point['derivative']}")
-    
+
     return "\n".join(lines)
 
 

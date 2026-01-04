@@ -31,10 +31,10 @@ class NCBIWebBlast:
     Uses Biopython's NCBIWWW for web BLAST queries.
     Includes rate limiting to comply with NCBI guidelines.
     """
-    
+
     # NCBI rate limit: 1 request per 3 seconds
     MIN_REQUEST_INTERVAL = 3.0
-    
+
     def __init__(
         self,
         database: str = "nt",
@@ -57,7 +57,7 @@ class NCBIWebBlast:
         self.email = email
         self._last_request_time = 0.0
         self._available = None
-    
+
     def is_available(self) -> bool:
         """Check if Biopython NCBIWWW is available."""
         if self._available is None:
@@ -68,7 +68,7 @@ class NCBIWebBlast:
                 self._available = False
                 logger.warning("Biopython not installed - NCBI web BLAST unavailable")
         return self._available
-    
+
     def _rate_limit(self):
         """Apply rate limiting between requests."""
         elapsed = time.time() - self._last_request_time
@@ -77,7 +77,7 @@ class NCBIWebBlast:
             logger.debug(f"Rate limiting: sleeping {sleep_time:.1f}s")
             time.sleep(sleep_time)
         self._last_request_time = time.time()
-    
+
     def blast(
         self,
         sequence: str,
@@ -98,15 +98,15 @@ class NCBIWebBlast:
         if not self.is_available():
             logger.error("NCBI web BLAST not available")
             return None
-        
+
         try:
             from Bio.Blast import NCBIWWW, NCBIXML
-            
+
             self._rate_limit()
-            
+
             logger.info(f"Running web BLAST against {self.database}...")
             start_time = time.time()
-            
+
             # Run BLAST
             result_handle = NCBIWWW.qblast(
                 program=self.program,
@@ -116,14 +116,14 @@ class NCBIWebBlast:
                 expect=evalue,
                 format_type="XML"
             )
-            
+
             # Parse results
             blast_record = NCBIXML.read(result_handle)
             result_handle.close()
-            
+
             search_time = time.time() - start_time
             logger.info(f"Web BLAST completed in {search_time:.1f}s")
-            
+
             # Extract hits
             hits = []
             for alignment in blast_record.alignments:
@@ -139,7 +139,7 @@ class NCBIWebBlast:
                         "subject_start": hsp.sbjct_start,
                         "subject_end": hsp.sbjct_end
                     })
-            
+
             return WebBlastResult(
                 query_id="query",
                 hits=hits,
@@ -147,11 +147,11 @@ class NCBIWebBlast:
                 database=self.database,
                 program=self.program
             )
-            
+
         except Exception as e:
             logger.error(f"Web BLAST failed: {e}")
             return None
-    
+
     def blast_primers(
         self,
         forward: str,

@@ -32,7 +32,7 @@ class PrimerDatabase:
         db.save_design(result, config)
         history = db.search(gene="GAPDH")
     """
-    
+
     def __init__(self, db_path: Optional[str] = None):
         """
         Initialize database connection with resilience features.
@@ -44,19 +44,19 @@ class PrimerDatabase:
         """
         self.db_path = Path(db_path) if db_path else DEFAULT_DB_PATH
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         # Try to connect with corruption handling
         try:
             self.conn = sqlite3.connect(str(self.db_path))
             self.conn.row_factory = sqlite3.Row
-            
+
             # Check integrity
             if not self._check_integrity():
                 logger.warning("Database integrity check failed, attempting repair...")
                 self._repair_database()
-            
+
             self._init_schema()
-            
+
         except sqlite3.DatabaseError as e:
             logger.error(f"Database error: {e}")
             logger.info("Attempting to recover database...")
@@ -65,7 +65,7 @@ class PrimerDatabase:
             self.conn = sqlite3.connect(str(self.db_path))
             self.conn.row_factory = sqlite3.Row
             self._init_schema()
-    
+
     def _check_integrity(self) -> bool:
         """Check database integrity using PRAGMA integrity_check."""
         try:
@@ -76,13 +76,13 @@ class PrimerDatabase:
         except Exception as e:
             logger.error(f"Integrity check failed: {e}")
             return False
-    
+
     def _repair_database(self):
         """Attempt to repair a corrupted database."""
         try:
             # Create backup first
             self._create_backup()
-            
+
             # Try to recover data
             cursor = self.conn.cursor()
             cursor.execute("REINDEX")
@@ -92,7 +92,7 @@ class PrimerDatabase:
         except Exception as e:
             logger.error(f"Repair failed: {e}")
             raise
-    
+
     def _recover_database(self):
         """Recover from a completely corrupted database."""
         try:
@@ -102,14 +102,14 @@ class PrimerDatabase:
                 import shutil
                 shutil.move(str(self.db_path), str(backup_path))
                 logger.info(f"Corrupted database backed up to: {backup_path}")
-            
+
             # Create fresh database
             logger.info("Creating fresh database...")
-            
+
         except Exception as e:
             logger.error(f"Recovery failed: {e}")
             raise
-    
+
     def _create_backup(self):
         """Create a timestamped backup of the database."""
         if self.db_path.exists():
@@ -118,7 +118,7 @@ class PrimerDatabase:
             import shutil
             shutil.copy2(str(self.db_path), str(backup_path))
             logger.debug(f"Database backup created: {backup_path}")
-            
+
             # Keep only last 5 backups
             backups = sorted(self.db_path.parent.glob("primer_history.backup_*.db"))
             if len(backups) > 5:
@@ -126,11 +126,11 @@ class PrimerDatabase:
                     old_backup.unlink()
                     logger.debug(f"Removed old backup: {old_backup}")
 
-    
+
     def _init_schema(self):
         """Create database tables if they don't exist."""
         cursor = self.conn.cursor()
-        
+
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS designs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -170,7 +170,7 @@ class PrimerDatabase:
                 notes TEXT
             )
         """)
-        
+
         # Index for common searches
         cursor.execute("""
             CREATE INDEX IF NOT EXISTS idx_gene_name ON designs(gene_name)
@@ -181,10 +181,10 @@ class PrimerDatabase:
         cursor.execute("""
             CREATE INDEX IF NOT EXISTS idx_created_at ON designs(created_at)
         """)
-        
+
         self.conn.commit()
         logger.debug(f"Database initialized: {self.db_path}")
-    
+
     def save_design(
         self, 
         result: Dict[str, Any], 
@@ -208,39 +208,39 @@ class PrimerDatabase:
         amplicons = result.get("amplicons", [])
         qc = result.get("qc", {})
         metadata = result.get("metadata", {})
-        
+
         # Extract gene name
         if not gene_name:
             gene_name = metadata.get("sequence_name") or metadata.get("gene_name") or "unknown"
-        
+
         # Forward primer
         fwd = primers.get("forward", {})
         fwd_seq = fwd.get("sequence", "")
         fwd_tm = fwd.get("tm", 0)
         fwd_gc = fwd.get("gc", 0)
         fwd_len = fwd.get("length", len(fwd_seq) if fwd_seq else 0)
-        
+
         # Reverse primer
         rev = primers.get("reverse", {})
         rev_seq = rev.get("sequence", "")
         rev_tm = rev.get("tm", 0)
         rev_gc = rev.get("gc", 0)
         rev_len = rev.get("length", len(rev_seq) if rev_seq else 0)
-        
+
         # Probe
         probe = primers.get("probe", {})
         probe_seq = probe.get("sequence", "")
         probe_tm = probe.get("tm", 0)
-        
+
         # Amplicon
         amp = amplicons[0] if amplicons else {}
         amp_len = amp.get("length", 0)
         amp_gc = amp.get("gc", 0)
-        
+
         # Quality
         quality_score = qc.get("quality_score", 0)
         quality_category = qc.get("quality_category", "N/A")
-        
+
         cursor = self.conn.cursor()
         cursor.execute("""
             INSERT INTO designs (
@@ -265,12 +265,12 @@ class PrimerDatabase:
             json.dumps(result),
             notes
         ))
-        
+
         self.conn.commit()
         record_id = cursor.lastrowid
         logger.info(f"Saved design to database: ID={record_id}, gene={gene_name}")
         return record_id
-    
+
     def search(
         self,
         gene: Optional[str] = None,
@@ -294,25 +294,25 @@ class PrimerDatabase:
         """
         conditions = []
         params = []
-        
+
         if gene:
             conditions.append("gene_name LIKE ?")
             params.append(f"%{gene}%")
-        
+
         if sequence:
             conditions.append("(fwd_sequence = ? OR rev_sequence = ?)")
             params.extend([sequence.upper(), sequence.upper()])
-        
+
         if workflow:
             conditions.append("workflow = ?")
             params.append(workflow.lower())
-        
+
         if min_quality:
             conditions.append("quality_score >= ?")
             params.append(min_quality)
-        
+
         where_clause = " AND ".join(conditions) if conditions else "1=1"
-        
+
         cursor = self.conn.cursor()
         cursor.execute(f"""
             SELECT * FROM designs
@@ -320,20 +320,20 @@ class PrimerDatabase:
             ORDER BY created_at DESC
             LIMIT ?
         """, params + [limit])
-        
+
         results = []
         for row in cursor.fetchall():
             results.append(dict(row))
-        
+
         return results
-    
+
     def get_by_id(self, record_id: int) -> Optional[Dict[str, Any]]:
         """Get a specific design by ID."""
         cursor = self.conn.cursor()
         cursor.execute("SELECT * FROM designs WHERE id = ?", (record_id,))
         row = cursor.fetchone()
         return dict(row) if row else None
-    
+
     def delete(self, record_id: int) -> bool:
         """Delete a design by ID."""
         cursor = self.conn.cursor()
@@ -343,7 +343,7 @@ class PrimerDatabase:
         if deleted:
             logger.info(f"Deleted design: ID={record_id}")
         return deleted
-    
+
     def get_recent(self, limit: int = 10) -> List[Dict[str, Any]]:
         """Get most recent designs."""
         cursor = self.conn.cursor()
@@ -354,36 +354,36 @@ class PrimerDatabase:
             ORDER BY created_at DESC
             LIMIT ?
         """, (limit,))
-        
+
         return [dict(row) for row in cursor.fetchall()]
-    
+
     def get_stats(self) -> Dict[str, Any]:
         """Get database statistics."""
         cursor = self.conn.cursor()
-        
+
         cursor.execute("SELECT COUNT(*) FROM designs")
         total = cursor.fetchone()[0]
-        
+
         cursor.execute("""
             SELECT workflow, COUNT(*) as count
             FROM designs
             GROUP BY workflow
         """)
         by_workflow = {row[0]: row[1] for row in cursor.fetchall()}
-        
+
         cursor.execute("SELECT AVG(quality_score) FROM designs")
         avg_quality = cursor.fetchone()[0] or 0
-        
+
         return {
             "total_designs": total,
             "by_workflow": by_workflow,
             "avg_quality_score": round(avg_quality, 1)
         }
-    
+
     def export_csv(self, output_path: str) -> str:
         """Export all designs to CSV."""
         import csv
-        
+
         cursor = self.conn.cursor()
         cursor.execute("""
             SELECT id, created_at, gene_name, workflow,
@@ -394,7 +394,7 @@ class PrimerDatabase:
             FROM designs
             ORDER BY created_at DESC
         """)
-        
+
         path = Path(output_path)
         with open(path, 'w', newline='') as f:
             writer = csv.writer(f)
@@ -405,13 +405,13 @@ class PrimerDatabase:
                 "Probe Sequence", "Amplicon Length", "Amplicon GC%",
                 "Quality Score", "Quality Category"
             ])
-            
+
             for row in cursor.fetchall():
                 writer.writerow(row)
-        
+
         logger.info(f"Exported {cursor.rowcount} designs to: {path}")
         return str(path)
-    
+
     def close(self):
         """Close database connection."""
         self.conn.close()
@@ -421,24 +421,24 @@ def format_history_table(designs: List[Dict[str, Any]]) -> str:
     """Format designs as CLI table."""
     if not designs:
         return "No designs found."
-    
+
     lines = []
     lines.append("")
     lines.append("=" * 90)
     lines.append(f"{'ID':<6} {'Date':<12} {'Gene':<15} {'Type':<6} {'Fwd Primer':<20} {'QS':>6}")
     lines.append("-" * 90)
-    
+
     for d in designs:
         date_str = d.get("created_at", "")[:10]
         gene = (d.get("gene_name") or "?")[:15]
         workflow = (d.get("workflow") or "?")[:6]
         fwd_seq = (d.get("fwd_sequence") or "?")[:20]
         qs = d.get("quality_score") or 0
-        
+
         lines.append(f"{d['id']:<6} {date_str:<12} {gene:<15} {workflow:<6} {fwd_seq:<20} {qs:>6.1f}")
-    
+
     lines.append("=" * 90)
     lines.append(f"Total: {len(designs)} designs")
     lines.append("")
-    
+
     return "\n".join(lines)

@@ -42,10 +42,10 @@ def analyze_primer_binding(
         min_match_percent=min_match_percent,
         max_mismatches=max_mismatches
     )
-    
+
     binding_sites = []
     best_match = 0.0
-    
+
     for pos, strand, match_pct, mismatches, mm_pos in sites:
         site = BindingSite(
             position=pos,
@@ -56,7 +56,7 @@ def analyze_primer_binding(
         )
         binding_sites.append(site)
         best_match = max(best_match, match_pct)
-    
+
     return SpeciesBinding(
         species_name=template.species_name,
         primer_name=primer_name,
@@ -88,24 +88,24 @@ def compare_binding_across_species(
     """
     all_templates = {target_template.species_name: target_template}
     all_templates.update(offtarget_templates)
-    
+
     primer_names = []
     bindings = {}
-    
+
     for primer in primers:
         name = primer.get("name", "unknown")
         fwd = primer.get("forward", "")
         rev = primer.get("reverse", "")
-        
+
         # Check both forward and reverse primers
         for direction, seq in [("_fwd", fwd), ("_rev", rev)]:
             if not seq:
                 continue
-            
+
             full_name = f"{name}{direction}"
             primer_names.append(full_name)
             bindings[full_name] = {}
-            
+
             for species_name, template in all_templates.items():
                 binding = analyze_primer_binding(
                     full_name,
@@ -115,7 +115,7 @@ def compare_binding_across_species(
                     max_mismatches=max_mismatches
                 )
                 bindings[full_name][species_name] = binding
-    
+
     return SpecificityMatrix(
         primer_names=primer_names,
         species_names=list(all_templates.keys()),
@@ -146,28 +146,28 @@ def check_species_specificity(
     min_match = config.get("min_match_percent", 70.0)
     max_mm = config.get("max_mismatches", 5)
     offtarget_threshold = config.get("offtarget_threshold", 80.0)
-    
+
     # Build specificity matrix
     matrix = compare_binding_across_species(
         primers, target_template, offtarget_templates,
         min_match_percent=min_match, max_mismatches=max_mm
     )
-    
+
     # Calculate scores and warnings
     warnings = []
     recommendations = []
     scores = []
     all_specific = True
-    
+
     for primer_name in matrix.primer_names:
         spec_score = matrix.get_specificity_score(primer_name)
         scores.append(spec_score)
-        
+
         # Check for off-target binding
         for species_name in matrix.species_names:
             if species_name == matrix.target_species:
                 continue
-            
+
             binding = matrix.get_binding(primer_name, species_name)
             if binding and binding.best_match_percent >= offtarget_threshold:
                 warnings.append(
@@ -175,21 +175,21 @@ def check_species_specificity(
                     f"to off-target species: {species_name}"
                 )
                 all_specific = False
-    
+
     # Calculate overall score
     overall_score = sum(scores) / len(scores) if scores else 0.0
     grade = score_to_grade(overall_score)
-    
+
     if not all_specific:
         recommendations.append(
             "Consider redesigning primers with off-target binding to improve specificity"
         )
-    
+
     if overall_score < 70:
         recommendations.append(
             "Overall specificity is low - review primer design for target species"
         )
-    
+
     return SpeciesCheckResult(
         target_species=target_template.species_name,
         primers_checked=len(primers),

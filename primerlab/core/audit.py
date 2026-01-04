@@ -44,18 +44,18 @@ def create_audit_log(
         Path to audit.json file
     """
     timestamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-    
+
     # Hash sensitive data
     config_str = json.dumps(config, sort_keys=True)
     config_hash = generate_hash(config_str)
-    
+
     sequence_hash = generate_hash(sequence) if sequence else None
     sequence_length = len(sequence) if sequence else 0
-    
+
     # Extract key parameters
     params = config.get("parameters", {})
     qc_config = config.get("qc", {})
-    
+
     # Build audit entry
     audit_entry = {
         "primerlab_version": __version__,
@@ -89,18 +89,18 @@ def create_audit_log(
             "tm_diff_max": qc_config.get("tm_diff_max"),
         }
     }
-    
+
     # Save to file
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    
+
     audit_path = output_dir / "audit.json"
-    
+
     with open(audit_path, "w") as f:
         json.dump(audit_entry, f, indent=2)
-    
+
     logger.info(f"Audit log saved: {audit_path}")
-    
+
     return audit_path
 
 
@@ -108,13 +108,13 @@ def _format_range(param_dict: Dict[str, Any]) -> str:
     """Format min/max or min/opt/max range as string."""
     if not param_dict:
         return "N/A"
-    
+
     min_val = param_dict.get("min")
     max_val = param_dict.get("max")
-    
+
     if min_val is not None and max_val is not None:
         return f"{min_val}-{max_val}"
-    
+
     return "N/A"
 
 
@@ -130,17 +130,17 @@ def append_audit_log(
         additional_data: Data to append
     """
     audit_path = Path(output_dir) / "audit.json"
-    
+
     if not audit_path.exists():
         logger.warning("No audit.json found to append to")
         return
-    
+
     with open(audit_path, "r") as f:
         audit_entry = json.load(f)
-    
+
     audit_entry.update(additional_data)
-    
+
     with open(audit_path, "w") as f:
         json.dump(audit_entry, f, indent=2)
-    
+
     logger.debug(f"Audit log updated: {audit_path}")

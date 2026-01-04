@@ -40,31 +40,31 @@ def generate_batch_summary(results: List[Dict[str, Any]]) -> Dict[str, Any]:
     failed = 0
     summary_table = []
     quality_scores = []
-    
+
     for i, result in enumerate(results):
         sequence_name = result.get("metadata", {}).get("sequence_name", f"Sequence_{i+1}")
-        
+
         # Check if result has primers
         primers = result.get("primers", {})
         qc = result.get("qc", {})
         amplicons = result.get("amplicons", [])
-        
+
         if primers:
             successful += 1
             status = "✅ Success"
-            
+
             # Extract metrics
             fwd = primers.get("forward", {})
             rev = primers.get("reverse", {})
-            
+
             fwd_tm = fwd.get("tm", 0)
             rev_tm = rev.get("tm", 0)
             product_size = amplicons[0].get("length", 0) if amplicons else 0
             quality_score = qc.get("quality_score", 0)
-            
+
             if quality_score:
                 quality_scores.append(quality_score)
-            
+
             summary_table.append({
                 "name": sequence_name,
                 "status": status,
@@ -79,7 +79,7 @@ def generate_batch_summary(results: List[Dict[str, Any]]) -> Dict[str, Any]:
             failed += 1
             status = "❌ Failed"
             error_msg = result.get("error", "No primers found")
-            
+
             summary_table.append({
                 "name": sequence_name,
                 "status": status,
@@ -91,9 +91,9 @@ def generate_batch_summary(results: List[Dict[str, Any]]) -> Dict[str, Any]:
                 "quality_score": "-",
                 "error": error_msg
             })
-    
+
     avg_quality = sum(quality_scores) / len(quality_scores) if quality_scores else 0
-    
+
     return {
         "total_sequences": total,
         "successful": successful,
@@ -114,17 +114,17 @@ def save_batch_summary_csv(summary: Dict[str, Any], filepath: str):
         filepath: Output file path
     """
     path = Path(filepath)
-    
+
     try:
         with open(path, 'w', newline='') as f:
             writer = csv.writer(f)
-            
+
             # Header
             writer.writerow([
                 "Sequence", "Status", "Forward Primer", "Reverse Primer",
                 "Fwd Tm", "Rev Tm", "Product Size", "Quality Score"
             ])
-            
+
             # Data rows
             for row in summary["summary_table"]:
                 writer.writerow([
@@ -137,7 +137,7 @@ def save_batch_summary_csv(summary: Dict[str, Any], filepath: str):
                     row["product_size"],
                     row["quality_score"]
                 ])
-            
+
             # Summary footer
             writer.writerow([])
             writer.writerow(["SUMMARY"])
@@ -146,7 +146,7 @@ def save_batch_summary_csv(summary: Dict[str, Any], filepath: str):
             writer.writerow(["Failed", summary["failed"]])
             writer.writerow(["Success Rate", f"{summary['success_rate']}%"])
             writer.writerow(["Avg Quality Score", summary["avg_quality_score"]])
-        
+
         logger.info(f"Batch summary CSV saved to: {path}")
     except Exception as e:
         logger.error(f"Failed to save batch summary CSV: {e}")
@@ -169,17 +169,17 @@ def save_batch_excel(results: List[Dict[str, Any]], filepath: str):
     except ImportError:
         logger.warning("openpyxl not installed. Run: pip install openpyxl")
         return
-    
+
     path = Path(filepath)
     summary = generate_batch_summary(results)
-    
+
     try:
         wb = Workbook()
-        
+
         # === SUMMARY SHEET ===
         ws_summary = wb.active
         ws_summary.title = "Batch Summary"
-        
+
         # Styles
         header_font = Font(bold=True, color="FFFFFF")
         header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
@@ -191,7 +191,7 @@ def save_batch_excel(results: List[Dict[str, Any]], filepath: str):
             top=Side(style='thin'),
             bottom=Side(style='thin')
         )
-        
+
         # Summary stats
         stats = [
             ("Batch Summary Report", ""),
@@ -203,48 +203,48 @@ def save_batch_excel(results: List[Dict[str, Any]], filepath: str):
             ("Avg Quality Score", summary["avg_quality_score"]),
             ("Generated", summary["timestamp"]),
         ]
-        
+
         for row_idx, (label, value) in enumerate(stats, 1):
             cell_label = ws_summary.cell(row=row_idx, column=1, value=label)
             cell_value = ws_summary.cell(row=row_idx, column=2, value=value)
             if row_idx == 1:
                 cell_label.font = Font(bold=True, size=14)
-        
+
         # Results table starting at row 10
         headers = ["Sequence", "Status", "Fwd Primer", "Rev Primer", 
                   "Fwd Tm", "Rev Tm", "Product Size", "Quality"]
-        
+
         row_offset = 10
         for col, header in enumerate(headers, 1):
             cell = ws_summary.cell(row=row_offset, column=col, value=header)
             cell.font = header_font
             cell.fill = header_fill
             cell.border = thin_border
-        
+
         for i, row in enumerate(summary["summary_table"], row_offset + 1):
             ws_summary.cell(row=i, column=1, value=row["name"]).border = thin_border
-            
+
             status_cell = ws_summary.cell(row=i, column=2, value=row["status"])
             status_cell.border = thin_border
             if "Success" in row["status"]:
                 status_cell.fill = success_fill
             else:
                 status_cell.fill = fail_fill
-            
+
             ws_summary.cell(row=i, column=3, value=row["fwd_primer"]).border = thin_border
             ws_summary.cell(row=i, column=4, value=row["rev_primer"]).border = thin_border
             ws_summary.cell(row=i, column=5, value=row["fwd_tm"]).border = thin_border
             ws_summary.cell(row=i, column=6, value=row["rev_tm"]).border = thin_border
             ws_summary.cell(row=i, column=7, value=row["product_size"]).border = thin_border
             ws_summary.cell(row=i, column=8, value=row["quality_score"]).border = thin_border
-        
+
         # Adjust column widths
         for col in range(1, len(headers) + 1):
             ws_summary.column_dimensions[get_column_letter(col)].width = 15
-        
+
         wb.save(path)
         logger.info(f"Batch Excel saved to: {path}")
-        
+
     except Exception as e:
         logger.error(f"Failed to save batch Excel: {e}")
 
@@ -260,7 +260,7 @@ def format_batch_summary_cli(summary: Dict[str, Any]) -> str:
         Formatted string for terminal display
     """
     lines = []
-    
+
     lines.append("")
     lines.append("=" * 70)
     lines.append("📊 BATCH RUN SUMMARY")
@@ -274,19 +274,19 @@ def format_batch_summary_cli(summary: Dict[str, Any]) -> str:
     lines.append("")
     lines.append("-" * 70)
     lines.append("")
-    
+
     # Table header
     lines.append(f"{'Sequence':<20} {'Status':<12} {'Fwd Tm':>8} {'Rev Tm':>8} {'Size':>8} {'QS':>6}")
     lines.append("-" * 70)
-    
+
     for row in summary["summary_table"]:
         lines.append(
             f"{row['name']:<20} {row['status']:<12} "
             f"{str(row['fwd_tm']):>8} {str(row['rev_tm']):>8} "
             f"{str(row['product_size']):>8} {str(row['quality_score']):>6}"
         )
-    
+
     lines.append("")
     lines.append("=" * 70)
-    
+
     return "\n".join(lines)

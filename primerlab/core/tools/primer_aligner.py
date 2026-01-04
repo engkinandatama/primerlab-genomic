@@ -33,7 +33,7 @@ class PrimerAligner:
         aligner = PrimerAligner()
         result = aligner.search_primer("ATGCATGCATGC", "database.fasta")
     """
-    
+
     def __init__(
         self,
         mode: AlignmentMode = AlignmentMode.AUTO,
@@ -49,10 +49,10 @@ class PrimerAligner:
         self.mode = mode
         self.blast_wrapper = BlastWrapper(blast_params)
         self.biopython_aligner = BiopythonAligner()
-        
+
         # Determine active method
         self._active_method = self._select_method()
-    
+
     def _select_method(self) -> AlignmentMethod:
         """Select alignment method based on mode and availability."""
         if self.mode == AlignmentMode.BLAST:
@@ -62,12 +62,12 @@ class PrimerAligner:
                     f"Error: {self.blast_wrapper.installation.error}"
                 )
             return AlignmentMethod.BLAST
-        
+
         elif self.mode == AlignmentMode.BIOPYTHON:
             if not self.biopython_aligner.is_available:
                 raise RuntimeError("Biopython alignment requested but Biopython not installed")
             return AlignmentMethod.BIOPYTHON
-        
+
         else:  # AUTO
             if self.blast_wrapper.is_available:
                 logger.info("Using BLAST+ for alignment")
@@ -80,22 +80,22 @@ class PrimerAligner:
                     "No alignment method available. "
                     "Install BLAST+ or Biopython (pip install biopython)"
                 )
-    
+
     @property
     def active_method(self) -> AlignmentMethod:
         """Get the active alignment method."""
         return self._active_method
-    
+
     @property
     def is_blast_available(self) -> bool:
         """Check if BLAST+ is available."""
         return self.blast_wrapper.is_available
-    
+
     @property
     def is_biopython_available(self) -> bool:
         """Check if Biopython is available."""
         return self.biopython_aligner.is_available
-    
+
     def search_primer(
         self,
         primer_seq: str,
@@ -125,7 +125,7 @@ class PrimerAligner:
                 database_path=database,
                 query_id=primer_id
             )
-    
+
     def check_primer_specificity(
         self,
         forward_primer: str,
@@ -151,14 +151,14 @@ class PrimerAligner:
             database=database,
             primer_id="forward"
         )
-        
+
         # Search reverse primer
         rev_result = self.search_primer(
             primer_seq=reverse_primer,
             database=database,
             primer_id="reverse"
         )
-        
+
         # Mark on-target hits if target_id provided
         if target_id:
             for hit in fwd_result.hits:
@@ -167,12 +167,12 @@ class PrimerAligner:
             for hit in rev_result.hits:
                 if target_id in hit.subject_id or target_id in hit.subject_title:
                     hit.is_on_target = True
-        
+
         return SpecificityResult(
             forward_result=fwd_result,
             reverse_result=rev_result
         )
-    
+
     def make_blast_database(self, fasta_path: str, db_name: Optional[str] = None) -> bool:
         """
         Create BLAST database from FASTA file.
@@ -187,7 +187,7 @@ class PrimerAligner:
         if not self.blast_wrapper.is_available:
             logger.error("BLAST+ not available - cannot create database")
             return False
-        
+
         return self.blast_wrapper.make_database(fasta_path, db_name)
 
 
@@ -214,15 +214,15 @@ def check_alignment_availability() -> Tuple[bool, bool, str]:
     """
     blast_info = check_blast_installation()
     biopython_aligner = get_fallback_aligner()
-    
+
     blast_available = blast_info.available
     biopython_available = biopython_aligner is not None
-    
+
     if blast_available:
         recommended = "blast"
     elif biopython_available:
         recommended = "biopython"
     else:
         recommended = "none"
-    
+
     return (blast_available, biopython_available, recommended)

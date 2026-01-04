@@ -49,7 +49,7 @@ class Variant:
     maf: Optional[float] = None
     variant_type: VariantType = VariantType.SNP
     info: dict = field(default_factory=dict)
-    
+
     def __post_init__(self):
         """Determine variant type based on ref/alt."""
         if len(self.ref) == 1 and len(self.alt) == 1:
@@ -62,16 +62,16 @@ class Variant:
             self.variant_type = VariantType.MNP
         else:
             self.variant_type = VariantType.COMPLEX
-    
+
     @property
     def end_pos(self) -> int:
         """End position of the variant."""
         return self.pos + len(self.ref) - 1
-    
+
     def overlaps(self, start: int, end: int) -> bool:
         """Check if variant overlaps with a region."""
         return not (self.end_pos < start or self.pos > end)
-    
+
     def __str__(self) -> str:
         rsid_str = f" ({self.rsid})" if self.rsid else ""
         return f"{self.chrom}:{self.pos} {self.ref}>{self.alt}{rsid_str}"
@@ -92,7 +92,7 @@ class VariantOverlap:
     primer_position: int
     distance_from_3prime: int
     impact: VariantImpact = VariantImpact.MEDIUM
-    
+
     def __post_init__(self):
         """Determine impact based on position."""
         if self.distance_from_3prime <= 3:
@@ -123,17 +123,17 @@ class PrimerVariantResult:
     primer_end: int
     strand: str = "+"
     overlaps: List[VariantOverlap] = field(default_factory=list)
-    
+
     @property
     def has_critical_variants(self) -> bool:
         """Check if any HIGH impact variants."""
         return any(o.impact == VariantImpact.HIGH for o in self.overlaps)
-    
+
     @property
     def variant_count(self) -> int:
         """Number of overlapping variants."""
         return len(self.overlaps)
-    
+
     @property
     def high_impact_count(self) -> int:
         """Number of HIGH impact variants."""
@@ -153,27 +153,27 @@ class PrimerPairVariantResult:
     """
     forward_result: PrimerVariantResult
     reverse_result: PrimerVariantResult
-    
+
     @property
     def total_variants(self) -> int:
         return self.forward_result.variant_count + self.reverse_result.variant_count
-    
+
     @property
     def has_critical_variants(self) -> bool:
-        return (self.forward_result.has_critical_variants or 
+        return (self.forward_result.has_critical_variants  or
                 self.reverse_result.has_critical_variants)
-    
+
     @property
     def warnings(self) -> List[str]:
         """Generate warnings for critical variants."""
         warnings = []
-        
+
         if self.forward_result.has_critical_variants:
             count = self.forward_result.high_impact_count
             warnings.append(f"Forward primer has {count} variant(s) near 3' end")
-        
+
         if self.reverse_result.has_critical_variants:
             count = self.reverse_result.high_impact_count
             warnings.append(f"Reverse primer has {count} variant(s) near 3' end")
-        
+
         return warnings

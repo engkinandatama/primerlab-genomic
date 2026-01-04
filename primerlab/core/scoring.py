@@ -29,7 +29,7 @@ class ScoringResult:
     category: str  # Excellent, Good, Fair, Poor
     category_emoji: str  # ✅ or ⚠️ or ❌
     penalties: Dict[str, int]  # Individual penalties applied
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "score": self.score,
@@ -129,61 +129,61 @@ def calculate_quality_score(
     """
     config = PENALTY_CONFIG.get(qc_mode, PENALTY_CONFIG["standard"])
     penalties = {}
-    
+
     # Base score from Primer3 penalty
     # Primer3 penalty typically 0-10, we scale by 10
     primer3_deduction = min(50, int(primer3_penalty * 10))
     penalties["primer3"] = -primer3_deduction
-    
+
     # Hairpin penalties (forward)
     if hairpin_dg_fwd is not None:
         if hairpin_dg_fwd < config["hairpin_3end_threshold"]:
             penalties["hairpin_fwd"] = config["hairpin_3end_penalty"]
-    
+
     # Hairpin penalties (reverse)
     if hairpin_dg_rev is not None:
         if hairpin_dg_rev < config["hairpin_3end_threshold"]:
             penalties["hairpin_rev"] = config["hairpin_3end_penalty"]
-    
+
     # Homodimer penalties
     if homodimer_dg_fwd is not None:
         if homodimer_dg_fwd < config["self_dimer_threshold"]:
             penalties["homodimer_fwd"] = config["self_dimer_penalty"]
-    
+
     if homodimer_dg_rev is not None:
         if homodimer_dg_rev < config["self_dimer_threshold"]:
             penalties["homodimer_rev"] = config["self_dimer_penalty"]
-    
+
     # Heterodimer penalty
     if heterodimer_dg is not None:
         if heterodimer_dg < config["heterodimer_threshold"]:
             penalties["heterodimer"] = config["heterodimer_penalty"]
-    
+
     # GC clamp penalties
     if gc_clamp_fwd == "weak":
         penalties["gc_clamp_fwd"] = config["gc_clamp_weak_penalty"]
     elif gc_clamp_fwd == "strong":
         penalties["gc_clamp_fwd"] = config["gc_clamp_strong_penalty"]
-    
+
     if gc_clamp_rev == "weak":
         penalties["gc_clamp_rev"] = config["gc_clamp_weak_penalty"]
     elif gc_clamp_rev == "strong":
         penalties["gc_clamp_rev"] = config["gc_clamp_strong_penalty"]
-    
+
     # Poly-X penalties
     if poly_x_fwd:
         penalties["poly_x_fwd"] = config["poly_x_penalty"]
     if poly_x_rev:
         penalties["poly_x_rev"] = config["poly_x_penalty"]
-    
+
     # Calculate final score
     total_penalty = sum(penalties.values())
     score = max(0, min(100, 100 + total_penalty))
-    
+
     category, emoji = get_category(score)
-    
+
     logger.debug(f"Quality score: {score} ({category}) - penalties: {penalties}")
-    
+
     return ScoringResult(
         score=score,
         category=category,

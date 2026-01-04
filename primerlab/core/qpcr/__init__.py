@@ -59,4 +59,3 @@ __all__ = [
     "generate_melt_png",
     "annotate_peaks",
 ]
-

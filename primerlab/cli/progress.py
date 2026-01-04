@@ -15,9 +15,9 @@ class Spinner:
     """
     Simple terminal spinner for indeterminate operations.
     """
-    
+
     FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
-    
+
     def __init__(self, message: str = "Loading", delay: float = 0.1):
         """
         Initialize spinner.
@@ -30,7 +30,7 @@ class Spinner:
         self.delay = delay
         self._stop_event = threading.Event()
         self._thread: Optional[threading.Thread] = None
-    
+
     def _spin(self):
         """Spinner animation loop."""
         idx = 0
@@ -40,30 +40,30 @@ class Spinner:
             sys.stdout.flush()
             idx += 1
             time.sleep(self.delay)
-    
+
     def start(self):
         """Start the spinner."""
         if self._thread is None:
             self._stop_event.clear()
             self._thread = threading.Thread(target=self._spin, daemon=True)
             self._thread.start()
-    
+
     def stop(self, success: bool = True):
         """Stop the spinner and show result."""
         if self._thread is not None:
             self._stop_event.set()
             self._thread.join(timeout=1)
             self._thread = None
-            
+
             # Clear line and show result
             icon = "✅" if success else "❌"
             sys.stdout.write(f"\r   {icon} {self.message}    \n")
             sys.stdout.flush()
-    
+
     def __enter__(self):
         self.start()
         return self
-    
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.stop(success=exc_type is None)
         return False
@@ -73,7 +73,7 @@ class ProgressBar:
     """
     Simple terminal progress bar.
     """
-    
+
     def __init__(
         self,
         total: int,
@@ -96,27 +96,27 @@ class ProgressBar:
         self.show_eta = show_eta
         self.current = 0
         self.start_time = time.time()
-    
+
     def update(self, n: int = 1):
         """Update progress by n items."""
         self.current += n
         self._render()
-    
+
     def set(self, value: int):
         """Set progress to specific value."""
         self.current = value
         self._render()
-    
+
     def _render(self):
         """Render the progress bar."""
         if self.total == 0:
             pct = 100
         else:
             pct = min(100, int(100 * self.current / self.total))
-        
+
         filled = int(self.width * pct / 100)
         bar = "█" * filled + "░" * (self.width - filled)
-        
+
         # ETA calculation
         eta_str = ""
         if self.show_eta and self.current > 0:
@@ -124,16 +124,16 @@ class ProgressBar:
             rate = self.current / elapsed
             remaining = (self.total - self.current) / rate if rate > 0 else 0
             eta_str = f" ETA: {remaining:.0f}s"
-        
+
         sys.stdout.write(f"\r   {self.message}: [{bar}] {pct}%{eta_str}  ")
         sys.stdout.flush()
-        
+
         if self.current >= self.total:
             sys.stdout.write("\n")
-    
+
     def __enter__(self):
         return self
-    
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.current < self.total:
             sys.stdout.write("\n")

@@ -34,22 +34,22 @@ class MultiplexPair:
     gc_forward: float = 0.0
     gc_reverse: float = 0.0
     target_region: Optional[str] = None
-    
+
     def __post_init__(self):
         """Normalize sequences to uppercase."""
         self.forward = self.forward.upper()
         self.reverse = self.reverse.upper()
-    
+
     @property
     def avg_tm(self) -> float:
         """Average Tm of the primer pair."""
         return (self.tm_forward + self.tm_reverse) / 2
-    
+
     @property
     def avg_gc(self) -> float:
         """Average GC content of the primer pair."""
         return (self.gc_forward + self.gc_reverse) / 2
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Export to dictionary for JSON serialization."""
         return {
@@ -88,12 +88,12 @@ class DimerResult:
     delta_g: float
     structure: str = ""
     is_problematic: bool = False
-    
+
     @property
     def is_homodimer(self) -> bool:
         """True if this is a homodimer (same primer with itself)."""
         return self.primer1_seq == self.primer2_seq
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Export to dictionary for JSON serialization."""
         return {
@@ -125,7 +125,7 @@ class CompatibilityMatrix:
     worst_dimer: Optional[DimerResult] = None
     total_dimers: int = 0
     problematic_count: int = 0
-    
+
     def get_dimer(self, name1: str, name2: str) -> Optional[DimerResult]:
         """Get dimer result for a specific pair."""
         # Check both orderings
@@ -134,16 +134,16 @@ class CompatibilityMatrix:
         if (name2, name1) in self.matrix:
             return self.matrix[(name2, name1)]
         return None
-    
+
     def get_problematic_dimers(self) -> List[DimerResult]:
         """Get all problematic dimer interactions."""
         return [d for d in self.matrix.values() if d.is_problematic]
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Export to dictionary for JSON serialization."""
         # Convert matrix to list format for JSON
         matrix_list = [d.to_dict() for d in self.matrix.values()]
-        
+
         return {
             "primer_names": self.primer_names,
             "matrix": matrix_list,
@@ -183,31 +183,31 @@ class MultiplexResult:
     is_valid: bool = True
     errors: List[str] = field(default_factory=list)
     component_scores: Dict[str, float] = field(default_factory=dict)
-    
+
     @property
     def is_compatible(self) -> bool:
         """True if the multiplex set is compatible (grade A, B, or C)."""
         return self.grade in ("A", "B", "C")
-    
+
     @property
     def pair_count(self) -> int:
         """Number of primer pairs in the set."""
         return len(self.pairs)
-    
+
     @property
     def avg_tm(self) -> float:
         """Average Tm of all primers in the set."""
         if not self.pairs:
             return 0.0
         return sum(p.avg_tm for p in self.pairs) / len(self.pairs)
-    
+
     @property
     def avg_gc(self) -> float:
         """Average GC content of all primers in the set."""
         if not self.pairs:
             return 0.0
         return sum(p.avg_gc for p in self.pairs) / len(self.pairs)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Export to dictionary for JSON serialization."""
         return {

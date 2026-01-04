@@ -22,7 +22,7 @@ class SemiNestedPCREngine:
     - One unique outer primer
     - One unique inner primer
     """
-    
+
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         """
         Initialize semi-nested PCR engine.
@@ -32,20 +32,20 @@ class SemiNestedPCREngine:
         """
         self.config = config or {}
         self.p3_wrapper = Primer3Wrapper()
-        
+
         # Default size ranges
         self.outer_size_min = self.config.get("outer_size_min", 400)
         self.outer_size_max = self.config.get("outer_size_max", 600)
         self.inner_size_min = self.config.get("inner_size_min", 150)
         self.inner_size_max = self.config.get("inner_size_max", 300)
-        
+
         # Tm settings
         self.shared_tm_opt = self.config.get("shared_tm_opt", 60.0)
         self.unique_tm_opt = self.config.get("unique_tm_opt", 60.0)
-        
+
         # Shared primer position: "forward" or "reverse"
         self.shared_position = self.config.get("shared_position", "forward")
-    
+
     def design(self, sequence: str) -> NestedPCRResult:
         """
         Design semi-nested PCR primer set.
@@ -58,13 +58,13 @@ class SemiNestedPCREngine:
         """
         logger.info(f"Designing semi-nested PCR primers for {len(sequence)}bp sequence")
         logger.info(f"Shared primer position: {self.shared_position}")
-        
+
         result = NestedPCRResult(
             sequence_length=len(sequence),
             outer_size_range=(self.outer_size_min, self.outer_size_max),
             inner_size_range=(self.inner_size_min, self.inner_size_max),
         )
-        
+
         # Validate sequence length
         if len(sequence) < self.outer_size_min + 50:
             result.warnings.append(
@@ -72,7 +72,7 @@ class SemiNestedPCREngine:
                 f"Minimum recommended: {self.outer_size_min + 50}bp"
             )
             return result
-        
+
         # Step 1: Design outer primers
         logger.info("Step 1: Designing outer primers...")
         outer_primers = self._design_primers(
@@ -80,34 +80,34 @@ class SemiNestedPCREngine:
             self.outer_size_min, 
             self.outer_size_max
         )
-        
+
         if not outer_primers:
             result.warnings.append("Failed to design outer primers")
             return result
-        
+
         logger.info(f"Found {len(outer_primers)} outer primer candidates")
-        
+
         # Step 2: Design inner primers for each outer pair
         # The shared primer is reused, only design the unique inner primer
         logger.info("Step 2: Designing inner primers with shared primer...")
         seminested_sets: List[NestedPrimerSet] = []
-        
+
         for outer in outer_primers[:5]:  # Top 5 outer candidates
             outer_amplicon = sequence[outer["start"]:outer["end"]]
-            
+
             if len(outer_amplicon) < self.inner_size_min + 20:
                 continue
-            
+
             # Design inner pair within outer amplicon
             inner_primers = self._design_primers(
                 outer_amplicon,
                 self.inner_size_min,
                 min(self.inner_size_max, len(outer_amplicon) - 40)
             )
-            
+
             if not inner_primers:
                 continue
-            
+
             for inner in inner_primers[:3]:
                 # Create semi-nested set
                 seminested_set = self._create_seminested_set(
@@ -115,25 +115,25 @@ class SemiNestedPCREngine:
                 )
                 if seminested_set:
                     seminested_sets.append(seminested_set)
-        
+
         if not seminested_sets:
             result.warnings.append("Failed to design semi-nested primer sets")
             result.recommendations.append("Try adjusting size ranges")
             return result
-        
+
         # Step 3: Score and select best
         logger.info(f"Step 3: Scoring {len(seminested_sets)} semi-nested sets...")
         seminested_sets = self._score_seminested_sets(seminested_sets)
         seminested_sets.sort(key=lambda x: x.combined_score, reverse=True)
-        
+
         # Set result
         result.success = True
         result.primer_set = seminested_sets[0]
         result.alternatives = seminested_sets[1:5]
-        
+
         logger.info(f"Semi-nested PCR design complete. Grade: {result.primer_set.grade}")
         return result
-    
+
     def _design_primers(
         self, 
         sequence: str, 
@@ -152,23 +152,23 @@ class SemiNestedPCREngine:
                 "primer_size": {"min": 18, "opt": 20, "max": 25},
             }
         }
-        
+
         raw_results = self.p3_wrapper.design_primers(sequence, config)
         return self._parse_primer3_results(raw_results)
-    
+
     def _parse_primer3_results(self, raw_results: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Parse Primer3 results into primer list."""
         primers = []
         num_returned = raw_results.get("PRIMER_LEFT_NUM_RETURNED", 0)
-        
+
         for i in range(num_returned):
             try:
                 fwd_pos = raw_results.get(f"PRIMER_LEFT_{i}", (0, 0))
                 rev_pos = raw_results.get(f"PRIMER_RIGHT_{i}", (0, 0))
-                
+
                 fwd_start, fwd_len = fwd_pos
                 rev_start, rev_len = rev_pos
-                
+
                 primers.append({
                     "index": i,
                     "fwd_seq": raw_results.get(f"PRIMER_LEFT_{i}_SEQUENCE", ""),
@@ -183,9 +183,9 @@ class SemiNestedPCREngine:
                 })
             except (KeyError, TypeError):
                 continue
-        
+
         return primers
-    
+
     def _create_seminested_set(
         self,
         sequence: str,
@@ -196,7 +196,7 @@ class SemiNestedPCREngine:
         """Create NestedPrimerSet for semi-nested design."""
         try:
             inner_amplicon = outer_amplicon[inner["start"]:inner["end"]]
-            
+
             # For semi-nested, one primer is shared
             if self.shared_position == "forward":
                 # Shared forward: outer_fwd = inner_fwd
@@ -253,7 +253,7 @@ class SemiNestedPCREngine:
         except (KeyError, TypeError) as e:
             logger.warning(f"Failed to create semi-nested set: {e}")
             return None
-    
+
     def _score_seminested_sets(
         self, 
         sets: List[NestedPrimerSet]
@@ -261,26 +261,26 @@ class SemiNestedPCREngine:
         """Score semi-nested primer sets."""
         for ns in sets:
             score = 100.0
-            
+
             # Tm uniformity (max -20)
             outer_tm_diff = abs(ns.outer_tm_forward - ns.outer_tm_reverse)
             inner_tm_diff = abs(ns.inner_tm_forward - ns.inner_tm_reverse)
             score -= min(outer_tm_diff * 5, 10)
             score -= min(inner_tm_diff * 5, 10)
-            
+
             # GC content 40-60% (max -10)
             for gc in [ns.outer_gc_forward, ns.outer_gc_reverse, 
                        ns.inner_gc_forward, ns.inner_gc_reverse]:
                 if gc < 40 or gc > 60:
                     score -= 2.5
-            
+
             # Size ratio bonus for semi-nested (inner should be ~50-80% of outer)
             size_ratio = ns.inner_product_size / ns.outer_product_size
             if 0.4 < size_ratio < 0.9:
                 score += 5  # Bonus for good ratio
-            
+
             ns.combined_score = max(score, 0)
-            
+
             # Grade
             if score >= 90:
                 ns.grade = "A"
@@ -292,7 +292,7 @@ class SemiNestedPCREngine:
                 ns.grade = "D"
             else:
                 ns.grade = "F"
-        
+
         return sets
 
 
@@ -325,6 +325,6 @@ def design_seminested_primers(
         "shared_tm_opt": tm_opt,
         "unique_tm_opt": tm_opt,
     }
-    
+
     engine = SemiNestedPCREngine(config)
     return engine.design(sequence)

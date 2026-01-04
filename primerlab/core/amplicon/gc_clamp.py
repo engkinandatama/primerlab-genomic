@@ -30,19 +30,19 @@ def analyze_gc_clamp(
         GCClamp result with counts and assessment
     """
     seq = sequence.upper()
-    
+
     # 5' end (first N nucleotides)
     five_prime = seq[:region_size]
     five_prime_count = five_prime.count("G") + five_prime.count("C")
-    
+
     # 3' end (last N nucleotides)
     three_prime = seq[-region_size:] if len(seq) >= region_size else seq
     three_prime_count = three_prime.count("G") + three_prime.count("C")
-    
+
     # Assess optimality
     warning = None
     is_optimal = True
-    
+
     # Check 3' end (more critical for PCR)
     if three_prime_count < min_gc:
         warning = f"Weak 3' end: only {three_prime_count} G/C in last {region_size}nt"
@@ -50,14 +50,14 @@ def analyze_gc_clamp(
     elif three_prime_count > max_gc:
         warning = f"Strong 3' end: {three_prime_count} G/C in last {region_size}nt (may cause non-specific binding)"
         is_optimal = False
-    
+
     # Check 5' end
     if five_prime_count < min_gc and is_optimal:
         warning = f"Weak 5' end: only {five_prime_count} G/C in first {region_size}nt"
         # 5' is less critical, so don't mark as non-optimal
     elif five_prime_count > max_gc and is_optimal:
         warning = f"Strong 5' end: {five_prime_count} G/C in first {region_size}nt"
-    
+
     return GCClamp(
         five_prime_count=five_prime_count,
         three_prime_count=three_prime_count,

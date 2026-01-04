@@ -28,7 +28,7 @@ class DesignRunSummary:
     product_size: int = 0
     tm_forward: float = 0.0
     tm_reverse: float = 0.0
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "name": self.name,
@@ -51,7 +51,7 @@ class ComparisonResult:
     worst_run: Optional[str] = None
     avg_quality: float = 0.0
     success_rate: float = 0.0
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "run_count": len(self.runs),
@@ -68,11 +68,11 @@ class BatchComparator:
     """
     Compares multiple primer design runs.
     """
-    
+
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         """Initialize comparator."""
         self.config = config or {}
-    
+
     def compare(self, result_paths: List[str]) -> ComparisonResult:
         """
         Compare multiple result files.
@@ -84,29 +84,29 @@ class BatchComparator:
             ComparisonResult with comparison data
         """
         logger.info(f"Comparing {len(result_paths)} design runs")
-        
+
         runs = []
         for path in result_paths:
             summary = self._load_result(path)
             if summary:
                 runs.append(summary)
-        
+
         if not runs:
             return ComparisonResult()
-        
+
         # Calculate statistics
         successful = [r for r in runs if r.success]
         success_rate = len(successful) / len(runs) * 100 if runs else 0
-        
+
         scores = [r.quality_score for r in runs if r.quality_score is not None]
         avg_quality = sum(scores) / len(scores) if scores else 0
-        
+
         best_run = max(runs, key=lambda x: x.quality_score or 0).name if scores else None
         worst_run = min(runs, key=lambda x: x.quality_score or 100).name if scores else None
-        
+
         # Find differences
         differences = self._find_differences(runs)
-        
+
         result = ComparisonResult(
             runs=runs,
             differences=differences,
@@ -115,27 +115,27 @@ class BatchComparator:
             avg_quality=avg_quality,
             success_rate=success_rate,
         )
-        
+
         logger.info(f"Comparison complete. {len(runs)} runs, {success_rate:.0f}% success rate")
         return result
-    
+
     def _load_result(self, path: str) -> Optional[DesignRunSummary]:
         """Load a result file and extract summary."""
         try:
             with open(path, 'r') as f:
                 data = json.load(f)
-            
+
             # Extract key fields
             workflow = data.get("workflow", "unknown")
             primers = data.get("primers", {})
             qc = data.get("qc", {})
-            
+
             fwd = primers.get("forward", {})
             rev = primers.get("reverse", {})
-            
+
             amplicons = data.get("amplicons", [])
             product_size = amplicons[0].get("length", 0) if amplicons else 0
-            
+
             return DesignRunSummary(
                 name=Path(path).stem,
                 path=path,
@@ -153,14 +153,14 @@ class BatchComparator:
         except Exception as e:
             logger.warning(f"Failed to load {path}: {e}")
             return None
-    
+
     def _find_differences(self, runs: List[DesignRunSummary]) -> List[Dict[str, Any]]:
         """Find significant differences between runs."""
         differences = []
-        
+
         if len(runs) < 2:
             return differences
-        
+
         # Compare quality scores
         scores = [(r.name, r.quality_score) for r in runs if r.quality_score]
         if scores:
@@ -172,7 +172,7 @@ class BatchComparator:
                     "description": f"Quality score range: {min_score:.0f} - {max_score:.0f}",
                     "severity": "high" if max_score - min_score > 20 else "medium",
                 })
-        
+
         # Compare product sizes
         sizes = [(r.name, r.product_size) for r in runs if r.product_size > 0]
         if sizes:
@@ -184,7 +184,7 @@ class BatchComparator:
                     "description": f"Product size range: {min_size} - {max_size} bp",
                     "severity": "medium",
                 })
-        
+
         # Compare Tm
         tms = [(r.name, r.tm_forward) for r in runs if r.tm_forward > 0]
         if tms:
@@ -196,7 +196,7 @@ class BatchComparator:
                     "description": f"Tm range: {min_tm:.1f} - {max_tm:.1f}°C",
                     "severity": "medium" if max_tm - min_tm > 5 else "low",
                 })
-        
+
         return differences
 
 

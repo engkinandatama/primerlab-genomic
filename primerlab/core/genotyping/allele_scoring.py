@@ -43,23 +43,23 @@ POSITION_WEIGHTS = {
 @dataclass
 class AlleleScoringResult:
     """Result of allele discrimination scoring."""
-    
+
     primer_sequence: str
     snp_position: int  # 0-indexed from 3' end
     ref_allele: str
     alt_allele: str
-    
+
     # Scores (0-100)
     position_score: float
     mismatch_score: float
     combined_score: float
-    
+
     # Assessment
     grade: str  # A-F
     is_discriminating: bool
     warnings: List[str]
     recommendations: List[str]
-    
+
     def to_dict(self) -> Dict:
         """Convert to dictionary."""
         return {
@@ -129,46 +129,46 @@ def score_allele_discrimination(
     primer_sequence = primer_sequence.upper()
     ref_allele = ref_allele.upper()
     alt_allele = alt_allele.upper()
-    
+
     warnings = []
     recommendations = []
-    
+
     # Validate inputs
     if snp_position < 0 or snp_position >= len(primer_sequence):
         warnings.append(f"SNP position {snp_position} out of range")
         snp_position = 0  # Default to 3' end
-    
+
     if len(ref_allele) != 1 or len(alt_allele) != 1:
         warnings.append("Only single nucleotide variants supported")
-    
+
     # Calculate position score (0-100)
     position_weight = _get_position_weight(snp_position)
     position_score = position_weight * 100
-    
+
     # Calculate mismatch type score (0-100)
     mismatch_weight = _get_mismatch_score(ref_allele, alt_allele)
     mismatch_score = mismatch_weight * 100
-    
+
     # Combined score (weighted average)
     # Position matters more (60%) than mismatch type (40%)
     combined_score = (position_score * 0.6) + (mismatch_score * 0.4)
-    
+
     # Generate warnings
     if snp_position > 3:
         warnings.append(f"SNP at position {snp_position} from 3' end - poor discrimination expected")
         recommendations.append("Move SNP closer to 3' end for better discrimination")
-    
+
     if mismatch_weight < 0.7:
         warnings.append(f"{ref_allele}→{alt_allele} is a transition (less discriminating)")
         recommendations.append("Transversion mismatches (A↔T, G↔C) provide better specificity")
-    
+
     # Grade and assessment
     grade = _score_to_grade(combined_score)
     is_discriminating = combined_score >= min_score_threshold
-    
+
     if not is_discriminating:
         recommendations.append("Consider alternative primer design with SNP at 3' terminal position")
-    
+
     return AlleleScoringResult(
         primer_sequence=primer_sequence,
         snp_position=snp_position,

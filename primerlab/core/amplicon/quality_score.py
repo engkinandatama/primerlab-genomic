@@ -63,9 +63,9 @@ def calculate_quality_score(
             "length": 0.15,
             "tm_sharpness": 0.10
         }
-    
+
     warnings = []
-    
+
     # 1. Structure score (0-100)
     structure_score = 100.0
     if structure:
@@ -78,21 +78,21 @@ def calculate_quality_score(
         elif structure.delta_g < -3.0:
             structure_score = 80.0
         # else: 100 (weak or no structure)
-    
+
     # 2. GC uniformity score (from profile)
     gc_uniformity_score = 100.0
     if gc_profile:
         gc_uniformity_score = gc_profile.uniformity_score
         if gc_profile.uniformity_score < 60:
             warnings.append(f"Non-uniform GC content (range: {gc_profile.min_gc:.1f}-{gc_profile.max_gc:.1f}%)")
-    
+
     # 3. GC clamp score
     gc_clamp_score = 100.0
     if gc_clamp:
         gc_clamp_score = 100.0 if gc_clamp.is_optimal else 60.0
         if gc_clamp.warning:
             warnings.append(gc_clamp.warning)
-    
+
     # 4. Length score
     length = len(sequence)
     length_score = 100.0
@@ -102,7 +102,7 @@ def calculate_quality_score(
     elif length > optimal_length_max:
         length_score = max(50, 100 - (length - optimal_length_max) * 0.2)
         warnings.append(f"Long amplicon ({length}bp > {optimal_length_max}bp)")
-    
+
     # 5. Tm sharpness score
     tm_sharpness_score = 100.0
     if amplicon_tm:
@@ -112,7 +112,7 @@ def calculate_quality_score(
             warnings.append("Broad melting curve expected")
         elif amplicon_tm.width > 10:
             tm_sharpness_score = 80.0
-    
+
     # Calculate weighted score
     total_score = (
         structure_score * weights["structure"] +
@@ -121,9 +121,9 @@ def calculate_quality_score(
         length_score * weights["length"] +
         tm_sharpness_score * weights["tm_sharpness"]
     )
-    
+
     grade = score_to_grade(total_score)
-    
+
     return AmpliconQuality(
         score=round(total_score, 1),
         grade=grade,

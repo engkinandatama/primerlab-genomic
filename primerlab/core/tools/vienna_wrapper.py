@@ -11,13 +11,13 @@ class ViennaWrapper:
     Wrapper for ViennaRNA tools (RNAfold, RNAcofold).
     Gracefully handles missing installation.
     """
-    
+
     _warned = False  # Class-level flag to avoid repeated warnings
-    
+
     def __init__(self):
         self.rnafold_path = shutil.which("RNAfold")
         self.rnacofold_path = shutil.which("RNAcofold")
-        
+
         if not self.is_available and not ViennaWrapper._warned:
             ViennaWrapper._warned = True
             logger.warning(
@@ -27,12 +27,12 @@ class ViennaWrapper:
                 "   - macOS: brew install viennarna\n"
                 "   - Conda: conda install -c bioconda viennarna"
             )
-    
+
     @property
     def is_available(self) -> bool:
         """Check if ViennaRNA tools are available."""
         return self.rnafold_path is not None
-        
+
     def fold(self, sequence: str, temp: float = 37.0) -> Dict[str, Any]:
         """
         Calculates secondary structure and MFE (Minimum Free Energy) using RNAfold.
@@ -54,9 +54,9 @@ class ViennaWrapper:
         # Note: For DNA primers, we should ideally use DNA parameters (-P dna_mathews2004.par),
         # but standard RNAfold uses RNA parameters. For relative stability it's often acceptable,
         # or we can add a parameter to load DNA params if available.
-        
+
         cmd = [self.rnafold_path, "--noPS", f"-T {temp}"]
-        
+
         try:
             process = subprocess.Popen(
                 cmd,
@@ -67,7 +67,7 @@ class ViennaWrapper:
                 shell=False
             )
             stdout, stderr = process.communicate(input=sequence)
-            
+
             if process.returncode != 0:
                 raise ToolExecutionError(f"RNAfold failed: {stderr}", "ERR_TOOL_RNAFOLD")
 
@@ -84,7 +84,7 @@ class ViennaWrapper:
                 structure = parts[0].strip()
                 mfe_str = parts[1].replace(")", "").strip()
                 mfe = float(mfe_str)
-                
+
                 return {
                     "structure": structure,
                     "mfe": mfe,
@@ -107,7 +107,7 @@ class ViennaWrapper:
 
         input_seq = f"{seq1}&{seq2}"
         cmd = [self.rnacofold_path, "--noPS", f"-T {temp}"]
-        
+
         try:
             process = subprocess.Popen(
                 cmd,
@@ -118,7 +118,7 @@ class ViennaWrapper:
                 shell=False
             )
             stdout, stderr = process.communicate(input=input_seq)
-            
+
             if process.returncode != 0:
                 raise ToolExecutionError(f"RNAcofold failed: {stderr}", "ERR_TOOL_RNACOFOLD")
 
@@ -132,7 +132,7 @@ class ViennaWrapper:
                 structure = parts[0].strip()
                 mfe_str = parts[1].replace(")", "").strip()
                 mfe = float(mfe_str)
-                
+
                 return {
                     "structure": structure,
                     "mfe": mfe,

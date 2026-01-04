@@ -35,9 +35,9 @@ class BlastCache:
     - Database path/hash
     - BLAST parameters
     """
-    
+
     DEFAULT_TTL = 86400 * 7  # 7 days
-    
+
     def __init__(
         self,
         cache_dir: Optional[str] = None,
@@ -54,17 +54,17 @@ class BlastCache:
         """
         self.enabled = enabled
         self.ttl = ttl
-        
+
         if cache_dir:
             self.cache_dir = Path(cache_dir)
         else:
             self.cache_dir = Path.home() / ".primerlab" / "cache"
-        
+
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.db_path = self.cache_dir / "blast_cache.db"
-        
+
         self._init_db()
-    
+
     def _init_db(self):
         """Initialize SQLite database."""
         with sqlite3.connect(self.db_path) as conn:
@@ -83,7 +83,7 @@ class BlastCache:
                 ON blast_cache(expires_at)
             """)
             conn.commit()
-    
+
     def _make_key(
         self,
         query_seq: str,
@@ -98,7 +98,7 @@ class BlastCache:
         ]
         key_str = "|".join(key_parts)
         return hashlib.sha256(key_str.encode()).hexdigest()[:32]
-    
+
     def get(
         self,
         query_seq: str,
@@ -118,10 +118,10 @@ class BlastCache:
         """
         if not self.enabled:
             return None
-        
+
         cache_key = self._make_key(query_seq, database, params)
         now = time.time()
-        
+
         try:
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.execute(
@@ -130,18 +130,18 @@ class BlastCache:
                     (cache_key, now)
                 )
                 row = cursor.fetchone()
-                
+
                 if row:
                     logger.debug(f"Cache hit for {cache_key[:8]}...")
                     return json.loads(row[0])
-                
+
                 logger.debug(f"Cache miss for {cache_key[:8]}...")
                 return None
-                
+
         except Exception as e:
             logger.warning(f"Cache read error: {e}")
             return None
-    
+
     def set(
         self,
         query_seq: str,
@@ -160,14 +160,14 @@ class BlastCache:
         """
         if not self.enabled:
             return
-        
+
         cache_key = self._make_key(query_seq, database, params)
         now = time.time()
         expires_at = now + self.ttl
-        
+
         try:
             result_json = json.dumps(result)
-            
+
             with sqlite3.connect(self.db_path) as conn:
                 conn.execute(
                     """INSERT OR REPLACE INTO blast_cache 
@@ -176,12 +176,12 @@ class BlastCache:
                     (cache_key, cache_key[:16], database, result_json, now, expires_at)
                 )
                 conn.commit()
-                
+
             logger.debug(f"Cached result for {cache_key[:8]}...")
-            
+
         except Exception as e:
             logger.warning(f"Cache write error: {e}")
-    
+
     def clear(self):
         """Clear all cache entries."""
         try:
@@ -191,7 +191,7 @@ class BlastCache:
             logger.info("Cache cleared")
         except Exception as e:
             logger.warning(f"Cache clear error: {e}")
-    
+
     def cleanup_expired(self):
         """Remove expired entries."""
         now = time.time()
@@ -203,27 +203,27 @@ class BlastCache:
                 )
                 count = cursor.rowcount
                 conn.commit()
-                
+
             if count > 0:
                 logger.debug(f"Cleaned up {count} expired cache entries")
-                
+
         except Exception as e:
             logger.warning(f"Cache cleanup error: {e}")
-    
+
     def stats(self) -> Dict[str, Any]:
         """Get cache statistics."""
         try:
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.execute("SELECT COUNT(*) FROM blast_cache")
                 total = cursor.fetchone()[0]
-                
+
                 now = time.time()
                 cursor = conn.execute(
                     "SELECT COUNT(*) FROM blast_cache WHERE expires_at > ?",
                     (now,)
                 )
                 valid = cursor.fetchone()[0]
-                
+
                 return {
                     "total_entries": total,
                     "valid_entries": valid,
