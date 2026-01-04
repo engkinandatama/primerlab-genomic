@@ -38,26 +38,26 @@ def find_restriction_sites(
         List of RestrictionSite objects
     """
     seq = sequence.upper()
-    
+
     # Use default enzymes if not specified
     if enzymes is None:
         enzymes = ["EcoRI", "BamHI", "HindIII", "XhoI", "NotI", "SalI"]
-    
+
     sites = []
-    
+
     for enzyme in enzymes:
         if enzyme not in DEFAULT_ENZYMES:
             continue
-            
+
         recognition, cut_pos = DEFAULT_ENZYMES[enzyme]
-        
+
         # Search for recognition site
         pos = 0
         while True:
             pos = seq.find(recognition, pos)
             if pos == -1:
                 break
-            
+
             sites.append(RestrictionSite(
                 enzyme=enzyme,
                 position=pos,
@@ -65,10 +65,10 @@ def find_restriction_sites(
                 cut_position=cut_pos
             ))
             pos += 1
-    
+
     # Sort by position
     sites.sort(key=lambda s: s.position)
-    
+
     return sites
 
 

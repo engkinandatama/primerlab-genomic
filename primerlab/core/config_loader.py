@@ -22,13 +22,13 @@ def load_yaml(path: str) -> Dict[str, Any]:
     except yaml.YAMLError as e:
         # Extract detailed error information
         error_msg = f"Invalid YAML syntax in {path}"
-        
+
         if hasattr(e, 'problem_mark') and e.problem_mark:
             mark = e.problem_mark
             line_num = mark.line + 1
             col_num = mark.column + 1
             error_msg += f"\n  → Line {line_num}, Column {col_num}"
-            
+
             # Try to show the problematic line
             try:
                 with open(path, 'r', encoding='utf-8') as f:
@@ -39,15 +39,15 @@ def load_yaml(path: str) -> Dict[str, Any]:
                     error_msg += f"\n  → " + " " * col_num + "^"
             except (IOError, IndexError, UnicodeDecodeError):
                 pass
-        
+
         if hasattr(e, 'problem') and e.problem:
             error_msg += f"\n  → Problem: {e.problem}"
-        
+
         error_msg += "\n\nCommon YAML errors:"
         error_msg += "\n  • Missing colon after key (key value → key: value)"
         error_msg += "\n  • Incorrect indentation (use 2 spaces, not tabs)"
         error_msg += "\n  • Unquoted special characters (use quotes for : @ # etc.)"
-        
+
         raise ConfigError(error_msg, "ERR_CONFIG_002")
 
 
@@ -79,7 +79,7 @@ def validate_config(config: Dict[str, Any]):
             f"Your config must include: {', '.join(required_keys)}",
             "ERR_CONFIG_003"
         )
-            
+
     # Validate workflow name
     workflow = config.get("workflow")
     if not workflow:
@@ -88,7 +88,7 @@ def validate_config(config: Dict[str, Any]):
             "Please specify 'workflow: pcr' or 'workflow: qpcr' in your config.",
             "ERR_CONFIG_004"
         )
-    
+
     # Check for valid workflow types
     valid_workflows = ["pcr", "qpcr", "compat_check"]
     if workflow.lower() not in valid_workflows:
@@ -116,10 +116,10 @@ def validate_config(config: Dict[str, Any]):
             "Add 'output: directory: <output_folder>' to your config.",
             "ERR_CONFIG_005"
         )
-    
+
     # Validate parameter ranges (optional but helpful)
     params = config.get("parameters", {})
-    
+
     # Check Tm range validity
     tm = params.get("tm", {})
     if tm:
@@ -133,7 +133,7 @@ def validate_config(config: Dict[str, Any]):
         # v0.1.3: Soft warning for wide Tm range
         elif tm_max - tm_min > 10:
             logger.warning(f"Wide Tm range ({tm_min}°C - {tm_max}°C) may produce suboptimal primers. Consider tightening to 5-8°C range.")
-    
+
     # Check product_size range validity
     p_size = params.get("product_size", {})
     if p_size:
@@ -147,7 +147,7 @@ def validate_config(config: Dict[str, Any]):
         # v0.1.3: Soft warning for very large products
         if p_max > 5000:
             logger.warning(f"Large product size (up to {p_max}bp) may require specialized long-range PCR conditions.")
-    
+
     # v0.1.3: Soft warning for GC range
     gc = params.get("gc", {})
     if gc:
@@ -167,10 +167,10 @@ def load_and_merge_config(workflow: str, user_config_path: Optional[str] = None,
     # 1. Load Default Config
     # Assuming default configs are in primerlab/config/<workflow>_default.yaml
     base_path = Path(__file__).parent.parent / "config" / f"{workflow}_default.yaml"
-    
+
     if not base_path.exists():
         raise ConfigError(f"Default config for workflow '{workflow}' not found at {base_path}", "ERR_CONFIG_006")
-        
+
     logger.debug(f"Loading default config from {base_path}")
     final_config = load_yaml(str(base_path))
 
@@ -190,7 +190,7 @@ def load_and_merge_config(workflow: str, user_config_path: Optional[str] = None,
 
     # 5. Validate
     validate_config(final_config)
-    
+
     return final_config
 
 def _process_enhancements(config: Dict[str, Any]) -> Dict[str, Any]:
@@ -200,15 +200,15 @@ def _process_enhancements(config: Dict[str, Any]) -> Dict[str, Any]:
     2. product_size (min/opt/max) -> product_size_range
     """
     params = config.get("parameters", {})
-    
+
     # 1. Presets - v0.1.3: Load from YAML files or use inline defaults
     preset = config.get("preset")
     if preset:
         logger.info(f"Applying preset: {preset}")
-        
+
         # Try to load preset from file first
         preset_file = Path(__file__).parent.parent / "config" / f"{preset}_default.yaml"
-        
+
         if preset_file.exists():
             preset_config = load_yaml(str(preset_file))
             # Merge preset params with current params (user params override preset)
@@ -235,14 +235,14 @@ def _process_enhancements(config: Dict[str, Any]) -> Dict[str, Any]:
                 params.setdefault("product_size", {"min": 80, "opt": 130, "max": 200})
                 params.setdefault("tm", {"min": 58.0, "opt": 60.0, "max": 62.0})
             logger.debug(f"Applied inline preset: {preset}")
-        
+
     # 2. product_size -> product_size_range
     # Primer3 expects [[min, max]] for PRIMER_PRODUCT_SIZE_RANGE
     # We support user-friendly product_size: {min: X, opt: Y, max: Z}
-    
+
     p_size = params.get("product_size")
     p_range = params.get("product_size_range")
-    
+
     if p_size and not p_range:
         # Convert user-friendly size to range format
         # Note: Primer3 takes a list of ranges. We use min-max.
@@ -250,5 +250,5 @@ def _process_enhancements(config: Dict[str, Any]) -> Dict[str, Any]:
         max_s = p_size.get("max", 300)
         params["product_size_range"] = [[min_s, max_s]]
         logger.debug(f"Converted product_size {p_size} to range [[{min_s}, {max_s}]]")
-        
+
     return config

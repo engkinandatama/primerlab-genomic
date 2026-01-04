@@ -32,11 +32,11 @@ class IntegratedPCRResult:
     specificity_score: Optional[SpecificityScore] = None
     is_validated: bool = False
     validation_summary: str = ""
-    
+
     def __post_init__(self):
         """Generate validation summary."""
         summaries = []
-        
+
         # Check in-silico result
         if self.insilico_result.success:
             if self.insilico_result.has_unique_product:
@@ -49,7 +49,7 @@ class IntegratedPCRResult:
                     summaries.append(f"⚠ {product_count} products predicted")
         else:
             summaries.append("✗ In-silico simulation failed")
-        
+
         # Check specificity
         if self.specificity_score:
             grade = self.specificity_score.grade
@@ -58,16 +58,16 @@ class IntegratedPCRResult:
                 summaries.append(f"✓ Specificity: {score:.1f} ({grade})")
             else:
                 summaries.append(f"✗ Specificity: {score:.1f} ({grade})")
-        
+
         self.validation_summary = " | ".join(summaries)
-        
+
         # Determine if validated
         insilico_pass = (
-            self.insilico_result.success and 
+            self.insilico_result.success  and
             self.insilico_result.has_unique_product
         )
         specificity_pass = (
-            self.specificity_score is None or 
+            self.specificity_score is None  or
             self.specificity_score.is_acceptable
         )
         self.is_validated = insilico_pass and specificity_pass
@@ -94,7 +94,7 @@ def integrate_offtarget_check(
     # Get primers from result
     fwd_primer = insilico_result.forward_primer
     rev_primer = insilico_result.reverse_primer
-    
+
     # Run off-target finder
     finder = OfftargetFinder(database=database, target_id=target_id, mode=mode)
     offtarget_result = finder.find_primer_pair_offtargets(
@@ -102,11 +102,11 @@ def integrate_offtarget_check(
         reverse_primer=rev_primer,
         target_id=target_id
     )
-    
+
     # Score specificity
     scorer = SpecificityScorer()
     _, _, combined_score = scorer.score_primer_pair(offtarget_result)
-    
+
     return IntegratedPCRResult(
         insilico_result=insilico_result,
         offtarget_result=offtarget_result,

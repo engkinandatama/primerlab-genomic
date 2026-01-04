@@ -40,4 +40,3 @@ class QCResult:
             "warnings": self.warnings,
             "errors": self.errors
         }
-

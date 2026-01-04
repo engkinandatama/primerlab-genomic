@@ -54,7 +54,7 @@ class ProbeBindingResult:
     warnings: List[str] = field(default_factory=list)
     grade: str = "A"
     score: float = 100.0
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "probe_sequence": self.probe_sequence,
@@ -86,11 +86,11 @@ def calculate_nearest_neighbor_tm(
     """
     if len(sequence) < 2:
         return (0.0, 0.0, 0.0)
-    
+
     seq = sequence.upper()
     total_dH = 0.0  # kcal/mol
     total_dS = 0.0  # cal/mol·K
-    
+
     # Sum nearest-neighbor contributions
     for i in range(len(seq) - 1):
         dinucleotide = seq[i:i+2]
@@ -101,35 +101,35 @@ def calculate_nearest_neighbor_tm(
             # Handle unknown bases (N, etc.)
             total_dH += -7.5  # Average
             total_dS += -21.0
-    
+
     # Terminal corrections
     first_base = seq[0]
     last_base = seq[-1]
-    
+
     if first_base in "AT":
         total_dH += INIT_PARAMS["AT_terminal"]["dH"]
         total_dS += INIT_PARAMS["AT_terminal"]["dS"]
     else:
         total_dH += INIT_PARAMS["GC_terminal"]["dH"]
         total_dS += INIT_PARAMS["GC_terminal"]["dS"]
-    
+
     if last_base in "AT":
         total_dH += INIT_PARAMS["AT_terminal"]["dH"]
         total_dS += INIT_PARAMS["AT_terminal"]["dS"]
     else:
         total_dH += INIT_PARAMS["GC_terminal"]["dH"]
         total_dS += INIT_PARAMS["GC_terminal"]["dS"]
-    
+
     # Convert concentrations
     na_mol = na_concentration / 1000.0  # M
     probe_mol = probe_concentration / 1000000.0  # M
-    
+
     # Salt correction (SantaLucia 1998)
     # ΔS = ΔS + 0.368 * N * ln([Na+])
     n_bp = len(seq) - 1
     salt_correction = 0.368 * n_bp * math.log(na_mol)
     total_dS_corrected = total_dS + salt_correction
-    
+
     # Calculate Tm
     # Tm = (ΔH * 1000) / (ΔS + R * ln(Ct/4)) - 273.15
     R = 1.987  # cal/mol·K
@@ -137,7 +137,7 @@ def calculate_nearest_neighbor_tm(
         tm = (total_dH * 1000) / (total_dS_corrected + R * math.log(probe_mol / 4)) - 273.15
     else:
         tm = (total_dH * 1000) / total_dS_corrected - 273.15
-    
+
     return (tm, total_dH, total_dS)
 
 
@@ -182,9 +182,9 @@ def calculate_binding_efficiency(
     """
     # Probe should have Tm ~8-10°C higher than annealing temp
     # Efficiency drops as temp approaches Tm
-    
+
     delta = tm - annealing_temp
-    
+
     if delta > 15:
         # Too far below Tm - stable but check for non-specific
         return 100.0
@@ -227,18 +227,18 @@ def simulate_probe_binding(
         ProbeBindingResult with binding curve
     """
     warnings = []
-    
+
     # Calculate probe Tm
     probe_tm = calculate_probe_binding_tm(
         probe_sequence, na_concentration, probe_concentration
     )
-    
+
     # Check probe length
     if len(probe_sequence) < 18:
         warnings.append(f"Probe too short ({len(probe_sequence)} bp). Minimum 18 bp recommended.")
     if len(probe_sequence) > 30:
         warnings.append(f"Probe too long ({len(probe_sequence)} bp). Maximum 30 bp recommended.")
-    
+
     # Check GC content
     gc_count = probe_sequence.upper().count('G') + probe_sequence.upper().count('C')
     gc_percent = (gc_count / len(probe_sequence)) * 100
@@ -246,16 +246,16 @@ def simulate_probe_binding(
         warnings.append(f"Probe GC content too low ({gc_percent:.1f}%). Minimum 30% recommended.")
     if gc_percent > 80:
         warnings.append(f"Probe GC content too high ({gc_percent:.1f}%). Maximum 80% recommended.")
-    
+
     # Check 5' G rule (G at 5' end can quench fluorescence)
     if probe_sequence.upper().startswith('G'):
         warnings.append("Probe has G at 5' end - may quench fluorescence. Consider redesign.")
-    
+
     # Generate binding curve
     binding_curve = []
     best_efficiency = 0.0
     optimal_temp = min_temp
-    
+
     temp = min_temp
     while temp <= max_temp:
         efficiency = calculate_binding_efficiency(probe_tm, temp)
@@ -263,18 +263,18 @@ def simulate_probe_binding(
             "temperature": round(temp, 1),
             "efficiency": round(efficiency, 2),
         })
-        
+
         if efficiency > best_efficiency:
             best_efficiency = efficiency
             optimal_temp = temp
-        
+
         temp += step_size
-    
+
     # Calculate grade
     score = best_efficiency
     if warnings:
         score -= len(warnings) * 5
-    
+
     if score >= 90:
         grade = "A"
     elif score >= 80:
@@ -285,7 +285,7 @@ def simulate_probe_binding(
         grade = "D"
     else:
         grade = "F"
-    
+
     return ProbeBindingResult(
         probe_sequence=probe_sequence,
         probe_tm=probe_tm,

@@ -11,15 +11,15 @@ class WorkflowResult:
     primers: Dict[str, Primer]
     amplicons: List[Amplicon]
     metadata: RunMetadata
-    
+
     qc: Optional[QCResult] = None
-    
+
     warnings: List[str] = field(default_factory=list)
     errors: List[str] = field(default_factory=list)
-    
+
     # v0.1.3: Alternative primer candidates
     alternatives: List[Dict[str, Any]] = field(default_factory=list)
-    
+
     # Internal diagnostics
     raw: Dict[str, Any] = field(default_factory=dict, repr=False)
 

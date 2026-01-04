@@ -11,28 +11,28 @@ from typing import Optional, List, Dict, Tuple
 @dataclass
 class GdnaRiskResult:
     """Result of gDNA contamination risk assessment."""
-    
+
     # Primer positions (in transcript coordinates)
     fwd_start: int
     fwd_end: int
     rev_start: int
     rev_end: int
-    
+
     # Risk assessment
     risk_level: str  # "None", "Low", "Medium", "High"
     risk_score: float  # 0-100 (higher = more risk)
-    
+
     # Details
     fwd_spans_junction: bool
     rev_spans_junction: bool
     intron_between: bool
     intron_size: Optional[int]
-    
+
     # Recommendations
     is_rt_specific: bool
     warnings: List[str]
     recommendations: List[str]
-    
+
     def to_dict(self) -> Dict:
         """Convert to dictionary."""
         return {
@@ -86,11 +86,11 @@ def check_gdna_risk(
     """
     warnings = []
     recommendations = []
-    
+
     # Determine which exons primers are in
     fwd_exons = set()
     rev_exons = set()
-    
+
     for idx, (exon_start, exon_end) in enumerate(exon_boundaries):
         # Forward primer overlaps this exon?
         if fwd_start < exon_end and fwd_end > exon_start:
@@ -98,29 +98,29 @@ def check_gdna_risk(
         # Reverse primer overlaps?
         if rev_start < exon_end and rev_end > exon_start:
             rev_exons.add(idx)
-    
+
     # Check if primers span junctions
     fwd_spans_junction = len(fwd_exons) > 1
     rev_spans_junction = len(rev_exons) > 1
-    
+
     # Check if intron exists between primers
     intron_between = False
     intron_size = None
-    
+
     if fwd_exons and rev_exons:
         min_fwd_exon = min(fwd_exons)
         max_rev_exon = max(rev_exons)
-        
+
         if max_rev_exon > min_fwd_exon:
             intron_between = True
-            
+
             # Calculate intron size if available
             if genomic_intron_sizes:
                 total_intron = 0
                 for i in range(min_fwd_exon, min(max_rev_exon, len(genomic_intron_sizes))):
                     total_intron += genomic_intron_sizes[i]
                 intron_size = total_intron
-    
+
     # Calculate risk
     if fwd_spans_junction or rev_spans_junction:
         # Junction-spanning = RT-specific
@@ -148,7 +148,7 @@ def check_gdna_risk(
         warnings.append("Both primers in same exon - will amplify gDNA")
         recommendations.append("Redesign primers to span exon-exon junction")
         recommendations.append("Or use DNase treatment before RT")
-    
+
     return GdnaRiskResult(
         fwd_start=fwd_start,
         fwd_end=fwd_end,

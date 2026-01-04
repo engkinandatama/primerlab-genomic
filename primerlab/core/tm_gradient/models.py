@@ -17,7 +17,7 @@ class TmGradientConfig:
     na_concentration: float = 50.0   # Na+ concentration (mM)
     mg_concentration: float = 1.5    # Mg2+ concentration (mM)
     primer_concentration: float = 0.25  # Primer concentration (µM)
-    
+
     @property
     def temperature_range(self) -> List[float]:
         """Generate list of temperatures to simulate."""
@@ -36,7 +36,7 @@ class TmDataPoint:
     binding_efficiency: float       # 0-100% binding efficiency
     fraction_bound: float           # 0-1 fraction of primer bound
     delta_g: float                  # ΔG at this temperature (kcal/mol)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "temperature": self.temperature,
@@ -54,14 +54,14 @@ class TemperatureSensitivity:
     sensitivity_score: float        # 0-100, higher = less sensitive
     tolerance_range: float          # ±°C range with >80% efficiency
     narrow_window: bool             # True if tolerance < 2°C
-    
+
     # Detailed data
     efficiency_at_optimal: float    # Efficiency at optimal temp
     efficiency_at_minus_5: float    # Efficiency at optimal-5°C
     efficiency_at_plus_5: float     # Efficiency at optimal+5°C
-    
+
     grade: str = "A"
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "primer_name": self.primer_name,
@@ -80,24 +80,24 @@ class TmGradientResult:
     primer_name: str
     primer_sequence: str
     template_name: Optional[str] = None
-    
+
     # Calculated Tm
     calculated_tm: float = 0.0
-    
+
     # Optimal annealing
     optimal_annealing_temp: float = 0.0
     recommended_range: tuple = (55.0, 65.0)
-    
+
     # Data points
     data_points: List[TmDataPoint] = field(default_factory=list)
-    
+
     # Sensitivity
     sensitivity: Optional[TemperatureSensitivity] = None
-    
+
     # Summary
     grade: str = "A"
     warnings: List[str] = field(default_factory=list)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "primer_name": self.primer_name,
@@ -111,14 +111,14 @@ class TmGradientResult:
             "grade": self.grade,
             "warnings": self.warnings
         }
-    
+
     @property
     def max_efficiency(self) -> float:
         """Get maximum efficiency across all temperatures."""
         if not self.data_points:
             return 0.0
         return max(dp.binding_efficiency for dp in self.data_points)
-    
+
     @property
     def efficiency_curve(self) -> List[tuple]:
         """Get (temp, efficiency) pairs for plotting."""

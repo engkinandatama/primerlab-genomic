@@ -17,7 +17,7 @@ class Primer:
     end: Optional[int] = None
 
     warnings: List[str] = field(default_factory=list)
-    
+
     # Internal use only (Primer3 raw output)
     raw: Optional[Dict[str, Any]] = field(default=None, repr=False)
 

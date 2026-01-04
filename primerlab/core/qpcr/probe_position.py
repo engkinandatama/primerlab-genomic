@@ -23,7 +23,7 @@ class ProbePositionResult:
     position_score: float
     warnings: List[str] = field(default_factory=list)
     recommendations: List[str] = field(default_factory=list)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "probe_start": self.probe_start,
@@ -57,20 +57,20 @@ def analyze_probe_position(
     """
     warnings = []
     recommendations = []
-    
+
     probe_upper = probe_sequence.upper()
     amplicon_upper = amplicon_sequence.upper()
-    
+
     # Find probe in amplicon
     probe_start = amplicon_upper.find(probe_upper)
-    
+
     if probe_start == -1:
         # Try reverse complement
         probe_rc = reverse_complement(probe_upper)
         probe_start = amplicon_upper.find(probe_rc)
         if probe_start != -1:
             recommendations.append("Probe binds to antisense strand")
-    
+
     if probe_start == -1:
         return ProbePositionResult(
             probe_start=-1,
@@ -82,23 +82,23 @@ def analyze_probe_position(
             warnings=["Probe not found in amplicon sequence"],
             recommendations=["Verify probe sequence matches template"],
         )
-    
+
     probe_end = probe_start + len(probe_sequence) - 1
     amplicon_len = len(amplicon_sequence)
-    
+
     if rev_primer_start is None:
         rev_primer_start = amplicon_len
-    
+
     # Calculate distances
     distance_from_fwd = probe_start - fwd_primer_end
     distance_from_rev = rev_primer_start - probe_end
-    
+
     # Coverage
     amplicon_coverage = (len(probe_sequence) / amplicon_len) * 100
-    
+
     # Position scoring
     score = 100.0
-    
+
     # Distance from primers (optimal: 5-50 bp)
     if distance_from_fwd < 5:
         score -= 20
@@ -107,7 +107,7 @@ def analyze_probe_position(
     elif distance_from_fwd > 50:
         score -= 5
         recommendations.append("Consider moving probe closer to forward primer")
-    
+
     if distance_from_rev < 5:
         score -= 20
         warnings.append(f"Probe too close to reverse primer ({distance_from_rev} bp)")
@@ -115,7 +115,7 @@ def analyze_probe_position(
     elif distance_from_rev > 50:
         score -= 5
         recommendations.append("Consider moving probe closer to reverse primer")
-    
+
     # Probe length check
     probe_len = len(probe_sequence)
     if probe_len < 18:
@@ -124,16 +124,16 @@ def analyze_probe_position(
     elif probe_len > 30:
         score -= 10
         warnings.append(f"Probe too long ({probe_len} bp)")
-    
+
     # Check 5' nucleotide
     first_base = probe_sequence[0].upper()
     if first_base == 'G':
         score -= 10
         warnings.append("5' G may quench fluorescence")
         recommendations.append("Avoid G at 5' end of probe")
-    
+
     score = max(0.0, min(100.0, score))
-    
+
     return ProbePositionResult(
         probe_start=probe_start,
         probe_end=probe_end,
@@ -171,39 +171,39 @@ def optimize_probe_position(
     amplicon_len = len(amplicon_sequence)
     if rev_primer_start is None:
         rev_primer_start = amplicon_len
-    
+
     candidates = []
-    
+
     # Search region between primers
     search_start = fwd_primer_end + min_distance
     search_end = rev_primer_start - min_distance - probe_length
-    
+
     if search_end <= search_start:
         return []  # Amplicon too short
-    
+
     for pos in range(search_start, search_end + 1):
         probe_seq = amplicon_sequence[pos:pos + probe_length]
-        
+
         # Skip if 5' G
         if avoid_5_g and probe_seq[0].upper() == 'G':
             continue
-        
+
         # Calculate GC content
         gc_count = probe_seq.upper().count('G') + probe_seq.upper().count('C')
         gc_percent = (gc_count / len(probe_seq)) * 100
-        
+
         # Skip if GC outside range
         if gc_percent < 30 or gc_percent > 80:
             continue
-        
+
         # Score based on position (prefer middle of amplicon)
         center_distance = abs((pos + probe_length / 2) - (amplicon_len / 2))
         position_score = 100 - (center_distance / amplicon_len * 50)
-        
+
         # Adjust for GC (prefer 40-60%)
         if 40 <= gc_percent <= 60:
             position_score += 10
-        
+
         candidates.append({
             "start": pos,
             "end": pos + probe_length - 1,
@@ -211,10 +211,10 @@ def optimize_probe_position(
             "gc_percent": round(gc_percent, 1),
             "score": round(position_score, 1),
         })
-    
+
     # Sort by score
     candidates.sort(key=lambda x: x["score"], reverse=True)
-    
+
     return candidates[:10]  # Return top 10
 
 

@@ -50,7 +50,7 @@ class BlastWrapper:
         params: BLAST search parameters
         installation: BLAST+ installation info
     """
-    
+
     def __init__(self, params: Optional[Dict[str, Any]] = None):
         """
         Initialize BLAST wrapper.
@@ -61,21 +61,21 @@ class BlastWrapper:
         self.params = {**DEFAULT_BLAST_PARAMS}
         if params:
             self.params.update(params)
-        
+
         self._installation: Optional[BlastInstallation] = None
-    
+
     @property
     def installation(self) -> BlastInstallation:
         """Get BLAST+ installation info (cached)."""
         if self._installation is None:
             self._installation = self._detect_blast()
         return self._installation
-    
+
     @property
     def is_available(self) -> bool:
         """Check if BLAST+ is available."""
         return self.installation.available
-    
+
     def _detect_blast(self) -> BlastInstallation:
         """
         Detect BLAST+ installation.
@@ -86,13 +86,13 @@ class BlastWrapper:
         # Try to find blastn
         blastn_path = shutil.which("blastn")
         makeblastdb_path = shutil.which("makeblastdb")
-        
+
         if not blastn_path:
             return BlastInstallation(
                 available=False,
                 error="BLAST+ not found. Install from https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=Download"
             )
-        
+
         # Get version
         version = None
         try:
@@ -110,16 +110,16 @@ class BlastWrapper:
                         break
         except Exception as e:
             logger.warning(f"Could not get BLAST version: {e}")
-        
+
         logger.info(f"BLAST+ detected: {blastn_path} (version: {version or 'unknown'})")
-        
+
         return BlastInstallation(
             available=True,
             blastn_path=blastn_path,
             makeblastdb_path=makeblastdb_path,
             version=version
         )
-    
+
     def run_blastn(
         self,
         query_seq: str,
@@ -148,17 +148,17 @@ class BlastWrapper:
                 success=False,
                 error=self.installation.error
             )
-        
+
         # Merge parameters
         search_params = {**self.params}
         if params:
             search_params.update(params)
-        
+
         # Create temp file for query
         with tempfile.NamedTemporaryFile(mode='w', suffix='.fasta', delete=False) as f:
             f.write(f">{query_id}\n{query_seq}\n")
             query_file = f.name
-        
+
         try:
             # Build command
             cmd = [
@@ -172,9 +172,9 @@ class BlastWrapper:
                 "-outfmt", "6 sseqid stitle qstart qend sstart send pident length mismatch gaps evalue bitscore qseq sseq",
                 "-task", search_params["task"]
             ]
-            
+
             logger.debug(f"Running: {' '.join(cmd)}")
-            
+
             # Run BLAST
             result = subprocess.run(
                 cmd,
@@ -182,7 +182,7 @@ class BlastWrapper:
                 text=True,
                 timeout=60
             )
-            
+
             if result.returncode != 0:
                 return BlastResult(
                     query_id=query_id,
@@ -193,10 +193,10 @@ class BlastWrapper:
                     success=False,
                     error=f"BLAST failed: {result.stderr}"
                 )
-            
+
             # Parse results
             hits = self._parse_blast_output(result.stdout)
-            
+
             return BlastResult(
                 query_id=query_id,
                 query_seq=query_seq,
@@ -207,7 +207,7 @@ class BlastWrapper:
                 parameters=search_params,
                 success=True
             )
-            
+
         except subprocess.TimeoutExpired:
             return BlastResult(
                 query_id=query_id,
@@ -232,7 +232,7 @@ class BlastWrapper:
                 os.unlink(query_file)
             except OSError:
                 pass
-    
+
     def _parse_blast_output(self, output: str) -> List[BlastHit]:
         """
         Parse tabular BLAST output.
@@ -244,15 +244,15 @@ class BlastWrapper:
             List of BlastHit objects
         """
         hits = []
-        
+
         for line in output.strip().split("\n"):
             if not line:
                 continue
-            
+
             fields = line.split("\t")
             if len(fields) < 14:
                 continue
-            
+
             try:
                 hit = BlastHit(
                     subject_id=fields[0],
@@ -274,12 +274,12 @@ class BlastWrapper:
             except (ValueError, IndexError) as e:
                 logger.warning(f"Could not parse BLAST hit: {line} ({e})")
                 continue
-        
+
         # Sort by bit score (best first)
         hits.sort(key=lambda h: -h.bit_score)
-        
+
         return hits
-    
+
     def make_database(
         self,
         fasta_path: str,
@@ -302,22 +302,22 @@ class BlastWrapper:
         if not self.is_available:
             logger.error("BLAST+ not available - cannot create database")
             return False
-        
+
         if not self.installation.makeblastdb_path:
             logger.error("makeblastdb not found")
             return False
-        
+
         fasta_path = Path(fasta_path)
         if not fasta_path.exists():
             logger.error(f"FASTA file not found: {fasta_path}")
             return False
-        
+
         if db_name is None:
             db_name = str(fasta_path.with_suffix(""))
-        
+
         if title is None:
             title = fasta_path.stem
-        
+
         cmd = [
             self.installation.makeblastdb_path,
             "-in", str(fasta_path),
@@ -325,7 +325,7 @@ class BlastWrapper:
             "-out", db_name,
             "-title", title
         ]
-        
+
         try:
             result = subprocess.run(
                 cmd,
@@ -333,14 +333,14 @@ class BlastWrapper:
                 text=True,
                 timeout=300
             )
-            
+
             if result.returncode == 0:
                 logger.info(f"Created BLAST database: {db_name}")
                 return True
             else:
                 logger.error(f"makeblastdb failed: {result.stderr}")
                 return False
-                
+
         except Exception as e:
             logger.error(f"makeblastdb error: {e}")
             return False

@@ -6,10 +6,10 @@ class RunMetadata:
     workflow: str
     timestamp: str
     version: str
-    
+
     input_hash: str = ""
     config_hash: str = ""
-    
+
     parameters: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:

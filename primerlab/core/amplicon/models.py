@@ -16,7 +16,7 @@ class SecondaryStructure:
     delta_g: float  # kcal/mol
     is_problematic: bool = False
     problematic_regions: List[Tuple[int, int]] = field(default_factory=list)
-    
+
     def to_dict(self) -> Dict:
         return {
             "sequence": self.sequence,
@@ -38,7 +38,7 @@ class GCProfile:
     min_gc: float
     max_gc: float
     avg_gc: float
-    
+
     def to_dict(self) -> Dict:
         return {
             "positions": self.positions,
@@ -60,7 +60,7 @@ class GCClamp:
     region_size: int
     is_optimal: bool
     warning: Optional[str] = None
-    
+
     def to_dict(self) -> Dict:
         return {
             "five_prime_count": self.five_prime_count,
@@ -78,7 +78,7 @@ class AmpliconTm:
     method: str = "nearest-neighbor"
     na_concentration: float = 50.0
     width: float = 0.0  # Melting curve sharpness (lower = sharper)
-    
+
     def to_dict(self) -> Dict:
         return {
             "tm": self.tm,
@@ -95,7 +95,7 @@ class RestrictionSite:
     position: int
     recognition_seq: str
     cut_position: int  # Relative to recognition start
-    
+
     def to_dict(self) -> Dict:
         return {
             "enzyme": self.enzyme,
@@ -116,7 +116,7 @@ class AmpliconQuality:
     length_score: float
     tm_sharpness_score: float
     warnings: List[str] = field(default_factory=list)
-    
+
     def to_dict(self) -> Dict:
         return {
             "score": self.score,
@@ -143,7 +143,7 @@ class AmpliconAnalysisResult:
     amplicon_tm: Optional[AmpliconTm] = None
     restriction_sites: List[RestrictionSite] = field(default_factory=list)
     quality: Optional[AmpliconQuality] = None
-    
+
     def to_dict(self) -> Dict:
         result = {
             "sequence": self.sequence,

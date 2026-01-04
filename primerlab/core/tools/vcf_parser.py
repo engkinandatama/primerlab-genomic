@@ -20,7 +20,7 @@ class VCFHeader:
     samples: List[str] = None
     contigs: List[str] = None
     info_fields: dict = None
-    
+
     def __post_init__(self):
         self.samples = self.samples or []
         self.contigs = self.contigs or []
@@ -37,7 +37,7 @@ class VCFParser:
     - Region filtering
     - MAF filtering
     """
-    
+
     def __init__(self, vcf_path: str):
         """
         Initialize VCF parser.
@@ -49,22 +49,22 @@ class VCFParser:
         self.is_gzipped = self.vcf_path.suffix == '.gz' or str(self.vcf_path).endswith('.vcf.gz')
         self.header = None
         self._validate_file()
-    
+
     def _validate_file(self):
         """Validate VCF file exists."""
         if not self.vcf_path.exists():
             raise FileNotFoundError(f"VCF file not found: {self.vcf_path}")
-    
+
     def _open_file(self):
         """Open file with appropriate handler."""
         if self.is_gzipped:
             return gzip.open(self.vcf_path, 'rt')
         return open(self.vcf_path, 'r')
-    
+
     def parse_header(self) -> VCFHeader:
         """Parse VCF header and return metadata."""
         header = VCFHeader()
-        
+
         with self._open_file() as f:
             for line in f:
                 line = line.strip()
@@ -85,10 +85,10 @@ class VCFParser:
                     if len(cols) > 9:
                         header.samples = cols[9:]
                     break
-        
+
         self.header = header
         return header
-    
+
     def parse(
         self,
         chrom: Optional[str] = None,
@@ -113,36 +113,36 @@ class VCFParser:
         with self._open_file() as f:
             for line in f:
                 line = line.strip()
-                
+
                 # Skip headers
                 if line.startswith('#'):
                     continue
-                
+
                 # Parse variant line
                 variant = self._parse_line(line)
                 if variant is None:
                     continue
-                
+
                 # Apply filters
                 if chrom and variant.chrom != chrom:
                     continue
-                
+
                 if start and variant.pos < start:
                     continue
-                
+
                 if end and variant.pos > end:
                     continue
-                
+
                 if min_maf is not None and variant.maf is not None:
                     if variant.maf < min_maf:
                         continue
-                
+
                 if max_maf is not None and variant.maf is not None:
                     if variant.maf > max_maf:
                         continue
-                
+
                 yield variant
-    
+
     def _parse_line(self, line: str) -> Optional[Variant]:
         """
         Parse a single VCF line into a Variant.
@@ -152,28 +152,28 @@ class VCFParser:
         cols = line.split('\t')
         if len(cols) < 8:
             return None
-        
+
         chrom = cols[0]
-        
+
         try:
             pos = int(cols[1])
         except ValueError:
             return None
-        
+
         rsid = cols[2] if cols[2] != '.' else None
         ref = cols[3]
         alt = cols[4].split(',')[0]  # Take first alt allele
-        
+
         # Parse INFO field for MAF
         info = self._parse_info(cols[7])
         maf = info.get('AF') or info.get('MAF')
-        
+
         if maf is not None:
             try:
                 maf = float(maf.split(',')[0]) if isinstance(maf, str) else float(maf)
             except (ValueError, AttributeError):
                 maf = None
-        
+
         return Variant(
             chrom=chrom,
             pos=pos,
@@ -183,22 +183,22 @@ class VCFParser:
             maf=maf,
             info=info
         )
-    
+
     def _parse_info(self, info_str: str) -> dict:
         """Parse INFO field into dictionary."""
         info = {}
         if info_str == '.' or not info_str:
             return info
-        
+
         for item in info_str.split(';'):
             if '=' in item:
                 key, value = item.split('=', 1)
                 info[key] = value
             else:
                 info[item] = True
-        
+
         return info
-    
+
     def get_variants_in_region(
         self,
         chrom: str,
@@ -217,7 +217,7 @@ class VCFParser:
             List of variants in the region
         """
         return list(self.parse(chrom=chrom, start=start, end=end))
-    
+
     def count_variants(self) -> int:
         """Count total variants in file."""
         count = 0

@@ -39,7 +39,7 @@ class DesignSummary:
     design_method: str = "primer3"
     candidates_evaluated: int = 0
     quality_score: float = 0.0
-    
+
     @property
     def has_primers(self) -> bool:
         return self.forward_primer is not None and self.reverse_primer is not None
@@ -101,41 +101,41 @@ class PrimerReport:
     primerlab_version: str = ""
     config_file: Optional[str] = None
     sequence_source: str = ""
-    
+
     # Summaries
     design: DesignSummary = field(default_factory=DesignSummary)
     validation: ValidationSummary = field(default_factory=ValidationSummary)
     offtarget: OfftargetSummary = field(default_factory=OfftargetSummary)
     variant: VariantSummary = field(default_factory=VariantSummary)
-    
+
     # Overall Status
     overall_grade: str = "?"  # A-F
     overall_score: float = 0.0
     warnings: List[str] = field(default_factory=list)
     recommendations: List[str] = field(default_factory=list)
-    
+
     def calculate_overall_grade(self) -> str:
         """Calculate overall grade from all analyses."""
         scores = []
-        
+
         # Design score
         if self.design.has_primers:
             scores.append(self.design.quality_score)
-        
+
         # Validation score
         if self.validation.validated:
             scores.append(self.validation.pcr_success_probability * 100)
-        
+
         # Offtarget score
         if self.offtarget.checked:
             scores.append(self.offtarget.specificity_score)
-        
+
         if not scores:
             return "?"
-        
+
         avg_score = sum(scores) / len(scores)
         self.overall_score = avg_score
-        
+
         if avg_score >= 90:
             self.overall_grade = "A"
         elif avg_score >= 80:
@@ -146,9 +146,9 @@ class PrimerReport:
             self.overall_grade = "D"
         else:
             self.overall_grade = "F"
-        
+
         return self.overall_grade
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert report to dictionary."""
         from dataclasses import asdict

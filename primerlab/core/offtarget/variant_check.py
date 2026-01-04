@@ -24,7 +24,7 @@ class VariantChecker:
     Detects variants that overlap with primer binding sites
     and assesses their impact on primer function.
     """
-    
+
     def __init__(
         self,
         vcf_path: str,
@@ -43,7 +43,7 @@ class VariantChecker:
         self.min_maf = min_maf
         self.max_maf = max_maf
         self._variants_cache = {}
-    
+
     def check_primer(
         self,
         primer_seq: str,
@@ -69,17 +69,17 @@ class VariantChecker:
         """
         if end is None:
             end = start + len(primer_seq) - 1
-        
+
         # Get variants in region
         variants = self._get_variants(chrom, start, end)
-        
+
         # Find overlaps
         overlaps = []
         for var in variants:
             if var.overlaps(start, end):
                 overlap = self._create_overlap(var, start, end, strand, len(primer_seq))
                 overlaps.append(overlap)
-        
+
         return PrimerVariantResult(
             primer_id=primer_id,
             primer_seq=primer_seq,
@@ -88,7 +88,7 @@ class VariantChecker:
             strand=strand,
             overlaps=overlaps
         )
-    
+
     def check_primer_pair(
         self,
         forward_seq: str,
@@ -123,7 +123,7 @@ class VariantChecker:
             strand=fwd_strand,
             primer_id="forward"
         )
-        
+
         rev_result = self.check_primer(
             primer_seq=reverse_seq,
             chrom=rev_chrom,
@@ -131,25 +131,25 @@ class VariantChecker:
             strand=rev_strand,
             primer_id="reverse"
         )
-        
+
         return PrimerPairVariantResult(
             forward_result=fwd_result,
             reverse_result=rev_result
         )
-    
+
     def _get_variants(self, chrom: str, start: int, end: int) -> List[Variant]:
         """Get variants in region, with caching."""
         cache_key = (chrom, start, end)
-        
+
         if cache_key not in self._variants_cache:
             self._variants_cache[cache_key] = self.vcf_parser.get_variants_in_region(
                 chrom=chrom,
                 start=start,
                 end=end
             )
-        
+
         return self._variants_cache[cache_key]
-    
+
     def _create_overlap(
         self,
         variant: Variant,
@@ -166,11 +166,11 @@ class VariantChecker:
         else:
             primer_position = primer_end - variant.pos
             distance_from_3prime = variant.pos - primer_start
-        
+
         # Clamp to valid range
         primer_position = max(0, min(primer_position, primer_len - 1))
         distance_from_3prime = max(0, distance_from_3prime)
-        
+
         return VariantOverlap(
             variant=variant,
             primer_position=primer_position,

@@ -20,16 +20,16 @@ def parse_primer3_output(raw_results: Dict[str, Any]) -> Dict[str, Primer]:
         Dictionary with 'forward', 'reverse', and optionally 'probe'
     """
     primers = {}
-    
+
     num_returned = raw_results.get('PRIMER_LEFT_NUM_RETURNED', 0)
-    
+
     if num_returned > 0:
         # Forward Primer
         fwd_seq = raw_results.get('PRIMER_LEFT_0_SEQUENCE')
         fwd_tm = raw_results.get('PRIMER_LEFT_0_TM')
         fwd_gc = raw_results.get('PRIMER_LEFT_0_GC_PERCENT')
         fwd_start, fwd_len = raw_results.get('PRIMER_LEFT_0')
-        
+
         fwd_primer = Primer(
             id="forward_0",
             sequence=fwd_seq,
@@ -42,13 +42,13 @@ def parse_primer3_output(raw_results: Dict[str, Any]) -> Dict[str, Primer]:
             homodimer_dg=raw_results.get('PRIMER_LEFT_0_HOMODIMER_TH', 0.0)
         )
         primers["forward"] = fwd_primer
-        
+
         # Reverse Primer
         rev_seq = raw_results.get('PRIMER_RIGHT_0_SEQUENCE')
         rev_tm = raw_results.get('PRIMER_RIGHT_0_TM')
         rev_gc = raw_results.get('PRIMER_RIGHT_0_GC_PERCENT')
         rev_start, rev_len = raw_results.get('PRIMER_RIGHT_0')
-        
+
         rev_primer = Primer(
             id="reverse_0",
             sequence=rev_seq,
@@ -61,14 +61,14 @@ def parse_primer3_output(raw_results: Dict[str, Any]) -> Dict[str, Primer]:
             homodimer_dg=raw_results.get('PRIMER_RIGHT_0_HOMODIMER_TH', 0.0)
         )
         primers["reverse"] = rev_primer
-        
+
         # Probe (Internal Oligo)
         probe_seq = raw_results.get('PRIMER_INTERNAL_0_SEQUENCE')
         if probe_seq:
             probe_tm = raw_results.get('PRIMER_INTERNAL_0_TM')
             probe_gc = raw_results.get('PRIMER_INTERNAL_0_GC_PERCENT')
             probe_start, probe_len = raw_results.get('PRIMER_INTERNAL_0')
-            
+
             probe = Primer(
                 id="probe_0",
                 sequence=probe_seq,
@@ -83,5 +83,5 @@ def parse_primer3_output(raw_results: Dict[str, Any]) -> Dict[str, Primer]:
             primers["probe"] = probe
         else:
             logger.warning("No internal probe designed by Primer3")
-    
+
     return primers

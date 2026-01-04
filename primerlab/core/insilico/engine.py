@@ -23,20 +23,20 @@ DEFAULT_INSILICO_PARAMS = {
     "max_5prime_mismatch": 2,       # max mismatches at 5' end
     "min_total_match_percent": 80,  # minimum % identity
     "three_prime_dg_max": -2.0,     # max ΔG at 3' end (kcal/mol)
-    
+
     # Temperature parameters
     "annealing_temp": None,         # None = auto (Tm - 5°C)
     "annealing_temp_range": [50, 72],
-    
+
     # Salt conditions (mM)
     "na_conc": 50,
     "mg_conc": 2.0,
     "dntp_conc": 0.2,
-    
+
     # Extension parameters
     "extension_time": None,         # None = auto (1min/kb)
     "max_amplicon_for_extension": 3000,
-    
+
     # Product filtering
     "product_size_min": 50,
     "product_size_max": 10000,
@@ -106,12 +106,12 @@ def calculate_match_percent(primer: str, target: str) -> Tuple[float, int, int]:
         max_len = max(len(primer), len(target))
         primer = primer.ljust(max_len, 'N')
         target = target.ljust(max_len, 'N')
-    
+
     # v0.2.1: IUPAC aware matching
     matches = sum(1 for p, t in zip(primer.upper(), target.upper()) if bases_match(p, t))
     mismatches = len(primer) - matches
     match_percent = (matches / len(primer)) * 100
-    
+
     # Count 3' end perfect match (from 3' end of primer)
     three_prime_match = 0
     for p, t in zip(reversed(primer.upper()), reversed(target.upper())):
@@ -119,7 +119,7 @@ def calculate_match_percent(primer: str, target: str) -> Tuple[float, int, int]:
             three_prime_match += 1
         else:
             break
-    
+
     return match_percent, mismatches, three_prime_match
 
 
@@ -146,28 +146,28 @@ def find_binding_sites(
     bindings = []
     primer_len = len(primer_seq)
     primer_upper = primer_seq.upper()
-    
+
     # For reverse primer, we look for binding to the reverse complement
     if strand == '-':
         search_seq = reverse_complement(primer_upper)
     else:
         search_seq = primer_upper
-    
+
     template_upper = template_seq.upper()
     template_len = len(template_upper)
-    
+
     # v0.2.1: Circular template support
     is_circular = params.get("circular", False)
     search_template = template_upper + template_upper[:primer_len-1] if is_circular else template_upper
-    
+
     # Slide along template looking for potential binding sites
     for i in range(len(search_template) - primer_len + 1):
         target_region = search_template[i:i + primer_len]
-        
+
         match_pct, mismatches, three_prime_match = calculate_match_percent(
             search_seq, target_region
         )
-        
+
         # Check if this site meets minimum threshold for reporting
         if match_pct >= params.get("report_threshold", 70):
             # Validate against binding requirements
@@ -176,13 +176,13 @@ def find_binding_sites(
                 three_prime_match >= params.get("min_3prime_match", 3) and
                 mismatches <= primer_len - params.get("min_3prime_match", 3) + params.get("max_5prime_mismatch", 2)
             )
-            
+
             # TODO: Calculate binding Tm using ViennaRNA
             binding_tm = 60.0  # Placeholder
-            
+
             # Create alignment string
             alignment = create_alignment_string(search_seq, target_region)
-            
+
             binding = PrimerBinding(
                 primer_name=primer_name,
                 primer_seq=primer_seq,
@@ -196,10 +196,10 @@ def find_binding_sites(
                 alignment=alignment
             )
             bindings.append(binding)
-    
+
     # Sort by match quality (best first)
     bindings.sort(key=lambda b: (-b.match_percent, -b.three_prime_match))
-    
+
     return bindings
 
 
@@ -230,49 +230,49 @@ def predict_products(
     - Product size within range
     """
     products = []
-    
+
     min_size = params.get("product_size_min", 50)
     max_size = params.get("product_size_max", 10000)
     max_products = params.get("max_products", 10)
-    
+
     for fwd in forward_bindings:
         if not fwd.is_valid:
             continue
-            
+
         for rev in reverse_bindings:
             if not rev.is_valid:
                 continue
-            
+
             # Calculate product size
             # Forward primer starts at fwd.position
             # Reverse primer's 3' end is at rev.position (on the reverse strand)
             # Product includes both primers
             fwd_start = fwd.position
             rev_end = rev.position + len(rev.primer_seq)
-            
+
             product_size = rev_end - fwd_start
-            
+
             # Skip if wrong orientation or size
             if product_size < min_size or product_size > max_size:
                 continue
-            
+
             # Extract product sequence
             product_seq = template_seq[fwd_start:rev_end]
-            
+
             # Calculate likelihood score (average of binding qualities)
             # v0.2.1: Weighted likelihood - penalize 3' mismatches more
             fwd_score = (fwd.match_percent * 0.7) + (min(10, fwd.three_prime_match) * 3)
             rev_score = (rev.match_percent * 0.7) + (min(10, rev.three_prime_match) * 3)
             likelihood = (fwd_score + rev_score) / 2
-            
+
             # Normalize to 0-100 (roughly)
             likelihood = min(100.0, likelihood)
-            
+
             # Check for warnings
             warnings = []
             if product_size > params.get("max_amplicon_for_extension", 3000):
                 warnings.append(f"Long amplicon ({product_size}bp) may need extended extension time")
-            
+
             product = AmpliconPrediction(
                 forward_binding=fwd,
                 reverse_binding=rev,
@@ -284,14 +284,14 @@ def predict_products(
                 warnings=warnings
             )
             products.append(product)
-    
+
     # Sort by likelihood (best first)
     products.sort(key=lambda p: -p.likelihood_score)
-    
+
     # Mark primary product
     if products:
         products[0].is_primary = True
-    
+
     # Limit to max products
     return products[:max_products]
 
@@ -303,7 +303,7 @@ class InsilicoPCR:
     Simulates PCR amplification by predicting primer binding sites
     and resulting products.
     """
-    
+
     def __init__(self, params: Optional[Dict[str, Any]] = None):
         """
         Initialize the engine with parameters.
@@ -314,11 +314,11 @@ class InsilicoPCR:
         self.params = {**DEFAULT_INSILICO_PARAMS}
         if params:
             self.params.update(params)
-        
+
         # v0.2.1: Auto-detect circularity from config if not explicit
         if "circular" not in self.params:
             self.params["circular"] = False
-    
+
     def run(
         self,
         template: str,
@@ -339,10 +339,10 @@ class InsilicoPCR:
             InsilicoPCRResult with all predictions
         """
         logger.info(f"Running in-silico PCR on {template_name}")
-        
+
         warnings = []
         errors = []
-        
+
         # Validate inputs
         if len(template) < 50:
             errors.append("Template sequence too short (< 50bp)")
@@ -358,7 +358,7 @@ class InsilicoPCR:
                 parameters=self.params,
                 errors=errors
             )
-        
+
         # Find forward primer binding sites (+ strand)
         logger.debug("Finding forward primer binding sites...")
         forward_bindings = find_binding_sites(
@@ -368,13 +368,13 @@ class InsilicoPCR:
             strand='+',
             params=self.params
         )
-        
+
         if not forward_bindings:
             warnings.append("No forward primer binding sites found")
         else:
             valid_fwd = sum(1 for b in forward_bindings if b.is_valid)
             logger.info(f"Found {len(forward_bindings)} forward binding sites ({valid_fwd} valid)")
-        
+
         # Find reverse primer binding sites (- strand)
         logger.debug("Finding reverse primer binding sites...")
         reverse_bindings = find_binding_sites(
@@ -384,13 +384,13 @@ class InsilicoPCR:
             strand='-',
             params=self.params
         )
-        
+
         if not reverse_bindings:
             warnings.append("No reverse primer binding sites found")
         else:
             valid_rev = sum(1 for b in reverse_bindings if b.is_valid)
             logger.info(f"Found {len(reverse_bindings)} reverse binding sites ({valid_rev} valid)")
-        
+
         # Predict products
         products = predict_products(
             forward_bindings=forward_bindings,
@@ -398,27 +398,27 @@ class InsilicoPCR:
             template_seq=template,
             params=self.params
         )
-        
+
         # v0.2.5: Calculate extension time for each product (1 min/kb = 60s/1000bp)
         for product in products:
             product.extension_time_sec = (product.product_size / 1000.0) * 60.0
-        
+
         # v0.2.5: Check primer-dimer between Fwd and Rev
         from primerlab.core.insilico.binding import check_primer_dimer
         primer_dimer_result = check_primer_dimer(forward_primer, reverse_primer)
-        
+
         if primer_dimer_result["warning"]:
             warnings.append(primer_dimer_result["warning"])
-        
+
         if not products:
             warnings.append("No valid products predicted")
         else:
             logger.info(f"Predicted {len(products)} products")
             if len(products) > 1:
                 warnings.append(f"Multiple products ({len(products)}) - potential non-specific amplification")
-        
+
         success = len(products) > 0 and not errors
-        
+
         return InsilicoPCRResult(
             success=success,
             template_name=template_name,

@@ -54,14 +54,14 @@ def predict_amplicon_tm(
         AmpliconTm with predicted Tm
     """
     seq = sequence.upper()
-    
+
     if len(seq) < 2:
         return AmpliconTm(tm=0.0, na_concentration=na_concentration)
-    
+
     # Calculate ΔH and ΔS
     delta_h = 0.0  # kcal/mol
     delta_s = 0.0  # cal/(mol·K)
-    
+
     # Initiation
     if seq[0] in "GC":
         delta_h += INIT_GC[0]
@@ -69,14 +69,14 @@ def predict_amplicon_tm(
     else:
         delta_h += INIT_AT[0]
         delta_s += INIT_AT[1]
-    
+
     if seq[-1] in "GC":
         delta_h += INIT_GC[0]
         delta_s += INIT_GC[1]
     else:
         delta_h += INIT_AT[0]
         delta_s += INIT_AT[1]
-    
+
     # Nearest-neighbor contributions
     for i in range(len(seq) - 1):
         dinuc = seq[i:i+2]
@@ -88,7 +88,7 @@ def predict_amplicon_tm(
             # Unknown base, use average
             delta_h += -8.0
             delta_s += -22.0
-    
+
     # Salt correction (SantaLucia 1998)
     # ΔS_corrected = ΔS + 0.368 * N * ln([Na+])
     # where N is length and [Na+] is in M
@@ -96,27 +96,27 @@ def predict_amplicon_tm(
     if na_molar > 0:
         import math
         delta_s += 0.368 * len(seq) * math.log(na_molar)
-    
+
     # Calculate Tm
     # Tm = ΔH / (ΔS + R * ln(Ct/4)) - 273.15
     # For amplicons (double-stranded), use simplified:
     # Tm = ΔH * 1000 / (ΔS + 1.987 * ln(1e-9)) - 273.15
     R = 1.987  # Gas constant cal/(mol·K)
     Ct = 1e-9  # Assume 1 nM total strand concentration
-    
+
     import math
     denominator = delta_s + R * math.log(Ct / 4)
-    
+
     if denominator >= 0:
         # Entropy too positive, use empirical formula
         tm = 81.5 + 0.41 * (sum(1 for b in seq if b in "GC") / len(seq) * 100) - 675 / len(seq)
     else:
         tm = (delta_h * 1000) / denominator - 273.15
-    
+
     # Estimate melting curve width (sharpness)
     # Longer sequences have sharper melting curves
     width = max(1.0, 20.0 - len(seq) * 0.02)
-    
+
     return AmpliconTm(
         tm=round(tm, 1),
         method="nearest-neighbor",

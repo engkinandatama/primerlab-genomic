@@ -25,10 +25,10 @@ class BatchSpeciesResult:
     processed: int = 0
     passed: int = 0
     failed: int = 0
-    
+
     results: Dict[str, SpeciesCheckResult] = field(default_factory=dict)
     summary: Dict[str, Any] = field(default_factory=dict)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "total_files": self.total_files,
@@ -94,11 +94,11 @@ def run_parallel_species_check(
         total_files=len(batch_input.primer_files),
         total_primers=batch_input.total_primers
     )
-    
+
     if not batch_input.primer_data:
         logger.warning("No primer files to process")
         return batch_result
-    
+
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         # Submit all jobs
         futures = {}
@@ -112,15 +112,15 @@ def run_parallel_species_check(
                 config
             )
             futures[future] = filename
-        
+
         # Collect results
         for future in as_completed(futures):
             filename = futures[future]
-            
+
             try:
                 fname, result, error = future.result()
                 batch_result.processed += 1
-                
+
                 if result:
                     batch_result.results[fname] = result
                     if result.is_specific:
@@ -129,14 +129,14 @@ def run_parallel_species_check(
                         batch_result.failed += 1
                 else:
                     batch_result.failed += 1
-                
+
                 if progress_callback:
                     progress_callback(batch_result.processed, batch_result.total_files)
-                    
+
             except Exception as e:
                 logger.error(f"Error processing {filename}: {e}")
                 batch_result.failed += 1
-    
+
     # Generate summary
     if batch_result.results:
         scores = [r.overall_score for r in batch_result.results.values()]
@@ -146,7 +146,7 @@ def run_parallel_species_check(
             "max_score": max(scores),
             "pass_rate": round(batch_result.passed / max(1, batch_result.processed) * 100, 1)
         }
-    
+
     return batch_result
 
 
@@ -165,22 +165,22 @@ def generate_batch_csv(
         Path to created CSV file
     """
     path = Path(output_path)
-    
+
     lines = ["Filename,Score,Grade,Is_Specific,Primers_Checked,Warnings"]
-    
+
     for filename, result in batch_result.results.items():
         warnings_str = "; ".join(result.warnings[:3]) if result.warnings else ""
         lines.append(
             f"{filename},{result.overall_score:.1f},{result.grade},"
             f"{result.is_specific},{result.primers_checked},\"{warnings_str}\""
         )
-    
+
     # Add summary row
     lines.append("")
     lines.append(f"Total,{batch_result.summary.get('avg_score', 0):.1f},-,-,-,-")
-    
+
     with open(path, "w") as f:
         f.write("\n".join(lines))
-    
+
     logger.info(f"CSV report saved to {path}")
     return str(path)

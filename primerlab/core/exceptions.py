@@ -18,13 +18,13 @@ Categories:
 
 class PrimerLabException(Exception):
     """Base exception for all PrimerLab errors."""
-    
+
     def __init__(self, message: str, error_code: str = None, details: dict = None):
         super().__init__(f"{error_code}: {message}" if error_code else message)
         self.error_code = error_code
         self.message = message
         self.details = details or {}
-    
+
     def __str__(self):
         if self.error_code:
             return f"{self.error_code}: {self.message}"

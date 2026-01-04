@@ -48,7 +48,7 @@ def validate_primers(
         1
     """
     from primerlab.core.insilico import run_insilico_pcr
-    
+
     result = run_insilico_pcr(
         template=template,
         forward_primer=forward_primer,
@@ -56,7 +56,7 @@ def validate_primers(
         template_name=template_name,
         params=params
     )
-    
+
     # Convert to dictionary for API response
     primary = None
     if result.products:
@@ -69,7 +69,7 @@ def validate_primers(
                     "sequence_preview": p.product_sequence[:50] + "..." if len(p.product_sequence) > 50 else p.product_sequence
                 }
                 break
-    
+
     return {
         "success": result.success,
         "products_count": len(result.products),
@@ -117,7 +117,7 @@ def design_pcr_primers(
         "parameters": {},
         "output": {"directory": "primerlab_api_out"} # Default output for API calls
     }
-    
+
     # Merge with user config if provided
     final_config = base_config
     if config:
@@ -125,12 +125,12 @@ def design_pcr_primers(
         final_config["input"]["sequence"] = sequence
 
     result = run_pcr_workflow(final_config)
-    
+
     # v0.2.3: Optional in-silico validation
     if validate and result.primers:
         fwd = result.primers.get("forward")
         rev = result.primers.get("reverse")
-        
+
         if fwd and rev:
             validation = validate_primers(
                 forward_primer=fwd.sequence,
@@ -144,7 +144,7 @@ def design_pcr_primers(
             else:
                 # Store in result as attribute
                 result.insilico_validation = validation
-    
+
     return result
 
 
@@ -178,19 +178,19 @@ def design_qpcr_assays(
         "parameters": {},
         "output": {"directory": "primerlab_api_out"}
     }
-    
+
     final_config = base_config
     if config:
         final_config.update(config)
         final_config["input"]["sequence"] = sequence
 
     result = run_qpcr_workflow(final_config)
-    
+
     # v0.2.3: Optional in-silico validation
     if validate and result.primers:
         fwd = result.primers.get("forward")
         rev = result.primers.get("reverse")
-        
+
         if fwd and rev:
             validation = validate_primers(
                 forward_primer=fwd.sequence,
@@ -202,7 +202,7 @@ def design_qpcr_assays(
                 result.metadata.insilico_validation = validation
             else:
                 result.insilico_validation = validation
-    
+
     return result
 
 
@@ -246,22 +246,22 @@ def check_offtargets(
     """
     from primerlab.core.offtarget.finder import OfftargetFinder
     from primerlab.core.offtarget.scorer import SpecificityScorer
-    
+
     finder = OfftargetFinder(
         database=database,
         target_id=target_id,
         mode=mode
     )
-    
+
     result = finder.find_primer_pair_offtargets(
         forward_primer=forward_primer,
         reverse_primer=reverse_primer,
         target_id=target_id
     )
-    
+
     scorer = SpecificityScorer()
     fwd_score, rev_score, combined = scorer.score_primer_pair(result)
-    
+
     return {
         "specificity_score": combined.overall_score,
         "grade": combined.grade,
@@ -317,10 +317,10 @@ def check_primer_compatibility(
     from primerlab.core.compat_check.scoring import MultiplexScorer
     from primerlab.core.compat_check.validator import MultiplexValidator
     from primerlab.core.config_loader import load_and_merge_config
-    
+
     # Load config
     full_config = load_and_merge_config("compat_check", cli_overrides=config)
-    
+
     # Map input to MultiplexPair models
     mapped_primers = []
     for p in primers:
@@ -334,19 +334,19 @@ def check_primer_compatibility(
             gc_reverse=p.get('gc_rev', p.get('gc_reverse', 0.0))
         )
         mapped_primers.append(mp)
-        
+
     # 1. Calculate Dimers
     engine = DimerEngine()
     matrix = engine.build_matrix(mapped_primers)
-    
+
     # 2. Score
     scorer = MultiplexScorer(full_config)
     score_result = scorer.calculate_score(matrix, mapped_primers)
-    
+
     # 3. Validate
     validator = MultiplexValidator(full_config)
     validation_summary = validator.get_validation_summary(matrix, mapped_primers)
-    
+
     return {
         "is_valid": validation_summary["is_valid"],
         "score": score_result.score,
@@ -389,13 +389,13 @@ def analyze_amplicon(
         92.5
     """
     from primerlab.core.amplicon import analyze_amplicon as _analyze
-    
+
     # Load config if provided
     full_config = config or {}
-    
+
     # Run analysis
     result = _analyze(sequence, full_config)
-    
+
     return {
         "length": result.length,
         "quality_score": result.quality.score if result.quality else None,
@@ -432,14 +432,14 @@ def run_overlap_simulation(
         - warnings: list of warnings
     """
     from primerlab.core.compat_check.overlap_detection import run_insilico_compat_simulation
-    
+
     result = run_insilico_compat_simulation(
         template=template,
         primer_pairs=primer_pairs,
         template_name=template_name,
         min_overlap_warning=min_overlap_warning
     )
-    
+
     return result.to_dict()
 
 
@@ -472,21 +472,21 @@ def check_species_specificity_api(
         SpeciesTemplate,
         check_species_specificity as _check
     )
-    
+
     # Create template objects
     target = SpeciesTemplate(
         species_name=target_name,
         sequence=target_template
     )
-    
+
     offtargets = {}
     if offtarget_templates:
         for name, seq in offtarget_templates.items():
             offtargets[name] = SpeciesTemplate(species_name=name, sequence=seq)
-    
+
     # Run check
     result = _check(primers, target, offtargets, config)
-    
+
     return result.to_dict()
 
 
@@ -522,7 +522,7 @@ def simulate_tm_gradient_api(
         simulate_tm_gradient,
         predict_optimal_annealing,
     )
-    
+
     config = TmGradientConfig(
         min_temp=min_temp,
         max_temp=max_temp,
@@ -530,25 +530,25 @@ def simulate_tm_gradient_api(
         na_concentration=na_concentration,
         primer_concentration=primer_concentration
     )
-    
+
     # Run simulations
     results = []
     for primer in primers:
         name = primer.get("name", "Unknown")
         fwd = primer.get("forward", primer.get("sequence", ""))
         rev = primer.get("reverse", "")
-        
+
         if fwd:
             result = simulate_tm_gradient(fwd, f"{name}_fwd", config=config)
             results.append(result.to_dict())
-        
+
         if rev:
             result = simulate_tm_gradient(rev, f"{name}_rev", config=config)
             results.append(result.to_dict())
-    
+
     # Calculate optimal
     optimal = predict_optimal_annealing(primers, config)
-    
+
     return {
         "optimal": optimal["optimal"],
         "range_min": optimal["range_min"],
@@ -592,7 +592,7 @@ def batch_species_check_api(
         run_parallel_species_check,
     )
     from primerlab.core.species.batch.batch_loader import load_primer_files
-    
+
     # Load primers
     if primer_dir:
         batch_input = load_primers_from_directory(primer_dir)
@@ -600,15 +600,15 @@ def batch_species_check_api(
         batch_input = load_primer_files(primer_files)
     else:
         raise ValueError("Must provide either primer_files or primer_dir")
-    
+
     # Create templates
     target = SpeciesTemplate(species_name=target_name, sequence=target_template)
-    
+
     offtargets = {}
     if offtarget_templates:
         for name, seq in offtarget_templates.items():
             offtargets[name] = SpeciesTemplate(species_name=name, sequence=seq)
-    
+
     # Run parallel check
     result = run_parallel_species_check(
         batch_input=batch_input,
@@ -617,7 +617,7 @@ def batch_species_check_api(
         config=config,
         max_workers=max_workers
     )
-    
+
     return result.to_dict()
 
 
@@ -656,7 +656,7 @@ def simulate_probe_binding_api(
     """
     from primerlab.core.qpcr.probe_binding import simulate_probe_binding
     from primerlab.core.qpcr.probe_position import analyze_probe_position
-    
+
     # Run binding simulation
     result = simulate_probe_binding(
         probe_sequence=probe_sequence,
@@ -666,9 +666,9 @@ def simulate_probe_binding_api(
         na_concentration=na_concentration,
         probe_concentration=probe_concentration,
     )
-    
+
     output = result.to_dict()
-    
+
     # Add position analysis if amplicon provided
     if amplicon_sequence:
         position_result = analyze_probe_position(
@@ -676,7 +676,7 @@ def simulate_probe_binding_api(
             amplicon_sequence=amplicon_sequence,
         )
         output["position"] = position_result.to_dict()
-    
+
     return output
 
 
@@ -709,7 +709,7 @@ def predict_melt_curve_api(
         - warnings: List of warnings
     """
     from primerlab.core.qpcr.melt_curve import predict_melt_curve
-    
+
     result = predict_melt_curve(
         amplicon_sequence=amplicon_sequence,
         na_concentration=na_concentration,
@@ -717,7 +717,7 @@ def predict_melt_curve_api(
         max_temp=max_temp,
         step=step,
     )
-    
+
     return result.to_dict()
 
 
@@ -752,7 +752,7 @@ def validate_qpcr_amplicon_api(
         - recommendations: List of suggestions
     """
     from primerlab.core.qpcr.amplicon_qc import validate_qpcr_amplicon
-    
+
     result = validate_qpcr_amplicon(
         amplicon_sequence=amplicon_sequence,
         min_length=min_length,
@@ -760,7 +760,7 @@ def validate_qpcr_amplicon_api(
         gc_min=gc_min,
         gc_max=gc_max,
     )
-    
+
     return result.to_dict()
 
 
@@ -801,7 +801,7 @@ def score_genotyping_primer_api(
         calculate_discrimination_tm,
         estimate_allele_specificity,
     )
-    
+
     # Score allele discrimination
     scoring_result = score_allele_discrimination(
         primer_sequence=primer_sequence,
@@ -809,12 +809,12 @@ def score_genotyping_primer_api(
         ref_allele=ref_allele,
         alt_allele=alt_allele,
     )
-    
+
     # Analyze SNP position
     primer_len = len(primer_sequence)
     snp_index = primer_len - 1 - snp_position  # Convert from 3' to 5' index
     position_result = analyze_snp_context(primer_sequence, snp_index)
-    
+
     # Calculate Tm discrimination
     tm_matched, tm_mismatched, delta_tm = calculate_discrimination_tm(
         primer_sequence=primer_sequence,
@@ -823,10 +823,10 @@ def score_genotyping_primer_api(
         alt_allele=alt_allele,
         na_concentration=na_concentration,
     )
-    
+
     # Estimate specificity
     specificity = estimate_allele_specificity(delta_tm)
-    
+
     # Combine results
     output = scoring_result.to_dict()
     output["tm_matched"] = tm_matched
@@ -835,10 +835,10 @@ def score_genotyping_primer_api(
     output["specificity"] = specificity["specificity"]
     output["specificity_score"] = specificity["score"]
     output["snp_context"] = position_result.to_dict()
-    
+
     # Merge recommendations
     output["recommendations"].extend(specificity["recommendations"])
-    
+
     return output
 
 
@@ -872,24 +872,24 @@ def validate_rtpcr_primers_api(
     """
     from primerlab.core.rtpcr.exon_junction import detect_exon_junction
     from primerlab.core.rtpcr.gdna_check import check_gdna_risk
-    
+
     fwd_len = len(fwd_sequence)
     rev_len = len(rev_sequence)
-    
+
     # Analyze forward primer junction
     fwd_junction = detect_exon_junction(
         primer_sequence=fwd_sequence,
         primer_start=fwd_start,
         exon_boundaries=exon_boundaries,
     )
-    
+
     # Analyze reverse primer junction
     rev_junction = detect_exon_junction(
         primer_sequence=rev_sequence,
         primer_start=rev_start,
         exon_boundaries=exon_boundaries,
     )
-    
+
     # Check gDNA risk
     gdna_risk = check_gdna_risk(
         fwd_start=fwd_start,
@@ -899,10 +899,10 @@ def validate_rtpcr_primers_api(
         exon_boundaries=exon_boundaries,
         genomic_intron_sizes=genomic_intron_sizes,
     )
-    
+
     # Calculate overall grade
     is_rt_specific = gdna_risk.is_rt_specific
-    
+
     if fwd_junction.spans_junction or rev_junction.spans_junction:
         grade = "A"
     elif gdna_risk.risk_level == "Low":
@@ -911,13 +911,13 @@ def validate_rtpcr_primers_api(
         grade = "C"
     else:
         grade = "F"
-    
+
     # Combine recommendations
     recommendations = []
     recommendations.extend(fwd_junction.warnings)
     recommendations.extend(rev_junction.warnings)
     recommendations.extend(gdna_risk.recommendations)
-    
+
     return {
         "fwd_junction": fwd_junction.to_dict(),
         "rev_junction": rev_junction.to_dict(),
@@ -926,4 +926,3 @@ def validate_rtpcr_primers_api(
         "grade": grade,
         "recommendations": recommendations,
     }
-

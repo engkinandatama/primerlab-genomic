@@ -21,7 +21,7 @@ class HTMLExporter:
     - Responsive design
     - Dark mode support
     """
-    
+
     # CSS styles for the report
     STYLES = """
     <style>
@@ -187,7 +187,7 @@ class HTMLExporter:
         }
     </style>
     """
-    
+
     # JavaScript for interactivity
     SCRIPTS = """
     <script>
@@ -221,7 +221,7 @@ class HTMLExporter:
         }
     </script>
     """
-    
+
     def __init__(self, report: PrimerReport):
         """
         Initialize HTML exporter.
@@ -230,11 +230,11 @@ class HTMLExporter:
             report: PrimerReport to export
         """
         self.report = report
-    
+
     def _grade_class(self, grade: str) -> str:
         """Get CSS class for grade."""
         return f"grade-{grade}" if grade in "ABCDF" else ""
-    
+
     def _badge_class(self, grade: str) -> str:
         """Get badge class for grade."""
         if grade in ["A", "B"]:
@@ -242,7 +242,7 @@ class HTMLExporter:
         elif grade == "C":
             return "badge-warning"
         return "badge-danger"
-    
+
     def generate(self) -> str:
         """
         Generate complete HTML report.
@@ -251,7 +251,7 @@ class HTMLExporter:
             HTML string
         """
         report = self.report
-        
+
         html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -273,14 +273,14 @@ class HTMLExporter:
     {self.SCRIPTS}
 </body>
 </html>"""
-        
+
         return html
-    
+
     def _header_section(self) -> str:
         """Generate header section."""
         r = self.report
         grade_class = self._grade_class(r.overall_grade)
-        
+
         return f"""
         <header>
             <h1>🧬 PrimerLab Report</h1>
@@ -289,17 +289,17 @@ class HTMLExporter:
             <p>Overall Score: {r.overall_score:.1f}/100</p>
         </header>
         """
-    
+
     def _design_section(self) -> str:
         """Generate design section."""
         d = self.report.design
-        
+
         if not d.has_primers:
             return ""
-        
+
         fwd = d.forward_primer
         rev = d.reverse_primer
-        
+
         return f"""
         <div class="card">
             <div class="card-header">
@@ -333,14 +333,14 @@ class HTMLExporter:
             </div>
         </div>
         """
-    
+
     def _validation_section(self) -> str:
         """Generate validation section."""
         v = self.report.validation
-        
+
         if not v.validated:
             return ""
-        
+
         return f"""
         <div class="card">
             <div class="card-header">
@@ -355,16 +355,16 @@ class HTMLExporter:
             </div>
         </div>
         """
-    
+
     def _offtarget_section(self) -> str:
         """Generate off-target section."""
         o = self.report.offtarget
-        
+
         if not o.checked:
             return ""
-        
+
         badge_class = self._badge_class(o.combined_grade)
-        
+
         return f"""
         <div class="card">
             <div class="card-header">
@@ -383,16 +383,16 @@ class HTMLExporter:
             </div>
         </div>
         """
-    
+
     def _warnings_section(self) -> str:
         """Generate warnings section."""
         warnings = self.report.warnings
-        
+
         if not warnings:
             return ""
-        
+
         items = "\n".join(f"<li>{w}</li>" for w in warnings)
-        
+
         return f"""
         <div class="card">
             <div class="card-header">
@@ -403,7 +403,7 @@ class HTMLExporter:
             </div>
         </div>
         """
-    
+
     def _footer_section(self) -> str:
         """Generate footer section."""
         return f"""
@@ -412,7 +412,7 @@ class HTMLExporter:
             <a href="https://github.com/primerlab" style="color: var(--accent);">Documentation</a>
         </footer>
         """
-    
+
     def save(self, path: str):
         """
         Save HTML report to file.

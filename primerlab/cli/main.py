@@ -17,24 +17,24 @@ def _run_health_check():
     Per v0.1.3 quick patches - helps debugging installation issues.
     """
     import platform
-    
+
     print(f"\n🔬 PrimerLab Health Check v{__version__}")
     print("=" * 45)
-    
+
     # Python version
     py_version = platform.python_version()
     if py_version >= "3.10":
         print(f"✅ Python {py_version}")
     else:
         print(f"⚠️ Python {py_version} (recommend 3.10+)")
-    
+
     # Primer3-py
     try:
         import primer3
         print(f"✅ primer3-py (installed)")
     except ImportError:
         print("❌ primer3-py NOT FOUND (required)")
-    
+
     # ViennaRNA
     try:
         from primerlab.core.tools.vienna_wrapper import ViennaWrapper
@@ -45,14 +45,14 @@ def _run_health_check():
             print("⚠️ ViennaRNA not found (optional, install for secondary structure QC)")
     except Exception as e:
         print(f"⚠️ ViennaRNA check failed: {e}")
-    
+
     # PyYAML
     try:
         import yaml
         print(f"✅ PyYAML (installed)")
     except ImportError:
         print("❌ PyYAML NOT FOUND (required)")
-    
+
     # Rich
     try:
         import rich
@@ -60,7 +60,7 @@ def _run_health_check():
         print(f"✅ Rich {version}")
     except ImportError:
         print("⚠️ Rich not found (optional, for colorized output)")
-    
+
     # tqdm
     try:
         import tqdm
@@ -68,28 +68,28 @@ def _run_health_check():
         print(f"✅ tqdm {version}")
     except ImportError:
         print("⚠️ tqdm not found (optional, for progress bars)")
-    
+
     # Biopython (optional)
     try:
         import Bio
         print(f"✅ Biopython {Bio.__version__}")
     except ImportError:
         print("⚠️ Biopython not found (optional, for advanced sequence parsing)")
-    
+
     # v0.1.6: Check for updates
     print("\n" + "-" * 45)
     print("📡 Checking for updates...")
     try:
         import urllib.request
         import json
-        
+
         url = "https://api.github.com/repos/engkinandatama/primerlab-genomic/releases/latest"
         req = urllib.request.Request(url, headers={"User-Agent": "PrimerLab"})
-        
+
         with urllib.request.urlopen(req, timeout=5) as response:
             data = json.loads(response.read().decode())
             latest_version = data.get("tag_name", "").lstrip("v")
-            
+
             if latest_version and latest_version > __version__:
                 print(f"🆕 New version available: v{latest_version}")
                 print(f"   Current: v{__version__}")
@@ -98,7 +98,7 @@ def _run_health_check():
                 print(f"✅ You are on the latest version (v{__version__})")
     except Exception as e:
         print(f"⚠️ Could not check for updates: {e}")
-    
+
     print("\n" + "=" * 45)
     print("Health check complete.\n")
 
@@ -107,11 +107,11 @@ def main():
         description="PrimerLab: Automated Primer Design Framework",
         formatter_class=argparse.RawTextHelpFormatter
     )
-    
+
     parser.add_argument("--version", action="version", version=f"PrimerLab v{__version__}")
-    
+
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
-    
+
     # --- VERSION Command ---
     subparsers.add_parser("version", help="Show version info")
 
@@ -183,10 +183,10 @@ def main():
     # --- PRESET Command (v0.1.5) ---
     preset_parser = subparsers.add_parser("preset", help="Manage and view presets")
     preset_subparsers = preset_parser.add_subparsers(dest="preset_action", help="Preset actions")
-    
+
     # preset list
     preset_subparsers.add_parser("list", help="List all available presets")
-    
+
     # preset show <name>
     preset_show = preset_subparsers.add_parser("show", help="Show details of a specific preset")
     preset_show.add_argument("name", type=str, help="Name of preset to show")
@@ -232,7 +232,7 @@ def main():
     # --- HISTORY Command (v0.1.5) ---
     history_parser = subparsers.add_parser("history", help="View and manage primer design history")
     history_subparsers = history_parser.add_subparsers(dest="history_command", help="History subcommands")
-    
+
     # history list
     history_list = history_subparsers.add_parser("list", help="List recent designs")
     history_list.add_argument("--limit", "-n", type=int, default=10,
@@ -241,19 +241,19 @@ def main():
                               help="Filter by gene name")
     history_list.add_argument("--workflow", "-w", type=str, choices=["pcr", "qpcr"],
                               help="Filter by workflow type")
-    
+
     # history show
     history_show = history_subparsers.add_parser("show", help="Show details of a design")
     history_show.add_argument("id", type=int, help="Design ID to show")
-    
+
     # history export
     history_export = history_subparsers.add_parser("export", help="Export history to CSV")
     history_export.add_argument("--output", "-o", type=str, default="primer_history.csv",
                                 help="Output CSV path")
-    
+
     # history stats
     history_subparsers.add_parser("stats", help="Show database statistics")
-    
+
     # history delete
     history_delete = history_subparsers.add_parser("delete", help="Delete a design")
     history_delete.add_argument("id", type=int, help="Design ID to delete")
@@ -487,7 +487,7 @@ def main():
     # --- QPCR-EFFICIENCY Command (v0.7.4) ---
     eff_parser = subparsers.add_parser("qpcr-efficiency", help="Calculate/predict qPCR efficiency (v0.7.4)")
     eff_subparsers = eff_parser.add_subparsers(dest="eff_action", help="Efficiency actions")
-    
+
     # qpcr-efficiency calculate
     calc_parser = eff_subparsers.add_parser("calculate", help="Calculate efficiency from standard curve")
     calc_parser.add_argument("--data", "-d", type=str, required=True,
@@ -496,7 +496,7 @@ def main():
                             help="Output file (default: stdout)")
     calc_parser.add_argument("--format", type=str, choices=["text", "json"],
                             default="text", help="Output format")
-    
+
     # qpcr-efficiency predict
     pred_parser = eff_subparsers.add_parser("predict", help="Predict efficiency from primer properties")
     pred_parser.add_argument("--forward", "-f", type=str, required=True,
@@ -529,7 +529,7 @@ def main():
     if args.command == "validate":
         logger = setup_logger(level=logging.INFO)
         logger.info(f"🔍 Validating configuration: {args.config}")
-        
+
         try:
             config = load_and_merge_config(
                 workflow=args.workflow,
@@ -538,7 +538,7 @@ def main():
             print("\n✅ Configuration is valid!")
             print(f"   Workflow: {args.workflow.upper()}")
             print(f"   Output: {config['output']['directory']}")
-            
+
             params = config.get('parameters', {})
             if params.get('tm'):
                 print(f"   Tm Range: {params['tm'].get('min', '?')} - {params['tm'].get('max', '?')} °C")
@@ -547,7 +547,7 @@ def main():
                 print(f"   Product Size: {ranges[0][0]} - {ranges[0][1]} bp")
             if params.get('primer_naming'):
                 print(f"   Primer Naming: custom pattern configured")
-            
+
             sys.exit(0)
         except PrimerLabException as e:
             print(f"\n❌ Configuration Error: {e.message}")
@@ -561,9 +561,9 @@ def main():
     if args.command == "stats":
         import json
         from pathlib import Path
-        
+
         seq_input = args.sequence
-        
+
         try:
             # Load sequence from file or use as raw
             if Path(seq_input).exists():
@@ -580,7 +580,7 @@ def main():
             else:
                 seq_name = "Input"
                 sequence = seq_input
-            
+
             # Calculate statistics
             seq_upper = sequence.upper()
             length = len(sequence)
@@ -588,15 +588,15 @@ def main():
             gc_percent = (gc_count / length * 100) if length > 0 else 0
             at_count = seq_upper.count('A') + seq_upper.count('T')
             n_count = seq_upper.count('N')
-            
+
             # Check for IUPAC codes
             iupac_codes = set("RYSWKMBDHV")
             iupac_found = set(seq_upper) & iupac_codes
             iupac_count = sum(seq_upper.count(c) for c in iupac_found)
-            
+
             # Check for RNA
             has_uracil = 'U' in sequence.upper()
-            
+
             if args.json:
                 stats = {
                     "name": seq_name,
@@ -617,20 +617,20 @@ def main():
                 print(f"  Length:      {length:,} bp")
                 print(f"  GC Content:  {gc_percent:.2f}% ({gc_count:,} bp)")
                 print(f"  AT Content:  {(100-gc_percent-n_count/length*100):.2f}% ({at_count:,} bp)")
-                
+
                 if n_count > 0:
                     print(f"  N (masked):  {n_count:,} bp ({n_count/length*100:.2f}%)")
-                
+
                 if iupac_found:
                     print(f"  ⚠️  IUPAC codes: {sorted(iupac_found)} ({iupac_count} bp)")
                     print(f"      → Will be converted to N during design")
-                
+
                 if has_uracil:
                     print(f"  ⚠️  RNA detected (contains U)")
                     print(f"      → Will be converted to T during design")
-                
+
                 print("=" * 45)
-                
+
                 if length < 50:
                     print("❌ Too short for primer design (min 50 bp)")
                 elif iupac_count > length * 0.1:
@@ -638,9 +638,9 @@ def main():
                 else:
                     print("✅ Ready for primer design")
                 print()
-            
+
             sys.exit(0)
-            
+
         except Exception as e:
             print(f"\n❌ Error: {e}")
             sys.exit(1)
@@ -651,33 +651,33 @@ def main():
         import json
         from primerlab.core.insilico import run_insilico_pcr
         from primerlab.core.sequence import SequenceLoader
-        
+
         # Suppress logs when --json flag is used for clean output
         if args.json:
             logger = setup_logger(level=logging.ERROR)
         else:
             logger = setup_logger(level=logging.INFO)
             logger.info("🧬 Running In-silico PCR Simulation...")
-        
+
         try:
             # Load template
             template_path = Path(args.template)
             if not template_path.exists():
                 print(f"❌ Template file not found: {args.template}")
                 sys.exit(1)
-            
+
             template_seq = SequenceLoader.load(str(template_path))
             template_name = template_path.stem
-            
+
             # Load primers from JSON or FASTA
             primers_path = Path(args.primers)
             if not primers_path.exists():
                 print(f"❌ Primers file not found: {args.primers}")
                 sys.exit(1)
-            
+
             with open(primers_path, 'r') as f:
                 content = f.read()
-            
+
             if content.strip().startswith('{'):
                 # JSON format
                 primers_data = json.loads(content)
@@ -707,11 +707,11 @@ def main():
             else:
                 print("❌ Primers file must be JSON or FASTA format")
                 sys.exit(1)
-            
+
             if not fwd_primer or not rev_primer:
                 print("❌ Could not parse forward and reverse primers from file")
                 sys.exit(1)
-            
+
             # Load params from config if provided
             params = {}
             if args.config:
@@ -719,11 +719,11 @@ def main():
                 with open(args.config, 'r') as f:
                     config = yaml.safe_load(f)
                 params = config.get("insilico", {})
-            
+
             # v0.2.4: Add circular flag from CLI
             if args.circular:
                 params["circular"] = True
-            
+
             # Run in-silico PCR
             result = run_insilico_pcr(
                 template=template_seq,
@@ -732,11 +732,11 @@ def main():
                 template_name=template_name,
                 params=params
             )
-            
+
             # Create output directory
             output_dir = Path(args.output)
             output_dir.mkdir(parents=True, exist_ok=True)
-            
+
             # Output as JSON
             result_dict = {
                 "success": result.success,
@@ -760,32 +760,32 @@ def main():
                 "warnings": result.warnings,
                 "errors": result.errors
             }
-            
+
             # Save JSON
             json_path = output_dir / "insilico_result.json"
             with open(json_path, 'w') as f:
                 json.dump(result_dict, f, indent=2)
-            
+
             # v0.2.2: Use report module for outputs
             from primerlab.core.insilico.report import (
                 generate_markdown_report,
                 generate_amplicon_fasta,
                 format_console_alignment
             )
-            
+
             # Save Markdown Report (v0.2.2)
             generate_markdown_report(result, output_dir)
-            
+
             # Save Amplicon FASTA (v0.2.2 - using report module)
             if result.products:
                 generate_amplicon_fasta(result, output_dir)
-            
+
             if args.json:
                 print(json.dumps(result_dict, indent=2))
             else:
                 # v0.2.2: Use formatted console output
                 print(format_console_alignment(result))
-                
+
                 print("-" * 60)
                 print(f"📁 Output directory: {output_dir}")
                 print(f"   • insilico_result.json")
@@ -793,9 +793,9 @@ def main():
                 if result.products:
                     print(f"   • predicted_amplicons.fasta ({len(result.products)} sequences)")
                 print()
-            
+
             sys.exit(0 if result.success else 1)
-            
+
         except Exception as e:
             print(f"\n❌ Error: {e}")
             import traceback
@@ -808,14 +808,14 @@ def main():
             from primerlab.core.offtarget.finder import OfftargetFinder
             from primerlab.core.offtarget.scorer import SpecificityScorer
             from primerlab.core.offtarget.report import generate_specificity_report
-            
+
             # v0.3.1: Database info mode
             if getattr(args, 'db_info', False):
                 db_path = Path(args.database)
                 if not db_path.exists():
                     print(f"❌ Database not found: {db_path}")
                     sys.exit(1)
-                
+
                 # Count sequences in FASTA
                 seq_count = 0
                 total_bp = 0
@@ -825,18 +825,18 @@ def main():
                             seq_count += 1
                         else:
                             total_bp += len(line.strip())
-                
+
                 print(f"📊 Database Info: {db_path.name}")
                 print(f"   Sequences: {seq_count:,}")
                 print(f"   Total size: {total_bp:,} bp")
                 print(f"   File size: {db_path.stat().st_size:,} bytes")
                 sys.exit(0)
-            
+
             # Parse primers
             primers_input = args.primers
             forward_primer = None
             reverse_primer = None
-            
+
             if os.path.exists(primers_input):
                 if primers_input.endswith('.json'):
                     with open(primers_input) as f:
@@ -867,25 +867,25 @@ def main():
                 forward_primer = parts[0].strip()
                 if len(parts) > 1:
                     reverse_primer = parts[1].strip()
-            
+
             if not forward_primer:
                 print("❌ No primers found in input")
                 sys.exit(1)
-            
+
             print(f"🔬 Off-target Check (v0.3.0)")
             print(f"   Database: {args.database}")
             print(f"   Forward:  {forward_primer[:30]}..." if len(forward_primer) > 30 else f"   Forward:  {forward_primer}")
             if reverse_primer:
                 print(f"   Reverse:  {reverse_primer[:30]}..." if len(reverse_primer) > 30 else f"   Reverse:  {reverse_primer}")
             print()
-            
+
             # Run off-target check
             finder = OfftargetFinder(
                 database=args.database,
                 target_id=args.target,
                 mode=args.mode
             )
-            
+
             if reverse_primer:
                 result = finder.find_primer_pair_offtargets(
                     forward_primer=forward_primer,
@@ -902,14 +902,14 @@ def main():
                 )
                 scorer = SpecificityScorer()
                 combined = scorer.score_primer(result)
-            
+
             # Output
             output_dir = Path(args.output)
             output_dir.mkdir(parents=True, exist_ok=True)
-            
+
             # Generate report
             generate_specificity_report(result, combined, output_dir)
-            
+
             # Result dict
             if hasattr(result, 'forward_result'):
                 result_dict = {
@@ -932,11 +932,11 @@ def main():
                     "grade": combined.grade,
                     "is_specific": combined.is_acceptable
                 }
-            
+
             # Save JSON
             with open(output_dir / "blast_result.json", "w") as f:
                 json.dump(result_dict, f, indent=2)
-            
+
             if args.json:
                 print(json.dumps(result_dict, indent=2))
             else:
@@ -946,18 +946,18 @@ def main():
                     print(f"   Reverse: {result.reverse_result.offtarget_count} off-targets")
                 else:
                     print(f"   Off-targets: {result.offtarget_count}")
-                
+
                 if combined.is_acceptable:
                     print("\n✅ Primers are specific!")
                 else:
                     print("\n⚠️  Low specificity - check off-targets")
-                
+
                 print(f"\n📁 Output: {output_dir}")
                 print(f"   • blast_result.json")
                 print(f"   • specificity_report.md")
-            
+
             sys.exit(0 if combined.is_acceptable else 1)
-            
+
         except Exception as e:
             print(f"\n❌ Error: {e}")
             import traceback
@@ -968,17 +968,17 @@ def main():
     if args.command == "preset":
         from pathlib import Path
         import yaml
-        
+
         preset_dir = Path(__file__).parent.parent / "config"
-        
+
         if args.preset_action == "list":
             print("\n📋 Available Presets:\n")
             preset_files = list(preset_dir.glob("*_default.yaml"))
-            
+
             # Filter out workflow defaults, show only special presets
             presets = [p.stem.replace("_default", "") for p in preset_files 
                       if p.stem not in ["pcr_default", "qpcr_default"]]
-            
+
             if presets:
                 for preset in sorted(presets):
                     print(f"  • {preset}")
@@ -986,27 +986,27 @@ def main():
             else:
                 print("  No custom presets found.")
                 print("  Built-in workflows: pcr, qpcr")
-            
+
             sys.exit(0)
-        
+
         elif args.preset_action == "show":
             preset_name = args.name
             preset_file = preset_dir / f"{preset_name}_default.yaml"
-            
+
             if not preset_file.exists():
                 print(f"\n❌ Preset '{preset_name}' not found.")
                 print("   Use 'primerlab preset list' to see available presets.")
                 sys.exit(1)
-            
+
             print(f"\n📄 Preset: {preset_name}\n")
             print("-" * 40)
-            
+
             with open(preset_file, 'r') as f:
                 content = f.read()
                 print(content)
-            
+
             sys.exit(0)
-        
+
         else:
             print("Usage: primerlab preset [list|show <name>]")
 
@@ -1053,7 +1053,7 @@ def main():
             else:
                 print("❌ Input JSON must be a list of objects")
                 sys.exit(1)
-            
+
             print(f"✅ Loaded {len(pairs)} primer pairs")
 
             # 2. Config
@@ -1069,7 +1069,7 @@ def main():
             print("📊 Scoring and validating...")
             scorer = MultiplexScorer(config)
             score_res = scorer.calculate_score(matrix, pairs)
-            
+
             validator = MultiplexValidator(config)
             validation = validator.get_validation_summary(matrix, pairs)
 
@@ -1081,10 +1081,10 @@ def main():
             # 5. Output
             out_dir = PathLib(args.output)
             out_dir.mkdir(parents=True, exist_ok=True)
-            
+
             report_path = generate_markdown_report(score_res, out_dir)
             json_path = generate_json_report(score_res, out_dir)
-            
+
             # 6. Overlap analysis if template provided (v0.4.1)
             overlap_result = None
             if args.template:
@@ -1092,39 +1092,39 @@ def main():
                 try:
                     from primerlab.core.compat_check.overlap_detection import run_insilico_compat_simulation
                     from primerlab.core.sequence import SequenceLoader
-                    
+
                     # Load template
                     template_path = PathLib(args.template)
                     if template_path.exists():
                         template_seq = SequenceLoader.load(str(template_path))
                     else:
                         template_seq = args.template  # Assume raw sequence
-                    
+
                     # Convert pairs to dict format
                     primer_dicts = [
                         {"name": p.name, "forward": p.forward, "reverse": p.reverse}
                         for p in pairs
                     ]
-                    
+
                     overlap_result = run_insilico_compat_simulation(
                         template=template_seq,
                         primer_pairs=primer_dicts,
                         template_name="template"
                     )
-                    
+
                     # Save overlap report
                     import json as json_module
                     with open(out_dir / "overlap_analysis.json", "w") as f:
                         json_module.dump(overlap_result.to_dict(), f, indent=2)
-                    
+
                     if overlap_result.has_problems:
                         print(f"   ⚠️ {len([o for o in overlap_result.overlaps if o.is_problematic])} problematic overlap(s) detected")
                     else:
                         print("   ✅ No problematic overlaps")
-                        
+
                 except Exception as e:
                     print(f"   ⚠️ Overlap analysis failed: {e}")
-            
+
             print("\n" + "=" * 45)
             print(f"🏁 Score: {score_res.score:.1f}/100 (Grade {score_res.grade})")
             print(f"   Status: {'✅ COMPATIBLE' if score_res.is_valid else '❌ INCOMPATIBLE'}")
@@ -1213,13 +1213,13 @@ def main():
             out_dir.mkdir(parents=True, exist_ok=True)
 
             json_path = generate_species_json_report(result, str(out_dir))
-            
+
             if args.format == "markdown" or args.format == "json":
                 md_path = generate_species_markdown_report(result, str(out_dir))
-            
+
             if args.format == "excel":
                 excel_path = generate_species_excel_report(result, str(out_dir))
-            
+
             if args.format == "html":
                 html_path = generate_species_html_report(result, str(out_dir))
 
@@ -1228,7 +1228,7 @@ def main():
             print(f"🏁 Specificity Score: {result.overall_score:.1f}/100 (Grade {result.grade})")
             print(f"   Status: {'✅ SPECIFIC' if result.is_specific else '⚠️ CROSS-REACTIVE'}")
             print(f"   Primers: {result.primers_checked} | Species: {result.species_checked}")
-            
+
             if result.warnings:
                 print(f"\n⚠️ Warnings ({len(result.warnings)}):")
                 for w in result.warnings[:3]:
@@ -1261,49 +1261,49 @@ def main():
                 predict_optimal_annealing,
                 analyze_temperature_sensitivity,
             )
-            
+
             logger = setup_logger(level=logging.INFO)
-            
+
             print("\n🌡️ Tm Gradient Simulation (v0.4.3)")
             print("=" * 50)
-            
+
             # 1. Load primers
             print(f"📂 Loading primers: {args.primers}")
             with open(args.primers, "r") as f:
                 primers = json.load(f)
-            
+
             # 2. Configure gradient
             config = TmGradientConfig(
                 min_temp=args.min_temp,
                 max_temp=args.max_temp,
                 step_size=args.step
             )
-            
+
             print(f"🔬 Temperature range: {config.min_temp}°C - {config.max_temp}°C (step {config.step_size}°C)")
             print(f"\n⏳ Simulating Tm gradient for {len(primers)} primers...")
-            
+
             # 3. Run simulations
             results = []
             for primer in primers:
                 name = primer.get("name", "Unknown")
                 seq = primer.get("forward", primer.get("sequence", ""))
-                
+
                 if seq:
                     result = simulate_tm_gradient(seq, f"{name}_fwd", config=config)
                     results.append(result)
-                
+
                 rev = primer.get("reverse", "")
                 if rev:
                     result = simulate_tm_gradient(rev, f"{name}_rev", config=config)
                     results.append(result)
-            
+
             # 4. Predict optimal
             optimal = predict_optimal_annealing(primers, config)
-            
+
             # 5. Output
             out_dir = PathLib(args.output)
             out_dir.mkdir(parents=True, exist_ok=True)
-            
+
             # Save JSON
             json_output = {
                 "config": {
@@ -1314,19 +1314,19 @@ def main():
                 "optimal": optimal,
                 "primers": [r.to_dict() for r in results]
             }
-            
+
             json_path = out_dir / "tm_gradient.json"
             with open(json_path, "w") as f:
                 json.dump(json_output, f, indent=2)
-            
+
             # Generate additional reports based on format
             from primerlab.core.tm_gradient.report import (
                 generate_tm_gradient_markdown,
                 generate_tm_gradient_csv,
             )
-            
+
             report_files = [str(json_path)]
-            
+
             if args.format == "markdown":
                 md_path = generate_tm_gradient_markdown(
                     json_output["primers"],
@@ -1335,7 +1335,7 @@ def main():
                     str(out_dir / "tm_gradient_report.md")
                 )
                 report_files.append(md_path)
-            
+
             if args.format == "csv":
                 csv_path = generate_tm_gradient_csv(
                     json_output["primers"],
@@ -1344,24 +1344,24 @@ def main():
                     str(out_dir / "tm_gradient.csv")
                 )
                 report_files.append(csv_path)
-            
+
             # Summary
             print("\n" + "=" * 50)
             print(f"🎯 Optimal Annealing Temperature: {optimal['optimal']:.1f}°C")
             print(f"   Recommended Range: {optimal['range_min']:.1f}°C - {optimal['range_max']:.1f}°C")
             print(f"\n📊 Per-Primer Results:")
-            
+
             for r in results[:6]:  # Show first 6
                 print(f"   {r.primer_name}: Tm={r.calculated_tm:.1f}°C, Optimal={r.optimal_annealing_temp:.1f}°C (Grade {r.grade})")
-            
+
             if len(results) > 6:
                 print(f"   ... and {len(results) - 6} more")
-            
+
             print(f"\n📁 Reports saved to: {out_dir}")
             for rf in report_files:
                 print(f"   • {PathLib(rf).name}")
             sys.exit(0)
-            
+
         except Exception as e:
             print(f"\n❌ Error: {e}")
             import traceback
@@ -1378,7 +1378,7 @@ def main():
         else:
             log_level = logging.INFO
         logger = setup_logger(level=log_level)
-        
+
         if not (hasattr(args, 'quiet') and args.quiet):
             logger.info(f"Starting PrimerLab v{__version__}")
             logger.info(f"Workflow: {args.workflow.upper()}")
@@ -1402,10 +1402,10 @@ def main():
                 user_config_path=args.config,
                 cli_overrides=overrides
             )
-            
+
             logger.info("Configuration loaded successfully.")
             logger.debug(f"Final Config: {config}")
-            
+
             # Check for dry-run mode
             if args.dry_run:
                 logger.info("✅ Dry-run complete. Configuration is valid.")
@@ -1422,25 +1422,25 @@ def main():
             if args.mask and args.mask != "none":
                 from primerlab.core.masking import RegionMasker, apply_masks_to_config, format_mask_report
                 from primerlab.core.sequence import SequenceLoader
-                
+
                 # Get raw sequence before workflow
                 input_cfg = config.get("input", {})
                 raw_seq = input_cfg.get("sequence") or ""
                 seq_path = input_cfg.get("sequence_path")
-                
+
                 if seq_path:
                     # Read raw (unprocessed) sequence to detect lowercase
                     from pathlib import Path
                     raw_seq = Path(seq_path).read_text()
-                
+
                 masker = RegionMasker()
-                
+
                 # Determine detection mode
                 detect_lower = args.mask in ["auto", "lowercase"]
                 detect_n = args.mask in ["auto", "n"]
-                
+
                 masks = masker.analyze_sequence(raw_seq, detect_lowercase=detect_lower, detect_n=detect_n)
-                
+
                 if masks:
                     # Apply masks to config
                     config = apply_masks_to_config(config, masks)
@@ -1450,7 +1450,7 @@ def main():
 
             # 5. Run Workflow
             logger.info("Initializing workflow engine...")
-            
+
             result = None
             if args.workflow == "pcr":
                 from primerlab.workflows.pcr import run_pcr_workflow
@@ -1458,30 +1458,30 @@ def main():
             elif args.workflow == "qpcr":
                 from primerlab.workflows.qpcr import run_qpcr_workflow
                 result = run_qpcr_workflow(config)
-            
+
             if result is not None:
                 # 5. Save Output
                 from primerlab.core.output import OutputManager
-                
+
                 out_dir = config["output"]["directory"]
                 output_mgr = OutputManager(out_dir, args.workflow)
-                
+
                 output_mgr.save_json(result)
                 output_mgr.save_csv(result)
-                
+
                 # Export vendor formats (v0.1.3)
                 # Priority: CLI --export flag > config output.export_formats > default ["idt"]
                 export_formats = ["idt"]  # Default
-                
+
                 # Check config for export_formats
                 config_formats = config.get("output", {}).get("export_formats", [])
                 if config_formats:
                     export_formats = [f.strip().lower() for f in config_formats]
-                
+
                 # CLI flag overrides config
                 if args.export:
                     export_formats = [f.strip().lower() for f in args.export.split(",")]
-                
+
                 for fmt in export_formats:
                     if fmt in ["idt", "sigma", "thermo"]:
                         output_mgr.save_ordering_format(result, fmt)
@@ -1502,7 +1502,7 @@ def main():
                         pass
                     else:
                         logger.warning(f"Unknown export format: {fmt}")
-                
+
                 # 6. Generate Report
                 if args.workflow == "qpcr":
                     from primerlab.workflows.qpcr.report import qPCRReportGenerator
@@ -1510,29 +1510,29 @@ def main():
                 else:
                     from primerlab.workflows.pcr.report import ReportGenerator
                     report_gen = ReportGenerator()
-                
+
                 report_content = report_gen.generate_report(result)
-                
+
                 # Save report
                 report_path = output_mgr.run_dir / "report.md"
                 with open(report_path, "w") as f:
                     f.write(report_content)
                 logger.info(f"Report saved to: {report_path}")
-                
+
                 # v0.3.3: Enhanced report generation with --report flag
                 if hasattr(args, 'report') and args.report:
                     try:
                         from primerlab.core.report import ReportGenerator as EnhancedReportGenerator
                         from primerlab.core.report import ReportExporter
-                        
+
                         # Build enhanced report from result
                         enhanced_gen = EnhancedReportGenerator()
-                        
+
                         # Extract primer info from result
                         if hasattr(result, 'primers') and result.primers:
                             fwd = result.primers.get('forward')
                             rev = result.primers.get('reverse')
-                            
+
                             fwd_seq = fwd.sequence if hasattr(fwd, 'sequence') else str(fwd) if fwd else ""
                             rev_seq = rev.sequence if hasattr(rev, 'sequence') else str(rev) if rev else ""
                             fwd_tm = fwd.tm if hasattr(fwd, 'tm') else 0.0
@@ -1540,7 +1540,7 @@ def main():
                             fwd_gc = fwd.gc_percent if hasattr(fwd, 'gc_percent') else 0.0
                             rev_gc = rev.gc_percent if hasattr(rev, 'gc_percent') else 0.0
                             product_size = result.amplicons[0].length if result.amplicons else None
-                            
+
                             enhanced_gen.add_design(
                                 forward_seq=fwd_seq,
                                 reverse_seq=rev_seq,
@@ -1550,14 +1550,14 @@ def main():
                                 reverse_gc=rev_gc,
                                 product_size=product_size
                             )
-                        
+
                         # Add validation info if available
                         if hasattr(result, 'insilico_result') and result.insilico_result:
                             enhanced_gen.add_validation(
                                 amplicons=len(result.insilico_result.amplicons) if hasattr(result.insilico_result, 'amplicons') else 1,
                                 product_size=product_size
                             )
-                        
+
                         # Add off-target info if available
                         if hasattr(result, 'offtarget_check') and result.offtarget_check:
                             ot = result.offtarget_check
@@ -1567,10 +1567,10 @@ def main():
                                 grade=ot.get('grade', '?') if isinstance(ot, dict) else '?',
                                 score=ot.get('specificity_score', 0.0) if isinstance(ot, dict) else 0.0
                             )
-                        
+
                         # Generate report
                         enhanced_report = enhanced_gen.generate()
-                        
+
                         # Determine output path
                         report_format = getattr(args, 'report_format', 'markdown')
                         if hasattr(args, 'report_output') and args.report_output:
@@ -1579,13 +1579,13 @@ def main():
                             ext_map = {'markdown': 'md', 'html': 'html', 'json': 'json'}
                             ext = ext_map.get(report_format, 'md')
                             enhanced_report_path = output_mgr.run_dir / f"enhanced_report.{ext}"
-                        
+
                         # Export report
                         exporter = ReportExporter(enhanced_report)
                         exporter.export(str(enhanced_report_path), format=report_format)
-                        
+
                         logger.info(f"Enhanced report ({report_format}) saved to: {enhanced_report_path}")
-                        
+
                     except Exception as report_err:
                         logger.warning(f"Could not generate enhanced report: {report_err}")
                         if args.debug:
@@ -1600,15 +1600,15 @@ def main():
                         from primerlab.core.compat_check.scoring import MultiplexScorer
                         from primerlab.core.compat_check.validator import MultiplexValidator
                         from primerlab.core.compat_check.report import generate_markdown_report, generate_json_report
-                        
+
                         logger.info("🔬 Running multiplex compatibility check...")
-                        
+
                         # Convert result primers to MultiplexPair format
                         pairs = []
                         if hasattr(result, 'primers') and result.primers:
                             fwd = result.primers.get('forward')
                             rev = result.primers.get('reverse')
-                            
+
                             if fwd and rev:
                                 fwd_seq = fwd.sequence if hasattr(fwd, 'sequence') else str(fwd)
                                 rev_seq = rev.sequence if hasattr(rev, 'sequence') else str(rev)
@@ -1616,7 +1616,7 @@ def main():
                                 rev_tm = rev.tm if hasattr(rev, 'tm') else 60.0
                                 fwd_gc = fwd.gc_percent if hasattr(fwd, 'gc_percent') else 50.0
                                 rev_gc = rev.gc_percent if hasattr(rev, 'gc_percent') else 50.0
-                                
+
                                 pairs.append(MultiplexPair(
                                     name=config.get('output', {}).get('target_name', 'Primer_1'),
                                     forward=fwd_seq,
@@ -1626,37 +1626,37 @@ def main():
                                     gc_forward=fwd_gc,
                                     gc_reverse=rev_gc
                                 ))
-                        
+
                         if len(pairs) >= 1:
                             # Run multiplex analysis
                             engine = DimerEngine()
                             matrix = engine.build_matrix(pairs)
-                            
+
                             scorer = MultiplexScorer(config)
                             score_res = scorer.calculate_score(matrix, pairs)
-                            
+
                             validator = MultiplexValidator(config)
                             validation = validator.get_validation_summary(matrix, pairs)
-                            
+
                             # Update result with validation info
                             score_res.is_valid = validation["is_valid"]
                             score_res.errors = validation["errors"]
                             score_res.warnings.extend(validation["warnings"])
-                            
+
                             # Save multiplex report
                             multiplex_dir = output_mgr.run_dir / "multiplex"
                             multiplex_dir.mkdir(parents=True, exist_ok=True)
-                            
+
                             generate_markdown_report(score_res, multiplex_dir)
                             generate_json_report(score_res, multiplex_dir)
-                            
+
                             # Print summary
                             status = "✅ COMPATIBLE" if score_res.is_valid else "⚠️ ISSUES FOUND"
                             logger.info(f"Multiplex Score: {score_res.score:.1f}/100 (Grade {score_res.grade}) - {status}")
                             logger.info(f"Multiplex reports saved to: {multiplex_dir}")
                         else:
                             logger.warning("No primer pairs found for multiplex check")
-                            
+
                     except Exception as mpx_err:
                         logger.warning(f"Could not run multiplex check: {mpx_err}")
                         if args.debug:
@@ -1679,7 +1679,7 @@ def main():
                     if result.amplicons:
                         logger.info(f"Amplicon size: {result.amplicons[0].length} bp")
                     logger.info("Workflow finished successfully.")
-                
+
                 # 8. Auto-save to database (v0.1.5)
                 try:
                     from primerlab.core.database import PrimerDatabase
@@ -1694,7 +1694,7 @@ def main():
 
         except PrimerLabException as e:
             logger.error(f"Error: {e}")
-            
+
             # v0.1.5: Auto Parameter Suggestion for design failures
             if hasattr(e, 'error_code') and e.error_code == "ERR_TOOL_P3_NO_PRIMERS":
                 try:
@@ -1703,7 +1703,7 @@ def main():
                     print(format_suggestions_for_cli(suggestion_result))
                 except Exception as suggestion_error:
                     logger.debug(f"Could not generate suggestions: {suggestion_error}")
-            
+
             if args.debug:
                 logger.exception("Traceback:")
             sys.exit(1)
@@ -1716,27 +1716,27 @@ def main():
     if args.command == "compare":
         logger = setup_logger(level=logging.INFO)
         logger.info(f"🔬 PrimerLab Primer Comparison v{__version__}")
-        
+
         try:
             from primerlab.core.comparison import compare_primers, format_comparison_for_cli, load_result_json
-            
+
             # Parse labels
             labels = tuple(args.labels.split(",")[:2])
             if len(labels) < 2:
                 labels = ("A", "B")
-            
+
             # Load results
             result_a = load_result_json(args.result_a)
             result_b = load_result_json(args.result_b)
-            
+
             # Compare
             comparison = compare_primers(result_a, result_b, labels)
-            
+
             # Display
             print(format_comparison_for_cli(comparison, labels))
-            
+
             sys.exit(0)
-            
+
         except FileNotFoundError as e:
             logger.error(f"Error: {e}")
             sys.exit(1)
@@ -1749,7 +1749,7 @@ def main():
     if args.command == "batch-run":
         logger = setup_logger(level=logging.INFO)
         logger.info(f"🚀 PrimerLab Batch Run v{__version__}")
-        
+
         try:
             from pathlib import Path
             import json
@@ -1760,33 +1760,33 @@ def main():
                 save_batch_summary_csv
             )
             from primerlab.core.sequence import SequenceLoader
-            
+
             # Determine mode: configs OR fasta
             use_fasta_mode = args.fasta is not None
             use_configs_mode = args.configs is not None
-            
+
             if not use_fasta_mode and not use_configs_mode:
                 logger.error("Either --configs or --fasta is required")
                 sys.exit(1)
-            
+
             if use_fasta_mode and use_configs_mode:
                 logger.error("Cannot use both --configs and --fasta. Choose one.")
                 sys.exit(1)
-            
+
             # 2. Create output directory
             output_dir = Path(args.output)
             output_dir.mkdir(parents=True, exist_ok=True)
-            
+
             results = []
             sequences_to_process = []  # List of (name, sequence, config)
-            
+
             # === FASTA MODE ===
             if use_fasta_mode:
                 fasta_path = Path(args.fasta)
                 if not fasta_path.exists():
                     logger.error(f"FASTA file not found: {fasta_path}")
                     sys.exit(1)
-                
+
                 # Load shared config
                 if args.config:
                     shared_config = load_and_merge_config(args.config)
@@ -1794,13 +1794,13 @@ def main():
                     # Default config
                     shared_config = {"workflow": "pcr", "parameters": {}}
                     logger.warning("No --config provided, using defaults")
-                
+
                 # Parse multi-FASTA
                 fasta_content = fasta_path.read_text()
                 parsed_seqs = SequenceLoader._parse_fasta(fasta_content)
-                
+
                 logger.info(f"Found {len(parsed_seqs)} sequences in {fasta_path.name}")
-                
+
                 import copy
                 for name, seq in parsed_seqs:
                     # Deep clone config to avoid shared state
@@ -1809,35 +1809,35 @@ def main():
                         seq_config["input"] = {}
                     seq_config["input"]["sequence"] = seq
                     sequences_to_process.append((name, seq, seq_config))
-            
+
             # === CONFIGS MODE ===
             else:
                 config_input = args.configs
                 config_files = []
-                
+
                 if Path(config_input).is_dir():
                     config_dir = Path(config_input)
                     config_files = list(config_dir.glob("*.yaml")) + list(config_dir.glob("*.yml"))
                     logger.info(f"Found {len(config_files)} config files in {config_input}")
                 else:
                     config_files = [Path(p.strip()) for p in config_input.split(",")]
-                
+
                 if not config_files:
                     logger.error("No config files found!")
                     sys.exit(1)
-                
+
                 for config_path in config_files:
                     sequence_name = config_path.stem.replace("_config", "")
                     config = load_and_merge_config(str(config_path))
                     sequences_to_process.append((sequence_name, None, config))
-            
+
             # 3. Run each sequence
             for sequence_name, raw_seq, config in sequences_to_process:
                 logger.info(f"📌 Processing: {sequence_name}")
-                
+
                 try:
                     workflow_type = config.get("workflow", "pcr").lower()
-                    
+
                     # Get workflow engine
                     if workflow_type == "qpcr":
                         from primerlab.workflows.qpcr.engine import qPCRWorkflowEngine
@@ -1845,20 +1845,20 @@ def main():
                     else:
                         from primerlab.workflows.pcr.engine import PCRWorkflowEngine
                         engine = PCRWorkflowEngine()
-                    
+
                     # Run workflow
                     result = engine.run(config)
-                    
+
                     # Save individual result
                     result_dir = output_dir / sequence_name
                     result_dir.mkdir(exist_ok=True)
-                    
+
                     result_data = result.to_dict()
                     result_data["metadata"] = {"sequence_name": sequence_name}
-                    
+
                     with open(result_dir / "result.json", "w") as f:
                         json.dump(result_data, f, indent=2)
-                    
+
                     # Run amplicon analysis if amplicons available (v0.4.1)
                     amplicons = result_data.get("amplicons", [])
                     if amplicons:
@@ -1868,30 +1868,30 @@ def main():
                                 generate_amplicon_json_report,
                                 generate_amplicon_markdown_report
                             )
-                            
+
                             # Analyze first/primary amplicon
                             primary_amplicon = amplicons[0] if amplicons else None
                             if primary_amplicon and primary_amplicon.get("sequence"):
                                 amplicon_result = analyze_amplicon(
                                     primary_amplicon["sequence"]
                                 )
-                                
+
                                 # Save amplicon analysis
                                 generate_amplicon_json_report(amplicon_result, str(result_dir))
-                                
+
                                 # Add to result
                                 result_data["amplicon_analysis"] = amplicon_result.to_dict()
-                                
+
                                 # Update result.json with amplicon data
                                 with open(result_dir / "result.json", "w") as f:
                                     json.dump(result_data, f, indent=2)
-                                    
+
                         except Exception as amp_err:
                             logger.debug(f"  Amplicon analysis skipped: {amp_err}")
-                    
+
                     results.append(result_data)
                     logger.info(f"  ✅ Success - Quality Score: {result.qc.quality_score if result.qc else 'N/A'}")
-                    
+
                 except Exception as e:
                     logger.error(f"  ❌ Failed: {e}")
                     results.append({
@@ -1901,29 +1901,29 @@ def main():
                         "qc": {},
                         "error": str(e)
                     })
-                    
+
                     if not args.continue_on_error:
                         logger.error("Stopping batch run. Use --continue-on-error to continue.")
                         break
-            
+
             # 4. Generate summary
             summary = generate_batch_summary(results)
-            
+
             # 5. Display CLI summary
             print(format_batch_summary_cli(summary))
-            
+
             # 6. Export summary
             export_formats = [f.strip().lower() for f in args.export.split(",")]
-            
+
             if "xlsx" in export_formats:
                 save_batch_excel(results, str(output_dir / "batch_summary.xlsx"))
             if "csv" in export_formats:
                 save_batch_summary_csv(summary, str(output_dir / "batch_summary.csv"))
-            
+
             # Save summary JSON
             with open(output_dir / "batch_summary.json", "w") as f:
                 json.dump(summary, f, indent=2)
-            
+
             # 7. Auto compat-check if ≥2 successful primer pairs
             successful_results = [r for r in results if "error" not in r and r.get("primers")]
             if len(successful_results) >= 2:
@@ -1933,18 +1933,18 @@ def main():
                     from primerlab.core.compat_check.scoring import MultiplexScorer
                     from primerlab.core.compat_check.validator import MultiplexValidator
                     from primerlab.core.compat_check.report import generate_markdown_report, generate_json_report
-                    
+
                     logger.info(f"🔬 Running compatibility check on {len(successful_results)} primer pairs...")
-                    
+
                     # Extract primer pairs
                     pairs = []
                     for r in successful_results:
                         primers = r.get("primers", {})
                         name = r.get("metadata", {}).get("sequence_name", f"Pair_{len(pairs)+1}")
-                        
+
                         fwd = primers.get("forward", {})
                         rev = primers.get("reverse", {})
-                        
+
                         if fwd and rev:
                             pairs.append(MultiplexPair(
                                 name=name,
@@ -1955,36 +1955,36 @@ def main():
                                 gc_forward=fwd.get("gc_content", 0.0),
                                 gc_reverse=rev.get("gc_content", 0.0)
                             ))
-                    
+
                     if len(pairs) >= 2:
                         # Run compat check
                         engine = DimerEngine()
                         matrix = engine.build_matrix(pairs)
-                        
+
                         scorer = MultiplexScorer()
                         result = scorer.calculate_score(matrix, pairs)
-                        
+
                         validator = MultiplexValidator()
                         is_valid, errors, warnings = validator.validate(result, matrix, pairs)
                         result.is_valid = is_valid
                         result.errors = errors
                         result.warnings = warnings
-                        
+
                         # Save compat reports
                         compat_dir = output_dir / "compat_check"
                         compat_dir.mkdir(exist_ok=True)
                         generate_json_report(result, compat_dir)
                         generate_markdown_report(result, compat_dir)
-                        
+
                         status = "✅ COMPATIBLE" if result.is_valid else "⚠️ ISSUES FOUND"
                         logger.info(f"  {status} - Score: {result.score:.1f}/100 (Grade: {result.grade})")
-                    
+
                 except Exception as e:
                     logger.warning(f"Compat check skipped: {e}")
-            
+
             logger.info(f"✅ Batch run complete. Results in: {output_dir}")
             sys.exit(0)
-            
+
         except Exception as e:
             logger.error(f"Batch run failed: {e}")
             sys.exit(1)
@@ -1993,56 +1993,56 @@ def main():
     if args.command == "plot":
         logger = setup_logger(level=logging.INFO)
         logger.info(f"🎨 PrimerLab Visualization v{__version__}")
-        
+
         try:
             from pathlib import Path
             import json
             from primerlab.core.visualization import plot_gc_profile
             from primerlab.core.sequence import SequenceLoader
-            
+
             # Load result
             result_path = Path(args.result)
             if not result_path.exists():
                 logger.error(f"Result file not found: {result_path}")
                 sys.exit(1)
-            
+
             with open(result_path) as f:
                 result = json.load(f)
-            
+
             # Load sequence
             sequence = SequenceLoader.load(args.sequence)
-            
+
             # Determine output path
             output_path = args.output
             if not output_path:
                 output_path = result_path.parent / f"gc_profile_{args.theme}.png"
-            
+
             # Get primer info
             primers = result.get("primers", {})
             amplicons = result.get("amplicons", [])
-            
+
             primer_fwd = None
             primer_rev = None
             probe = None
             amplicon_start = 0
             amplicon_end = len(sequence)
-            
+
             if "forward" in primers:
                 fwd = primers["forward"]
                 primer_fwd = {"start": fwd.get("start", 0), "end": fwd.get("end", 0)}
-            
+
             if "reverse" in primers:
                 rev = primers["reverse"]
                 primer_rev = {"start": rev.get("start", 0), "end": rev.get("end", 0)}
-            
+
             if "probe" in primers:
                 prb = primers["probe"]
                 probe = {"start": prb.get("start", 0), "end": prb.get("end", 0)}
-            
+
             if amplicons:
                 amplicon_start = amplicons[0].get("start", 0)
                 amplicon_end = amplicons[0].get("end", len(sequence))
-            
+
             # Generate plot
             saved_path = plot_gc_profile(
                 sequence=sequence,
@@ -2056,14 +2056,14 @@ def main():
                 output_path=str(output_path),
                 title=f"GC Content Profile - {result.get('workflow', 'PCR').upper()}"
             )
-            
+
             if saved_path:
                 logger.info(f"✅ Plot saved to: {saved_path}")
             else:
                 logger.warning("Plot generation failed (matplotlib may not be installed)")
-            
+
             sys.exit(0)
-            
+
         except Exception as e:
             logger.error(f"Plot generation failed: {e}")
             sys.exit(1)
@@ -2071,13 +2071,13 @@ def main():
     # --- HISTORY Command Handler (v0.1.5) ---
     if args.command == "history":
         logger = setup_logger(level=logging.INFO)
-        
+
         try:
             from primerlab.core.database import PrimerDatabase, format_history_table
             import json
-            
+
             db = PrimerDatabase()
-            
+
             if args.history_command == "list":
                 designs = db.search(
                     gene=args.gene,
@@ -2085,7 +2085,7 @@ def main():
                     limit=args.limit
                 )
                 print(format_history_table(designs))
-            
+
             elif args.history_command == "show":
                 design = db.get_by_id(args.id)
                 if design:
@@ -2108,11 +2108,11 @@ def main():
                     print(f"{'='*60}\n")
                 else:
                     logger.error(f"Design #{args.id} not found")
-            
+
             elif args.history_command == "export":
                 path = db.export_csv(args.output)
                 logger.info(f"✅ History exported to: {path}")
-            
+
             elif args.history_command == "stats":
                 stats = db.get_stats()
                 print(f"\n{'='*40}")
@@ -2124,21 +2124,21 @@ def main():
                 for wf, count in stats['by_workflow'].items():
                     print(f"    {wf.upper()}: {count}")
                 print(f"{'='*40}\n")
-            
+
             elif args.history_command == "delete":
                 if db.delete(args.id):
                     logger.info(f"✅ Deleted design #{args.id}")
                 else:
                     logger.error(f"Design #{args.id} not found")
-            
+
             else:
                 # No subcommand - show recent
                 designs = db.get_recent(10)
                 print(format_history_table(designs))
-            
+
             db.close()
             sys.exit(0)
-            
+
         except Exception as e:
             logger.error(f"History command failed: {e}")
             sys.exit(1)
@@ -2146,20 +2146,20 @@ def main():
     if args.command == "batch-generate":
         logger = setup_logger(level=logging.INFO)
         logger.info(f"Starting PrimerLab Batch Generator v{__version__}")
-        
+
         try:
             from primerlab.cli.batch_generator import generate_configs_from_csv
-            
+
             generated = generate_configs_from_csv(
                 csv_path=args.input,
                 output_dir=args.output,
                 workflow=args.workflow
             )
-            
+
             logger.info(f"✅ Successfully generated {len(generated)} config files")
             for f in generated:
                 print(f"  - {f}")
-            
+
         except FileNotFoundError as e:
             logger.error(f"Error: {e}")
             sys.exit(1)
@@ -2171,7 +2171,7 @@ def main():
         # Generate template configuration file (v0.1.3)
         logger = setup_logger(level=logging.INFO)
         logger.info(f"Generating template config for {args.workflow.upper()} workflow...")
-        
+
         templates = {
             "pcr": '''# PrimerLab Configuration - PCR Workflow
 # Generated by: primerlab init
@@ -2265,20 +2265,20 @@ qc:
   dimer_dg_min: -6.0
 '''
         }
-        
+
         template = templates.get(args.workflow, templates["pcr"])
         output_file = Path(args.output)
-        
+
         if output_file.exists():
             logger.warning(f"File {args.output} already exists. Overwrite? (y/n)")
             response = input().strip().lower()
             if response != 'y':
                 logger.info("Aborted.")
                 sys.exit(0)
-        
+
         with open(output_file, "w") as f:
             f.write(template)
-        
+
         logger.info(f"✅ Created config file: {output_file}")
         logger.info(f"   Edit the file to add your sequence, then run:")
         logger.info(f"   primerlab run {args.workflow} --config {output_file}")
@@ -2287,17 +2287,17 @@ qc:
     if args.command == "probe-check":
         import json
         from primerlab.api import simulate_probe_binding_api
-        
+
         probe = args.probe.upper()
         amplicon = args.amplicon.upper() if args.amplicon else None
-        
+
         result = simulate_probe_binding_api(
             probe_sequence=probe,
             amplicon_sequence=amplicon,
             min_temp=getattr(args, 'min_temp', 55.0),
             max_temp=getattr(args, 'max_temp', 72.0),
         )
-        
+
         if args.format == "json":
             output = json.dumps(result, indent=2)
         else:
@@ -2321,7 +2321,7 @@ qc:
                 for w in result['warnings']:
                     lines.append(f"  ⚠ {w}")
             output = "\n".join(lines)
-        
+
         if args.output:
             with open(args.output, 'w') as f:
                 f.write(output)
@@ -2336,7 +2336,7 @@ qc:
         from pathlib import Path
         from primerlab.core.qpcr.melt_curve import predict_melt_curve
         from primerlab.core.qpcr.melt_plot import generate_melt_svg, generate_melt_png
-        
+
         # Load amplicon from file or use as sequence
         amp_input = args.amplicon
         if Path(amp_input).exists():
@@ -2348,13 +2348,13 @@ qc:
                 amplicon = content.strip()
         else:
             amplicon = amp_input.upper()
-        
+
         result = predict_melt_curve(
             amplicon_sequence=amplicon,
             min_temp=getattr(args, 'min_temp', 65.0),
             max_temp=getattr(args, 'max_temp', 95.0),
         )
-        
+
         if args.format == "json":
             output = json.dumps(result.to_dict(), indent=2)
             if args.output:
@@ -2410,7 +2410,7 @@ qc:
         import json
         from pathlib import Path
         from primerlab.api import validate_qpcr_amplicon_api
-        
+
         # Load amplicon from file or use as sequence
         amp_input = args.amplicon
         if Path(amp_input).exists():
@@ -2422,13 +2422,13 @@ qc:
                 amplicon = content.strip()
         else:
             amplicon = amp_input.upper()
-        
+
         result = validate_qpcr_amplicon_api(
             amplicon_sequence=amplicon,
             min_length=args.min_length,
             max_length=args.max_length,
         )
-        
+
         if args.format == "json":
             output = json.dumps(result, indent=2)
         else:
@@ -2457,7 +2457,7 @@ qc:
                 for r in result['recommendations']:
                     lines.append(f"  → {r}")
             output = "\n".join(lines)
-        
+
         if args.output:
             with open(args.output, 'w') as f:
                 f.write(output)
@@ -2471,12 +2471,12 @@ qc:
         from primerlab.core.sequence import SequenceLoader
         from primerlab.core.variants import design_nested_primers
         import json
-        
+
         # Load sequence
         sequence = args.sequence
         if Path(sequence).exists():
             sequence = SequenceLoader.load(sequence)
-        
+
         # Design nested primers
         result = design_nested_primers(
             sequence=sequence,
@@ -2485,7 +2485,7 @@ qc:
             outer_tm=args.outer_tm,
             inner_tm=args.inner_tm,
         )
-        
+
         if args.format == "json":
             output = json.dumps(result.to_dict(), indent=2)
         elif args.format == "markdown":
@@ -2572,7 +2572,7 @@ qc:
                     lines.append(f"  → {r}")
             lines.append("═══════════════════════════════════════════════════════")
             output = "\n".join(lines)
-        
+
         if args.output:
             with open(args.output, 'w') as f:
                 f.write(output)
@@ -2586,12 +2586,12 @@ qc:
         from primerlab.core.sequence import SequenceLoader
         from primerlab.core.variants import design_seminested_primers
         import json
-        
+
         # Load sequence
         sequence = args.sequence
         if Path(sequence).exists():
             sequence = SequenceLoader.load(sequence)
-        
+
         # Design semi-nested primers
         result = design_seminested_primers(
             sequence=sequence,
@@ -2600,7 +2600,7 @@ qc:
             shared_position=args.shared,
             tm_opt=args.tm,
         )
-        
+
         if args.format == "json":
             output = json.dumps(result.to_dict(), indent=2)
         elif args.format == "markdown":
@@ -2673,7 +2673,7 @@ qc:
                     lines.append(f"  ⚠ {w}")
             lines.append("═══════════════════════════════════════════════════════")
             output = "\n".join(lines)
-        
+
         if args.output:
             with open(args.output, 'w') as f:
                 f.write(output)
@@ -2689,15 +2689,15 @@ qc:
             analyze_dimer_matrix,
         )
         import json
-        
+
         # Load primers from JSON
         with open(args.primers, 'r') as f:
             primers = json.load(f)
-        
+
         # Analyze dimer matrix
         analyzer = DimerMatrixAnalyzer({"dg_threshold": args.threshold})
         result = analyzer.analyze(primers)
-        
+
         if args.format == "json":
             output = json.dumps(result.to_dict(), indent=2)
         elif args.format == "svg":
@@ -2715,26 +2715,26 @@ qc:
                 "MATRIX (ΔG kcal/mol):",
                 "─────────────────────────────────────",
             ]
-            
+
             # Header row
             header = "        " + "  ".join([p["name"][:6].ljust(6) for p in result.primers])
             lines.append(header)
-            
+
             # Matrix rows
             for i, primer in enumerate(result.primers):
                 row_name = primer["name"][:6].ljust(6)
                 row_values = "  ".join([f"{v:6.1f}" for v in result.matrix[i]])
                 lines.append(f"{row_name}  {row_values}")
-            
+
             if result.problematic_pairs:
                 lines.append("")
                 lines.append("PROBLEMATIC PAIRS:")
                 for p1, p2 in result.problematic_pairs:
                     lines.append(f"  ⚠ {p1} ↔ {p2}")
-            
+
             lines.append("═══════════════════════════════════════════════════════")
             output = "\n".join(lines)
-        
+
         if args.output:
             with open(args.output, 'w') as f:
                 f.write(output)
@@ -2747,10 +2747,10 @@ qc:
     if args.command == "compare-batch":
         from primerlab.core.analysis.batch_compare import compare_batch
         import json
-        
+
         # Compare results
         result = compare_batch(args.results)
-        
+
         if args.format == "json":
             output = json.dumps(result.to_dict(), indent=2)
         elif args.format == "markdown":
@@ -2769,7 +2769,7 @@ qc:
             ]
             for run in result.runs:
                 lines.append(f"- **{run.name}**: {run.quality_grade or 'N/A'} ({run.quality_score or 'N/A'})")
-            
+
             if result.differences:
                 lines.append("\n## Differences")
                 for diff in result.differences:
@@ -2793,7 +2793,7 @@ qc:
             for run in result.runs:
                 status = "✅" if run.success else "❌"
                 lines.append(f"  {status} {run.name}: {run.quality_grade or 'N/A'} ({run.quality_score or 'N/A'})")
-            
+
             if result.differences:
                 lines.append("")
                 lines.append("DIFFERENCES:")
@@ -2801,10 +2801,10 @@ qc:
                 for diff in result.differences:
                     sev = {"high": "🔴", "medium": "🟡", "low": "🟢"}.get(diff["severity"], "⚪")
                     lines.append(f"  {sev} {diff['description']}")
-            
+
             lines.append("═══════════════════════════════════════════════════════")
             output = "\n".join(lines)
-        
+
         if args.output:
             with open(args.output, 'w') as f:
                 f.write(output)
@@ -2817,15 +2817,15 @@ qc:
     if args.command == "coverage-map":
         from primerlab.core.visualization import CoverageMapGenerator, create_coverage_map
         import json
-        
+
         # Load result file
         with open(args.result, 'r') as f:
             result_data = json.load(f)
-        
+
         # Extract primer pairs from result
         primers = result_data.get("primers", {})
         amplicons = result_data.get("amplicons", [])
-        
+
         primer_pairs = []
         if primers:
             fwd = primers.get("forward", {})
@@ -2836,18 +2836,18 @@ qc:
                     "forward": {"start": fwd.get("start", 0), "end": fwd.get("end", 0)},
                     "reverse": {"start": rev.get("start", 0), "end": rev.get("end", 0)},
                 })
-        
+
         # Get sequence length
         seq_len = args.sequence_length
         if seq_len is None and amplicons:
             seq_len = max(a.get("end", 0) for a in amplicons) + 100
         if seq_len is None:
             seq_len = 1000  # Default
-        
+
         # Create coverage map
         generator = CoverageMapGenerator()
         result = generator.create_map(seq_len, primer_pairs)
-        
+
         if args.format == "json":
             output = json.dumps(result.to_dict(), indent=2)
         elif args.format == "svg":
@@ -2870,7 +2870,7 @@ qc:
                 lines.append(f"  {amp.name}: {amp.start}-{amp.end} ({amp.length} bp)")
             lines.append("═══════════════════════════════════════════════════════")
             output = "\n".join(lines)
-        
+
         if args.output:
             with open(args.output, 'w') as f:
                 f.write(output)
@@ -2887,17 +2887,17 @@ qc:
         )
         import json
         import primer3
-        
+
         if args.eff_action == "calculate":
             # Load data from JSON
             with open(args.data, 'r') as f:
                 data = json.load(f)
-            
+
             concentrations = data.get("concentrations", [])
             ct_values = data.get("ct_values", [])
-            
+
             result = calculate_efficiency(concentrations, ct_values)
-            
+
             if args.format == "json":
                 output = json.dumps(result.to_dict(), indent=2)
             else:
@@ -2918,20 +2918,20 @@ qc:
                     "═══════════════════════════════════════════════════════",
                 ]
                 output = "\n".join(lines)
-        
+
         elif args.eff_action == "predict":
             # Calculate Tm and GC
             fwd_tm = primer3.calc_tm(args.forward)
             rev_tm = primer3.calc_tm(args.reverse)
             fwd_gc = sum(1 for c in args.forward.upper() if c in 'GC') / len(args.forward) * 100
             rev_gc = sum(1 for c in args.reverse.upper() if c in 'GC') / len(args.reverse) * 100
-            
+
             result = predict_primer_efficiency(
                 args.forward, args.reverse,
                 fwd_tm, rev_tm, fwd_gc, rev_gc,
                 args.amplicon_length,
             )
-            
+
             if args.format == "json":
                 output = json.dumps(result.to_dict(), indent=2)
             else:
@@ -2960,7 +2960,7 @@ qc:
         else:
             print("Usage: primerlab qpcr-efficiency [calculate|predict]")
             sys.exit(1)
-        
+
         if hasattr(args, 'output') and args.output:
             with open(args.output, 'w') as f:
                 f.write(output)

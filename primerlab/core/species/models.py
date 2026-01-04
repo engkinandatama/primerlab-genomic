@@ -15,11 +15,11 @@ class SpeciesTemplate:
     sequence: str
     description: str = ""
     accession: str = ""
-    
+
     @property
     def length(self) -> int:
         return len(self.sequence)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "species_name": self.species_name,
@@ -38,12 +38,12 @@ class BindingSite:
     mismatches: int
     mismatch_positions: List[int] = field(default_factory=list)
     binding_sequence: str = ""
-    
+
     @property
     def is_strong_binding(self) -> bool:
         """Strong binding = >80% match."""
         return self.match_percent >= 80.0
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "position": self.position,
@@ -64,15 +64,15 @@ class SpeciesBinding:
     binding_sites: List[BindingSite] = field(default_factory=list)
     best_match_percent: float = 0.0
     is_specific: bool = True  # True if only binds to target species
-    
+
     @property
     def has_binding(self) -> bool:
         return len(self.binding_sites) > 0
-    
+
     @property
     def binding_count(self) -> int:
         return len(self.binding_sites)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "species_name": self.species_name,
@@ -92,10 +92,10 @@ class SpecificityMatrix:
     target_species: str
     bindings: Dict[str, Dict[str, SpeciesBinding]] = field(default_factory=dict)
     # bindings[primer_name][species_name] = SpeciesBinding
-    
+
     def get_binding(self, primer: str, species: str) -> Optional[SpeciesBinding]:
         return self.bindings.get(primer, {}).get(species)
-    
+
     def get_specificity_score(self, primer: str) -> float:
         """
         Calculate specificity score for a primer.
@@ -103,23 +103,23 @@ class SpecificityMatrix:
         """
         if primer not in self.bindings:
             return 0.0
-        
+
         target_binding = self.bindings[primer].get(self.target_species)
         if not target_binding or not target_binding.has_binding:
             return 0.0
-        
+
         target_strength = target_binding.best_match_percent
-        
+
         # Calculate off-target binding
         offtarget_max = 0.0
         for species, binding in self.bindings[primer].items():
             if species != self.target_species and binding.has_binding:
                 offtarget_max = max(offtarget_max, binding.best_match_percent)
-        
+
         # Score = target strength - off-target strength
         specificity = target_strength - offtarget_max
         return max(0.0, min(100.0, specificity))
-    
+
     def to_dict(self) -> Dict[str, Any]:
         matrix_data = {}
         for primer, species_dict in self.bindings.items():
@@ -127,7 +127,7 @@ class SpecificityMatrix:
                 species: binding.to_dict() 
                 for species, binding in species_dict.items()
             }
-        
+
         return {
             "primer_names": self.primer_names,
             "species_names": self.species_names,
@@ -148,7 +148,7 @@ class SpeciesCheckResult:
     is_specific: bool  # True if all primers specific to target
     warnings: List[str] = field(default_factory=list)
     recommendations: List[str] = field(default_factory=list)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "target_species": self.target_species,

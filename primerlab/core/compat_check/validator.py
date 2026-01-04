@@ -28,7 +28,7 @@ class MultiplexValidator:
     - GC content uniformity
     - Product size overlap (if available)
     """
-    
+
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         """
         Initialize validator with configuration.
@@ -38,24 +38,24 @@ class MultiplexValidator:
         """
         config = config or {}
         compat_config = config.get("multiplex", {})
-        
+
         # Get mode (default: standard)
         mode = compat_config.get("mode", "standard")
         if mode not in MULTIPLEX_CONFIG:
             logger.warning(f"Unknown mode '{mode}', using 'standard'")
             mode = "standard"
-        
+
         # Start with preset settings
         self.settings = MULTIPLEX_CONFIG[mode].copy()
-        
+
         # Apply user overrides
         for key in self.settings:
             if key in compat_config:
                 self.settings[key] = compat_config[key]
-        
+
         self.mode = mode
         logger.debug(f"MultiplexValidator initialized with mode='{mode}'")
-    
+
     def validate_dimers(
         self,
         matrix: CompatibilityMatrix
@@ -71,16 +71,16 @@ class MultiplexValidator:
         """
         warnings = []
         errors = []
-        
+
         if matrix.total_dimers == 0:
             return True, [], []
-        
+
         threshold = self.settings["dimer_dg_threshold"]
         problematic = matrix.get_problematic_dimers()
-        
+
         for dimer in problematic:
             severity = threshold - dimer.delta_g
-            
+
             if severity > 5.0:
                 # Severe - error level
                 errors.append(
@@ -99,10 +99,10 @@ class MultiplexValidator:
                     f"Minor dimer: {dimer.primer1_name} + {dimer.primer2_name} "
                     f"(ΔG = {dimer.delta_g:.1f})"
                 )
-        
+
         is_valid = len(errors) == 0
         return is_valid, warnings, errors
-    
+
     def validate_tm_uniformity(
         self,
         pairs: List[MultiplexPair]
@@ -118,10 +118,10 @@ class MultiplexValidator:
         """
         warnings = []
         errors = []
-        
+
         if len(pairs) < 2:
             return True, [], []
-        
+
         # Collect all Tm values
         tm_values = []
         for pair in pairs:
@@ -129,17 +129,17 @@ class MultiplexValidator:
                 tm_values.append((f"{pair.name}_F", pair.tm_forward))
             if pair.tm_reverse > 0:
                 tm_values.append((f"{pair.name}_R", pair.tm_reverse))
-        
+
         if len(tm_values) < 2:
             return True, [], []
-        
+
         tm_only = [tm for _, tm in tm_values]
         tm_max = max(tm_only)
         tm_min = min(tm_only)
         tm_spread = tm_max - tm_min
-        
+
         tm_diff_max = self.settings["tm_diff_max"]
-        
+
         if tm_spread > tm_diff_max * 2:
             # Severe spread - error
             errors.append(
@@ -152,10 +152,10 @@ class MultiplexValidator:
                 f"Tm spread ({tm_spread:.1f}°C) exceeds limit ({tm_diff_max}°C). "
                 f"Range: {tm_min:.1f}°C - {tm_max:.1f}°C"
             )
-        
+
         is_valid = len(errors) == 0
         return is_valid, warnings, errors
-    
+
     def validate_gc_uniformity(
         self,
         pairs: List[MultiplexPair]
@@ -171,10 +171,10 @@ class MultiplexValidator:
         """
         warnings = []
         errors = []
-        
+
         if len(pairs) < 2:
             return True, [], []
-        
+
         # Collect all GC values
         gc_values = []
         for pair in pairs:
@@ -182,16 +182,16 @@ class MultiplexValidator:
                 gc_values.append(pair.gc_forward)
             if pair.gc_reverse > 0:
                 gc_values.append(pair.gc_reverse)
-        
+
         if len(gc_values) < 2:
             return True, [], []
-        
+
         gc_max = max(gc_values)
         gc_min = min(gc_values)
         gc_spread = gc_max - gc_min
-        
+
         gc_diff_max = self.settings["gc_diff_max"]
-        
+
         if gc_spread > gc_diff_max * 2:
             # Severe spread - error
             errors.append(
@@ -204,10 +204,10 @@ class MultiplexValidator:
                 f"GC spread ({gc_spread:.1f}%) exceeds limit ({gc_diff_max}%). "
                 f"Range: {gc_min:.1f}% - {gc_max:.1f}%"
             )
-        
+
         is_valid = len(errors) == 0
         return is_valid, warnings, errors
-    
+
     def validate(
         self,
         matrix: CompatibilityMatrix,
@@ -225,32 +225,32 @@ class MultiplexValidator:
         """
         all_warnings = []
         all_errors = []
-        
+
         # Validate dimers
         dimer_valid, dimer_warn, dimer_err = self.validate_dimers(matrix)
         all_warnings.extend(dimer_warn)
         all_errors.extend(dimer_err)
-        
+
         # Validate Tm uniformity
         tm_valid, tm_warn, tm_err = self.validate_tm_uniformity(pairs)
         all_warnings.extend(tm_warn)
         all_errors.extend(tm_err)
-        
+
         # Validate GC uniformity
         gc_valid, gc_warn, gc_err = self.validate_gc_uniformity(pairs)
         all_warnings.extend(gc_warn)
         all_errors.extend(gc_err)
-        
+
         # Overall validity
         is_valid = dimer_valid and tm_valid and gc_valid
-        
+
         if is_valid:
             logger.info("Multiplex validation passed")
         else:
             logger.warning(f"Multiplex validation failed: {len(all_errors)} errors")
-        
+
         return is_valid, all_warnings, all_errors
-    
+
     def get_validation_summary(
         self,
         matrix: CompatibilityMatrix,
@@ -267,7 +267,7 @@ class MultiplexValidator:
             Dictionary with validation details
         """
         is_valid, warnings, errors = self.validate(matrix, pairs)
-        
+
         return {
             "is_valid": is_valid,
             "mode": self.mode,

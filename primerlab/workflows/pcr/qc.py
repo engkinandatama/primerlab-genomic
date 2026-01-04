@@ -24,7 +24,7 @@ class PCRQC(BaseQC):
     Currently uses all base functionality without modifications,
     but can be extended for PCR-specific checks in the future.
     """
-    
+
     def __init__(self, config: Dict[str, Any]):
         """
         Initialize PCRQC with configuration.
@@ -34,7 +34,7 @@ class PCRQC(BaseQC):
         """
         super().__init__(config)
         # PCR-specific thresholds can be added here
-    
+
     def evaluate_pair(self, fwd: Primer, rev: Primer) -> QCResult:
         """
         Evaluate a PCR primer pair against QC thresholds.
@@ -50,8 +50,8 @@ class PCRQC(BaseQC):
         """
         # Use base evaluation
         result = super().evaluate_pair(fwd, rev)
-        
+
         # PCR-specific checks can be added here in the future
         # For example: product size validation, GC content checks, etc.
-        
+
         return result

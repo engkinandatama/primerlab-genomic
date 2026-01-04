@@ -24,17 +24,17 @@ def parse_fasta(content: str) -> List[Tuple[str, str, str]]:
     current_header = ""
     current_desc = ""
     current_seq = []
-    
+
     for line in content.strip().split('\n'):
         line = line.strip()
         if not line:
             continue
-        
+
         if line.startswith('>'):
             # Save previous sequence
             if current_header:
                 sequences.append((current_header, ''.join(current_seq), current_desc))
-            
+
             # Parse new header
             header_parts = line[1:].split(None, 1)
             current_header = header_parts[0] if header_parts else "unknown"
@@ -42,11 +42,11 @@ def parse_fasta(content: str) -> List[Tuple[str, str, str]]:
             current_seq = []
         else:
             current_seq.append(line.upper())
-    
+
     # Save last sequence
     if current_header:
         sequences.append((current_header, ''.join(current_seq), current_desc))
-    
+
     return sequences
 
 
@@ -64,19 +64,19 @@ def load_species_template(fasta_path: str, species_name: Optional[str] = None) -
     path = Path(fasta_path)
     if not path.exists():
         raise FileNotFoundError(f"FASTA file not found: {fasta_path}")
-    
+
     content = path.read_text()
     sequences = parse_fasta(content)
-    
+
     if not sequences:
         raise ValueError(f"No sequences found in: {fasta_path}")
-    
+
     # Use first sequence
     header, seq, desc = sequences[0]
-    
+
     # Determine species name
     name = species_name or path.stem
-    
+
     return SpeciesTemplate(
         species_name=name,
         sequence=seq,
@@ -100,17 +100,17 @@ def load_species_templates(
         Dict mapping species_name -> SpeciesTemplate
     """
     templates = {}
-    
+
     for i, path in enumerate(fasta_paths):
         name = species_names[i] if species_names and i < len(species_names) else None
-        
+
         try:
             template = load_species_template(path, name)
             templates[template.species_name] = template
             logger.info(f"Loaded template: {template.species_name} ({template.length} bp)")
         except Exception as e:
             logger.warning(f"Failed to load {path}: {e}")
-    
+
     return templates
 
 
@@ -128,10 +128,10 @@ def load_multi_fasta(fasta_path: str) -> Dict[str, SpeciesTemplate]:
     path = Path(fasta_path)
     if not path.exists():
         raise FileNotFoundError(f"FASTA file not found: {fasta_path}")
-    
+
     content = path.read_text()
     sequences = parse_fasta(content)
-    
+
     templates = {}
     for header, seq, desc in sequences:
         template = SpeciesTemplate(
@@ -141,6 +141,6 @@ def load_multi_fasta(fasta_path: str) -> Dict[str, SpeciesTemplate]:
             accession=header
         )
         templates[header] = template
-    
+
     logger.info(f"Loaded {len(templates)} species from {path.name}")
     return templates

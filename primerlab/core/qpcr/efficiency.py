@@ -25,7 +25,7 @@ class StandardCurveResult:
     dynamic_range: float  # log10 range
     lod: Optional[float] = None  # Limit of detection
     loq: Optional[float] = None  # Limit of quantification
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "slope": self.slope,
@@ -37,12 +37,12 @@ class StandardCurveResult:
             "loq": self.loq,
             "data_points": len(self.concentrations),
         }
-    
+
     @property
     def is_acceptable(self) -> bool:
         """Check if efficiency is in acceptable range (90-110%)."""
         return 90.0 <= self.efficiency <= 110.0
-    
+
     @property
     def grade(self) -> str:
         """Grade the standard curve quality."""
@@ -65,7 +65,7 @@ class EfficiencyPrediction:
     confidence: float
     factors: Dict[str, float] = field(default_factory=dict)
     recommendations: List[str] = field(default_factory=list)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "predicted_efficiency": self.predicted_efficiency,
@@ -79,11 +79,11 @@ class EfficiencyCalculator:
     """
     Calculates PCR efficiency from standard curve data.
     """
-    
+
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         """Initialize calculator."""
         self.config = config or {}
-    
+
     def calculate_from_curve(
         self,
         concentrations: List[float],
@@ -101,14 +101,14 @@ class EfficiencyCalculator:
         """
         if len(concentrations) != len(ct_values):
             raise ValueError("Concentrations and Ct values must have same length")
-        
+
         if len(concentrations) < 3:
             raise ValueError("At least 3 data points required for standard curve")
-        
+
         # Convert to log10 scale
         log_conc = [math.log10(c) for c in concentrations if c > 0]
         ct_filtered = [ct for c, ct in zip(concentrations, ct_values) if c > 0]
-        
+
         # Linear regression
         n = len(log_conc)
         sum_x = sum(log_conc)
@@ -116,26 +116,26 @@ class EfficiencyCalculator:
         sum_xy = sum(x * y for x, y in zip(log_conc, ct_filtered))
         sum_x2 = sum(x * x for x in log_conc)
         sum_y2 = sum(y * y for y in ct_filtered)
-        
+
         # Slope and intercept
         denominator = n * sum_x2 - sum_x * sum_x
         if denominator == 0:
             raise ValueError("Cannot calculate slope - degenerate data")
-        
+
         slope = (n * sum_xy - sum_x * sum_y) / denominator
         intercept = (sum_y - slope * sum_x) / n
-        
+
         # R-squared
         ss_tot = sum_y2 - (sum_y * sum_y) / n
         ss_res = sum((y - (slope * x + intercept)) ** 2 for x, y in zip(log_conc, ct_filtered))
         r_squared = 1 - (ss_res / ss_tot) if ss_tot > 0 else 0
-        
+
         # Efficiency: E = 10^(-1/slope) - 1
         efficiency = (10 ** (-1 / slope) - 1) * 100 if slope != 0 else 0
-        
+
         # Dynamic range
         dynamic_range = max(log_conc) - min(log_conc) if log_conc else 0
-        
+
         result = StandardCurveResult(
             concentrations=concentrations,
             ct_values=ct_values,
@@ -145,10 +145,10 @@ class EfficiencyCalculator:
             efficiency=efficiency,
             dynamic_range=dynamic_range,
         )
-        
+
         logger.info(f"Standard curve: E={efficiency:.1f}%, R²={r_squared:.4f}")
         return result
-    
+
     def predict_efficiency(
         self,
         forward_seq: str,
@@ -176,7 +176,7 @@ class EfficiencyCalculator:
         """
         factors = {}
         base_efficiency = 100.0
-        
+
         # Tm difference penalty
         tm_diff = abs(tm_forward - tm_reverse)
         if tm_diff > 2:
@@ -185,7 +185,7 @@ class EfficiencyCalculator:
             factors["tm_difference"] = -penalty
         else:
             factors["tm_difference"] = 0
-        
+
         # GC content balance
         gc_avg = (gc_forward + gc_reverse) / 2
         if 45 <= gc_avg <= 55:
@@ -196,7 +196,7 @@ class EfficiencyCalculator:
             base_efficiency -= 5
         else:
             factors["gc_content"] = 0
-        
+
         # Amplicon length factor
         if 80 <= amplicon_length <= 150:
             factors["amplicon_length"] = 5
@@ -207,7 +207,7 @@ class EfficiencyCalculator:
             base_efficiency -= penalty
         else:
             factors["amplicon_length"] = 0
-        
+
         # Primer length factor
         fwd_len = len(forward_seq)
         rev_len = len(reverse_seq)
@@ -216,10 +216,10 @@ class EfficiencyCalculator:
             base_efficiency += 2
         else:
             factors["primer_length"] = 0
-        
+
         # Confidence based on factors
         confidence = 0.7 + (sum(1 for v in factors.values() if v >= 0) / len(factors)) * 0.3
-        
+
         # Recommendations
         recommendations = []
         if tm_diff > 2:
@@ -230,7 +230,7 @@ class EfficiencyCalculator:
             recommendations.append("GC content is high - may cause secondary structures")
         if amplicon_length > 300:
             recommendations.append(f"Amplicon is long ({amplicon_length}bp) - consider shorter product for qPCR")
-        
+
         return EfficiencyPrediction(
             primer_forward=forward_seq,
             primer_reverse=reverse_seq,

@@ -8,7 +8,7 @@ class Amplicon:
     length: int
     sequence: str
     gc: float
-    
+
     tm_forward: float
     tm_reverse: float
 

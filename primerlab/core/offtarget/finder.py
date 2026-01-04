@@ -42,7 +42,7 @@ class OfftargetHit:
     evalue: float
     is_significant: bool = True
     risk_level: str = "medium"
-    
+
     @classmethod
     def from_blast_hit(cls, hit: BlastHit) -> "OfftargetHit":
         """Create OfftargetHit from BlastHit."""
@@ -53,7 +53,7 @@ class OfftargetHit:
             risk = "medium"
         else:
             risk = "low"
-        
+
         return cls(
             sequence_id=hit.subject_id,
             sequence_title=hit.subject_title,
@@ -114,23 +114,23 @@ class PrimerPairOfftargetResult:
     is_specific: bool = True
     potential_products: int = 0
     warnings: List[str] = field(default_factory=list)
-    
+
     def __post_init__(self):
         """Calculate combined metrics."""
         self.combined_score = (
-            self.forward_result.specificity_score + 
+            self.forward_result.specificity_score  +
             self.reverse_result.specificity_score
         ) / 2
-        
+
         # Check specificity
         if self.forward_result.specificity_score < 80:
             self.is_specific = False
         if self.reverse_result.specificity_score < 80:
             self.is_specific = False
-        
+
         # Combine warnings
         self.warnings = (
-            self.forward_result.warnings + 
+            self.forward_result.warnings  +
             self.reverse_result.warnings
         )
 
@@ -145,7 +145,7 @@ class OfftargetFinder:
         finder = OfftargetFinder(database="genome.fasta")
         result = finder.find_offtargets("ATGCATGCATGC", target_id="gene_x")
     """
-    
+
     # Default parameters for off-target detection
     DEFAULT_PARAMS = {
         "evalue_threshold": 10.0,       # E-value cutoff
@@ -154,7 +154,7 @@ class OfftargetFinder:
         "significant_identity": 85.0,   # Identity for "significant" hit
         "significant_evalue": 1e-3,     # E-value for "significant" hit
     }
-    
+
     def __init__(
         self,
         database: str,
@@ -176,11 +176,11 @@ class OfftargetFinder:
         self.params = {**self.DEFAULT_PARAMS}
         if params:
             self.params.update(params)
-        
+
         # Initialize aligner
         mode_enum = AlignmentMode(mode.lower())
         self.aligner = PrimerAligner(mode=mode_enum)
-    
+
     def find_offtargets(
         self,
         primer_seq: str,
@@ -199,14 +199,14 @@ class OfftargetFinder:
             OfftargetResult with all off-target hits
         """
         target = target_id or self.target_id
-        
+
         # Search database
         blast_result = self.aligner.search_primer(
             primer_seq=primer_seq,
             database=self.database,
             primer_id=primer_id
         )
-        
+
         if not blast_result.success:
             return OfftargetResult(
                 primer_id=primer_id,
@@ -214,11 +214,11 @@ class OfftargetFinder:
                 target_id=target,
                 warnings=[f"Search failed: {blast_result.error}"]
             )
-        
+
         # Process hits
         offtargets = []
         on_target_found = False
-        
+
         for hit in blast_result.hits:
             # Check if this is the on-target hit
             is_on_target = False
@@ -227,28 +227,28 @@ class OfftargetFinder:
                     is_on_target = True
                     on_target_found = True
                     hit.is_on_target = True
-            
+
             # Skip on-target hits
             if is_on_target:
                 continue
-            
+
             # Filter by identity
             if hit.identity_percent < self.params["identity_threshold"]:
                 continue
-            
+
             # Create off-target hit
             offtarget = OfftargetHit.from_blast_hit(hit)
             offtargets.append(offtarget)
-        
+
         # Limit results
         offtargets = offtargets[:self.params["max_offtargets"]]
-        
+
         # Count significant off-targets
         significant = sum(1 for ot in offtargets if ot.is_significant)
-        
+
         # Calculate specificity score
         specificity = self._calculate_specificity(offtargets)
-        
+
         # Generate warnings
         warnings = []
         if not on_target_found and target:
@@ -257,7 +257,7 @@ class OfftargetFinder:
             warnings.append(f"High off-target risk: {significant} significant off-targets")
         elif significant > 0:
             warnings.append(f"{significant} potential off-target site(s) found")
-        
+
         return OfftargetResult(
             primer_id=primer_id,
             primer_seq=primer_seq,
@@ -269,7 +269,7 @@ class OfftargetFinder:
             specificity_score=specificity,
             warnings=warnings
         )
-    
+
     def find_primer_pair_offtargets(
         self,
         forward_primer: str,
@@ -292,30 +292,30 @@ class OfftargetFinder:
             primer_id="forward",
             target_id=target_id
         )
-        
+
         rev_result = self.find_offtargets(
             primer_seq=reverse_primer,
             primer_id="reverse",
             target_id=target_id
         )
-        
+
         # Calculate potential off-target products
         # (where both primers could bind to same sequence)
         potential_products = self._count_potential_products(fwd_result, rev_result)
-        
+
         result = PrimerPairOfftargetResult(
             forward_result=fwd_result,
             reverse_result=rev_result,
             potential_products=potential_products
         )
-        
+
         if potential_products > 0:
             result.warnings.append(
                 f"Warning: {potential_products} potential off-target product(s)"
             )
-        
+
         return result
-    
+
     def _calculate_specificity(self, offtargets: List[OfftargetHit]) -> float:
         """
         Calculate specificity score based on off-targets.
@@ -325,7 +325,7 @@ class OfftargetFinder:
         """
         if not offtargets:
             return 100.0
-        
+
         penalty = 0.0
         for ot in offtargets:
             if ot.risk_level == "high":
@@ -334,10 +334,10 @@ class OfftargetFinder:
                 penalty += 8.0
             else:
                 penalty += 3.0
-        
+
         score = max(0.0, 100.0 - penalty)
         return round(score, 1)
-    
+
     def _count_potential_products(
         self,
         fwd_result: OfftargetResult,
@@ -350,7 +350,7 @@ class OfftargetFinder:
         """
         fwd_seqs = {ot.sequence_id for ot in fwd_result.offtargets}
         rev_seqs = {ot.sequence_id for ot in rev_result.offtargets}
-        
+
         # Sequences where both primers could bind
         common = fwd_seqs & rev_seqs
         return len(common)

@@ -49,11 +49,11 @@ def calculate_tm_nearest_neighbor(
         Tuple of (Tm, ΔH, ΔS)
     """
     seq = sequence.upper()
-    
+
     # Calculate ΔH and ΔS from nearest-neighbor pairs
     delta_h = 0.0  # kcal/mol
     delta_s = 0.0  # cal/(mol·K)
-    
+
     # Initiation
     if seq[0] in "GC":
         delta_h += INIT_GC[0]
@@ -61,22 +61,22 @@ def calculate_tm_nearest_neighbor(
     else:
         delta_h += INIT_AT[0]
         delta_s += INIT_AT[1]
-    
+
     if seq[-1] in "GC":
         delta_h += INIT_GC[0]
         delta_s += INIT_GC[1]
     else:
         delta_h += INIT_AT[0]
         delta_s += INIT_AT[1]
-    
+
     # Nearest-neighbor pairs
     complement = {"A": "T", "T": "A", "G": "C", "C": "G"}
-    
+
     for i in range(len(seq) - 1):
         pair1 = seq[i:i+2]
         pair2 = complement.get(seq[i+1], "N") + complement.get(seq[i], "N")
         key = f"{pair1}/{pair2}"
-        
+
         if key in NN_PARAMS:
             dh, ds = NN_PARAMS[key]
             delta_h += dh
@@ -85,18 +85,18 @@ def calculate_tm_nearest_neighbor(
             # Default for missing pairs
             delta_h += -8.0
             delta_s += -21.0
-    
+
     # Salt correction
     na_molar = na_conc / 1000.0
     delta_s_corrected = delta_s + 0.368 * len(seq) * math.log(na_molar)
-    
+
     # Calculate Tm
     R = 1.987  # Gas constant cal/(mol·K)
     primer_molar = primer_conc * 1e-6
-    
+
     tm_kelvin = (delta_h * 1000) / (delta_s_corrected + R * math.log(primer_molar / 4))
     tm_celsius = tm_kelvin - 273.15
-    
+
     return tm_celsius, delta_h, delta_s_corrected
 
 
@@ -116,20 +116,20 @@ def calculate_binding_efficiency(
     """
     R = 1.987  # cal/(mol·K)
     T_kelvin = temperature + 273.15
-    
+
     # Calculate ΔG at this temperature
     delta_g = delta_h - (T_kelvin * delta_s / 1000.0)
-    
+
     # Calculate equilibrium constant K
     K = math.exp(-delta_g * 1000 / (R * T_kelvin))
-    
+
     # Fraction bound (simplified two-state model)
     # At very high K, fraction approaches 1
     fraction_bound = K / (1 + K)
-    
+
     # Efficiency as percentage
     efficiency = fraction_bound * 100
-    
+
     return efficiency, fraction_bound, delta_g
 
 
@@ -153,33 +153,33 @@ def simulate_tm_gradient(
     """
     if config is None:
         config = TmGradientConfig()
-    
+
     # Calculate base Tm and thermodynamic parameters
     tm, delta_h, delta_s = calculate_tm_nearest_neighbor(
         primer_sequence,
         na_conc=config.na_concentration,
         primer_conc=config.primer_concentration
     )
-    
+
     # Simulate efficiency at each temperature
     data_points = []
     temps = config.temperature_range
-    
+
     for temp in temps:
         efficiency, fraction, delta_g = calculate_binding_efficiency(
             temp, tm, delta_h, delta_s
         )
-        
+
         data_points.append(TmDataPoint(
             temperature=temp,
             binding_efficiency=min(100.0, max(0.0, efficiency)),
             fraction_bound=min(1.0, max(0.0, fraction)),
             delta_g=delta_g
         ))
-    
+
     # Find optimal annealing temperature (highest efficiency below Tm)
     optimal_temp = tm - 5.0  # Rule of thumb: 5°C below Tm
-    
+
     # Adjust based on actual efficiency curve
     best_temp = optimal_temp
     best_efficiency = 0.0
@@ -187,21 +187,21 @@ def simulate_tm_gradient(
         if dp.temperature < tm and dp.binding_efficiency > best_efficiency:
             best_efficiency = dp.binding_efficiency
             best_temp = dp.temperature
-    
+
     # Calculate recommended range (where efficiency > 80%)
     high_eff_temps = [dp.temperature for dp in data_points if dp.binding_efficiency >= 80]
     if high_eff_temps:
         recommended = (min(high_eff_temps), max(high_eff_temps))
     else:
         recommended = (optimal_temp - 3, optimal_temp + 3)
-    
+
     # Check for warnings
     warnings = []
     if tm < 50:
         warnings.append(f"Very low Tm ({tm:.1f}°C) - primer may have poor specificity")
     if tm > 72:
         warnings.append(f"High Tm ({tm:.1f}°C) - consider redesigning primer")
-    
+
     # Assign grade based on Tm and efficiency curve
     if 55 <= tm <= 68 and best_efficiency >= 95:
         grade = "A"
@@ -211,7 +211,7 @@ def simulate_tm_gradient(
         grade = "C"
     else:
         grade = "D"
-    
+
     return TmGradientResult(
         primer_name=primer_name,
         primer_sequence=primer_sequence,

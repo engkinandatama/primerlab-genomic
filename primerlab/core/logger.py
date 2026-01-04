@@ -39,15 +39,15 @@ class WorkflowContextFormatter(logging.Formatter):
     Format: [YYYY-MM-DD HH:MM:SS][LEVEL] [CONTEXT] message
     Per blueprint-logging-system.md spec.
     """
-    
+
     def format(self, record):
         # Get workflow context if set
         context = f"[{_workflow_context}] " if _workflow_context else ""
-        
+
         # Format timestamp per spec
         timestamp = self.formatTime(record, "%Y-%m-%d %H:%M:%S")
         level = record.levelname
-        
+
         return f"[{timestamp}][{level}] {context}{record.getMessage()}"
 
 
@@ -57,7 +57,7 @@ class FileFormatter(logging.Formatter):
     
     Format: [YYYY-MM-DD HH:MM:SS][LEVEL] message
     """
-    
+
     def format(self, record):
         context = f"[{_workflow_context}] " if _workflow_context else ""
         timestamp = self.formatTime(record, "%Y-%m-%d %H:%M:%S")
@@ -75,7 +75,7 @@ def setup_logger(name="primerlab", log_file=None, level=logging.INFO):
     """
     logger = logging.getLogger(name)
     logger.setLevel(level)
-    
+
     # Clear existing handlers to avoid duplicates
     logger.handlers = []
 
@@ -90,7 +90,7 @@ def setup_logger(name="primerlab", log_file=None, level=logging.INFO):
     if log_file:
         log_path = Path(log_file)
         log_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         file_handler = logging.FileHandler(log_path)
         file_handler.setLevel(logging.DEBUG)  # Always log debug to file
         file_handler.setFormatter(FileFormatter())

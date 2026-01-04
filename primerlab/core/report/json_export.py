@@ -19,7 +19,7 @@ class JSONExporter:
     
     Provides complete metrics export with optional filtering.
     """
-    
+
     def __init__(self, report: PrimerReport):
         """
         Initialize JSON exporter.
@@ -28,7 +28,7 @@ class JSONExporter:
             report: PrimerReport to export
         """
         self.report = report
-    
+
     def generate(
         self,
         include_metadata: bool = True,
@@ -53,7 +53,7 @@ class JSONExporter:
             JSON string
         """
         data = {}
-        
+
         # Metadata
         if include_metadata:
             data["metadata"] = {
@@ -63,7 +63,7 @@ class JSONExporter:
                 "config_file": self.report.config_file,
                 "sequence_source": self.report.sequence_source
             }
-        
+
         # Overall status
         data["overall"] = {
             "grade": self.report.overall_grade,
@@ -71,7 +71,7 @@ class JSONExporter:
             "warnings": self.report.warnings,
             "recommendations": self.report.recommendations
         }
-        
+
         # Design summary
         if include_design and self.report.design.has_primers:
             d = self.report.design
@@ -84,7 +84,7 @@ class JSONExporter:
                 "candidates_evaluated": d.candidates_evaluated,
                 "quality_score": d.quality_score
             }
-        
+
         # Validation summary
         if include_validation and self.report.validation.validated:
             v = self.report.validation
@@ -98,7 +98,7 @@ class JSONExporter:
                 "pcr_success_probability": v.pcr_success_probability,
                 "warnings": v.warnings
             }
-        
+
         # Off-target summary
         if include_offtarget and self.report.offtarget.checked:
             o = self.report.offtarget
@@ -114,7 +114,7 @@ class JSONExporter:
                 "high_risk_sites": o.high_risk_sites,
                 "alignment_method": o.alignment_method
             }
-        
+
         # Variant summary
         if include_variant and self.report.variant.checked:
             var = self.report.variant
@@ -126,10 +126,10 @@ class JSONExporter:
                 "critical_variants": var.critical_variants,
                 "maf_threshold": var.maf_threshold
             }
-        
+
         indent = 2 if pretty else None
         return json.dumps(data, indent=indent, default=str)
-    
+
     def _primer_to_dict(self, primer) -> Optional[Dict[str, Any]]:
         """Convert primer info to dict."""
         if primer is None:
@@ -143,7 +143,7 @@ class JSONExporter:
             "position": primer.position,
             "orientation": primer.orientation
         }
-    
+
     def save(self, path: str, **kwargs):
         """
         Save JSON report to file.
@@ -175,7 +175,7 @@ class ReportExporter:
     
     Use this class to export reports in any supported format.
     """
-    
+
     def __init__(self, report: PrimerReport):
         """
         Initialize exporter.
@@ -184,7 +184,7 @@ class ReportExporter:
             report: PrimerReport to export
         """
         self.report = report
-    
+
     def export(self, path: str, format: str = "markdown") -> str:
         """
         Export report to file.
@@ -198,7 +198,7 @@ class ReportExporter:
         """
         from primerlab.core.report.generator import ReportGenerator
         from primerlab.core.report.html_export import HTMLExporter
-        
+
         if format == "html":
             exporter = HTMLExporter(self.report)
             exporter.save(path)
@@ -210,5 +210,5 @@ class ReportExporter:
             gen.report = self.report
             content = gen.to_markdown()
             Path(path).write_text(content, encoding="utf-8")
-        
+
         return path

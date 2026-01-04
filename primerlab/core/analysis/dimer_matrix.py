@@ -24,7 +24,7 @@ class DimerResult:
     tm: float  # Dimer Tm in °C
     structure: str  # ASCII representation
     is_problematic: bool = False
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "primer1": self.primer1_name,
@@ -45,7 +45,7 @@ class DimerMatrixResult:
     worst_dg: float = 0.0
     best_dg: float = 0.0
     grade: str = "A"
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "primer_count": len(self.primers),
@@ -62,7 +62,7 @@ class DimerMatrixAnalyzer:
     """
     Analyzes dimer formation potential between all pairs of primers.
     """
-    
+
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         """
         Initialize analyzer.
@@ -76,7 +76,7 @@ class DimerMatrixAnalyzer:
         self.dv_conc = self.config.get("dv_conc", 1.5)  # mM
         self.dntp_conc = self.config.get("dntp_conc", 0.6)  # mM
         self.dna_conc = self.config.get("dna_conc", 250.0)  # nM
-    
+
     def analyze(self, primers: List[Dict[str, str]]) -> DimerMatrixResult:
         """
         Analyze all pairwise dimer interactions.
@@ -89,39 +89,39 @@ class DimerMatrixAnalyzer:
         """
         n = len(primers)
         logger.info(f"Analyzing {n}x{n} dimer matrix for {n} primers")
-        
+
         matrix = [[0.0] * n for _ in range(n)]
         dimer_details = []
         problematic_pairs = []
-        
+
         worst_dg = 0.0
         best_dg = 0.0
-        
+
         for i in range(n):
             for j in range(i, n):  # Upper triangular + diagonal
                 p1 = primers[i]
                 p2 = primers[j]
-                
+
                 dimer = self._analyze_pair(p1, p2)
                 dimer_details.append(dimer)
-                
+
                 # Fill matrix symmetrically
                 matrix[i][j] = dimer.dg
                 matrix[j][i] = dimer.dg
-                
+
                 # Track extremes
                 if dimer.dg < worst_dg:
                     worst_dg = dimer.dg
                 if dimer.dg > best_dg:
                     best_dg = dimer.dg
-                
+
                 # Track problematic pairs
                 if dimer.is_problematic and i != j:
                     problematic_pairs.append((p1["name"], p2["name"]))
-        
+
         # Calculate grade
         grade = self._calculate_grade(worst_dg, len(problematic_pairs), n)
-        
+
         result = DimerMatrixResult(
             primers=primers,
             matrix=matrix,
@@ -131,10 +131,10 @@ class DimerMatrixAnalyzer:
             best_dg=best_dg,
             grade=grade,
         )
-        
+
         logger.info(f"Dimer matrix analysis complete. Grade: {grade}")
         return result
-    
+
     def _analyze_pair(
         self, 
         p1: Dict[str, str], 
@@ -150,19 +150,19 @@ class DimerMatrixAnalyzer:
                 dntp_conc=self.dntp_conc,
                 dna_conc=self.dna_conc,
             )
-            
+
             dg = result.dg if hasattr(result, 'dg') else 0.0
             tm = result.tm if hasattr(result, 'tm') else 0.0
             structure = result.ascii_structure if hasattr(result, 'ascii_structure') else ""
-            
+
         except Exception as e:
             logger.warning(f"Dimer calc failed for {p1['name']}-{p2['name']}: {e}")
             dg = 0.0
             tm = 0.0
             structure = ""
-        
+
         is_problematic = dg < self.dg_threshold
-        
+
         return DimerResult(
             primer1_name=p1["name"],
             primer2_name=p2["name"],
@@ -173,7 +173,7 @@ class DimerMatrixAnalyzer:
             structure=structure,
             is_problematic=is_problematic,
         )
-    
+
     def _calculate_grade(
         self, 
         worst_dg: float, 
@@ -191,7 +191,7 @@ class DimerMatrixAnalyzer:
             return "D"
         else:
             return "F"
-    
+
     def generate_heatmap_svg(
         self, 
         result: DimerMatrixResult,
@@ -212,13 +212,13 @@ class DimerMatrixAnalyzer:
         n = len(result.primers)
         if n == 0:
             return "<svg></svg>"
-        
+
         # Calculate cell size
         margin = 80
         cell_size = min((width - margin) // n, (height - margin) // n)
         actual_width = margin + cell_size * n
         actual_height = margin + cell_size * n
-        
+
         svg_parts = [
             f'<svg xmlns="http://www.w3.org/2000/svg" width="{actual_width}" height="{actual_height}">',
             '<style>',
@@ -228,22 +228,22 @@ class DimerMatrixAnalyzer:
             '</style>',
             f'<text x="{actual_width // 2}" y="20" class="title" text-anchor="middle">Primer Dimer Matrix (ΔG kcal/mol)</text>',
         ]
-        
+
         # Draw cells
         for i in range(n):
             for j in range(n):
                 x = margin + j * cell_size
                 y = margin + i * cell_size
                 dg = result.matrix[i][j]
-                
+
                 # Color based on ΔG
                 color = self._dg_to_color(dg)
-                
+
                 svg_parts.append(
                     f'<rect x="{x}" y="{y}" width="{cell_size}" height="{cell_size}" '
                     f'fill="{color}" stroke="#333" stroke-width="0.5"/>'
                 )
-                
+
                 # Value text (only if cell is big enough)
                 if cell_size >= 30:
                     text_x = x + cell_size // 2
@@ -252,7 +252,7 @@ class DimerMatrixAnalyzer:
                         f'<text x="{text_x}" y="{text_y}" class="cell-text" '
                         f'text-anchor="middle">{dg:.1f}</text>'
                     )
-        
+
         # Draw row labels (left)
         for i, primer in enumerate(result.primers):
             y = margin + i * cell_size + cell_size // 2 + 4
@@ -260,7 +260,7 @@ class DimerMatrixAnalyzer:
             svg_parts.append(
                 f'<text x="{margin - 5}" y="{y}" class="label" text-anchor="end">{name}</text>'
             )
-        
+
         # Draw column labels (top, rotated)
         for j, primer in enumerate(result.primers):
             x = margin + j * cell_size + cell_size // 2
@@ -269,7 +269,7 @@ class DimerMatrixAnalyzer:
                 f'<text x="{x}" y="{margin - 5}" class="label" text-anchor="end" '
                 f'transform="rotate(-45 {x} {margin - 5})">{name}</text>'
             )
-        
+
         # Legend
         legend_y = actual_height - 30
         svg_parts.extend([
@@ -280,10 +280,10 @@ class DimerMatrixAnalyzer:
             f'<text x="{margin + 200}" y="{legend_y}" class="label">Problematic (&lt;-6)</text>',
             f'<rect x="{margin + 300}" y="{legend_y - 12}" width="15" height="15" fill="#F44336"/>',
         ])
-        
+
         svg_parts.append('</svg>')
         return '\n'.join(svg_parts)
-    
+
     def _dg_to_color(self, dg: float) -> str:
         """Convert ΔG value to color."""
         if dg >= 0:

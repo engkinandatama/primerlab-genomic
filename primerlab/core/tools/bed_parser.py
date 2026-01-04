@@ -28,16 +28,16 @@ class BEDRegion:
     name: Optional[str] = None
     score: Optional[float] = None
     strand: Optional[str] = None
-    
+
     @property
     def length(self) -> int:
         """Region length in bp."""
         return self.end - self.start
-    
+
     def contains(self, pos: int) -> bool:
         """Check if position is within region (1-based input)."""
         return self.start < pos <= self.end
-    
+
     def overlaps(self, start: int, end: int) -> bool:
         """Check if region overlaps with another (1-based input)."""
         return not (end <= self.start or start >= self.end)
@@ -49,7 +49,7 @@ class BEDParser:
     
     Supports BED3, BED6, and custom columns.
     """
-    
+
     def __init__(self, bed_path: str):
         """
         Initialize BED parser.
@@ -59,12 +59,12 @@ class BEDParser:
         """
         self.bed_path = Path(bed_path)
         self._validate_file()
-    
+
     def _validate_file(self):
         """Validate BED file exists."""
         if not self.bed_path.exists():
             raise FileNotFoundError(f"BED file not found: {self.bed_path}")
-    
+
     def parse(self, chrom: Optional[str] = None) -> Iterator[BEDRegion]:
         """
         Parse BED file and yield regions.
@@ -78,43 +78,43 @@ class BEDParser:
         with open(self.bed_path) as f:
             for line in f:
                 line = line.strip()
-                
+
                 # Skip headers and comments
                 if not line or line.startswith('#') or line.startswith('track') or line.startswith('browser'):
                     continue
-                
+
                 region = self._parse_line(line)
                 if region is None:
                     continue
-                
+
                 # Filter by chromosome
                 if chrom and region.chrom != chrom:
                     continue
-                
+
                 yield region
-    
+
     def _parse_line(self, line: str) -> Optional[BEDRegion]:
         """Parse a single BED line."""
         cols = line.split('\t')
         if len(cols) < 3:
             return None
-        
+
         try:
             chrom = cols[0]
             start = int(cols[1])
             end = int(cols[2])
-            
+
             name = cols[3] if len(cols) > 3 and cols[3] != '.' else None
-            
+
             score = None
             if len(cols) > 4 and cols[4] != '.':
                 try:
                     score = float(cols[4])
                 except ValueError:
                     pass
-            
+
             strand = cols[5] if len(cols) > 5 and cols[5] in ('+', '-') else None
-            
+
             return BEDRegion(
                 chrom=chrom,
                 start=start,
@@ -125,11 +125,11 @@ class BEDParser:
             )
         except (ValueError, IndexError):
             return None
-    
+
     def get_regions(self, chrom: Optional[str] = None) -> List[BEDRegion]:
         """Get all regions as list."""
         return list(self.parse(chrom))
-    
+
     def filter_positions(
         self,
         chrom: str,

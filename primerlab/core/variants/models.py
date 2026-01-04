@@ -23,7 +23,7 @@ class NestedPrimerSet:
     outer_start: int
     outer_end: int
     outer_product_size: int
-    
+
     # Inner primers (required)
     inner_forward: str
     inner_reverse: str
@@ -34,7 +34,7 @@ class NestedPrimerSet:
     inner_start: int
     inner_end: int
     inner_product_size: int
-    
+
     # Optional fields with defaults
     outer_amplicon_seq: str = ""
     inner_amplicon_seq: str = ""
@@ -42,13 +42,13 @@ class NestedPrimerSet:
     inner_score: float = 0.0
     combined_score: float = 0.0
     grade: str = "C"
-    
+
     def get_tm_difference(self) -> float:
         """Get Tm difference between inner and outer primers."""
         outer_avg = (self.outer_tm_forward + self.outer_tm_reverse) / 2
         inner_avg = (self.inner_tm_forward + self.inner_tm_reverse) / 2
         return inner_avg - outer_avg
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         return {
@@ -93,7 +93,7 @@ class NestedPCRResult:
     outer_size_range: tuple = (400, 600)
     inner_size_range: tuple = (100, 200)
     sequence_length: int = 0
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         return {
