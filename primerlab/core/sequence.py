@@ -1,5 +1,5 @@
 import os
-from typing import Union, Tuple, Optional
+from typing import Union, Tuple, Optional, List
 from primerlab.core.exceptions import SequenceError
 from primerlab.core.logger import get_logger
 
@@ -90,7 +90,7 @@ class SequenceLoader:
         """
         sequences = []
         current_name = None
-        current_seq_lines = []
+        current_seq_lines: List[str] = []
 
         for line in content.splitlines():
             line = line.strip()
