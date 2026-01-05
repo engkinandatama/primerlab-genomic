@@ -1020,8 +1020,6 @@ def main():
             from primerlab.core.compat_check.scoring import MultiplexScorer
             from primerlab.core.compat_check.validator import MultiplexValidator
             from primerlab.core.compat_check.report import generate_markdown_report, generate_json_report
-            from primerlab.core.config_loader import load_and_merge_config
-
             logger = setup_logger(level=logging.INFO)
             print(f"\n🧬 Multiplex Analysis (v{__version__})")
             print("=" * 45)
