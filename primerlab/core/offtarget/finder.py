@@ -43,6 +43,21 @@ class OfftargetHit:
     is_significant: bool = True
     risk_level: str = "medium"
 
+    def to_dict(self) -> Dict[str, Any]:
+        """Export to dictionary for JSON serialization."""
+        return {
+            "sequence_id": self.sequence_id,
+            "sequence_title": self.sequence_title,
+            "position": self.position,
+            "strand": self.strand,
+            "identity": self.identity,
+            "mismatches": self.mismatches,
+            "gaps": self.gaps,
+            "evalue": self.evalue,
+            "is_significant": self.is_significant,
+            "risk_level": self.risk_level
+        }
+
     @classmethod
     def from_blast_hit(cls, hit: BlastHit) -> "OfftargetHit":
         """Create OfftargetHit from BlastHit."""
@@ -94,6 +109,20 @@ class OfftargetResult:
     specificity_score: float = 100.0
     warnings: List[str] = field(default_factory=list)
 
+    def to_dict(self) -> Dict[str, Any]:
+        """Export to dictionary for JSON serialization."""
+        return {
+            "primer_id": self.primer_id,
+            "primer_seq": self.primer_seq,
+            "target_id": self.target_id,
+            "on_target_found": self.on_target_found,
+            "offtarget_count": self.offtarget_count,
+            "significant_offtargets": self.significant_offtargets,
+            "offtargets": [ot.to_dict() for ot in self.offtargets],
+            "specificity_score": self.specificity_score,
+            "warnings": self.warnings
+        }
+
 
 @dataclass
 class PrimerPairOfftargetResult:
@@ -133,6 +162,17 @@ class PrimerPairOfftargetResult:
             self.forward_result.warnings  +
             self.reverse_result.warnings
         )
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Export to dictionary for JSON serialization."""
+        return {
+            "forward_result": self.forward_result.to_dict(),
+            "reverse_result": self.reverse_result.to_dict(),
+            "combined_score": self.combined_score,
+            "is_specific": self.is_specific,
+            "potential_products": self.potential_products,
+            "warnings": self.warnings
+        }
 
 
 class OfftargetFinder:
