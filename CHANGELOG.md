@@ -5,6 +5,29 @@ All notable changes to PrimerLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.2] - 2026-01-09 - Architecture Polish
+
+### Added
+
+- **Model Serialization**
+  - Added `to_dict()` methods to 10 dataclasses for consistent JSON export
+  - Files updated: offtarget/finder.py, insilico/binding.py, insilico/engine.py, config_validator.py, reranking.py
+  - Created `test_model_serialization.py` with 10 tests for serialization
+
+### Changed
+
+- **Dataclass Standardization**
+  - `OfftargetHit`, `OfftargetResult`, `PrimerPairOfftargetResult` now have `to_dict()`
+  - `BindingSite`, `PrimerBinding`, `AmpliconPrediction`, `InsilicoPCRResult` now have `to_dict()`
+  - `ValidationError`, `ValidationResult`, `CandidateScore` now have `to_dict()`
+
+### Tests
+
+- All 1273 tests passing (1263 + 10 new serialization tests)
+- 6 mock tests skipped (require Primer3 installation)
+
+---
+
 ## [0.8.0] - 2026-01-04 - Code Quality Foundation
 
 ### Added
