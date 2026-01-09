@@ -51,6 +51,26 @@ class BindingSite:
     # Visualization
     alignment_str: str              # Visual alignment
 
+    def to_dict(self) -> Dict[str, Any]:
+        """Export to dictionary for JSON serialization."""
+        return {
+            "position": self.position,
+            "strand": self.strand,
+            "primer_seq": self.primer_seq,
+            "target_seq": self.target_seq,
+            "match_count": self.match_count,
+            "mismatch_count": self.mismatch_count,
+            "match_percent": self.match_percent,
+            "three_prime_match": self.three_prime_match,
+            "three_prime_dg": self.three_prime_dg,
+            "five_prime_mismatch": self.five_prime_mismatch,
+            "binding_tm": self.binding_tm,
+            "binding_dg": self.binding_dg,
+            "is_valid": self.is_valid,
+            "validation_notes": self.validation_notes,
+            "alignment_str": self.alignment_str
+        }
+
 
 def calculate_three_prime_dg(
     primer_3prime: str,

@@ -59,6 +59,21 @@ class PrimerBinding:
     is_valid: bool                  # meets minimum requirements
     alignment: str = ""             # visual alignment string
 
+    def to_dict(self) -> Dict[str, Any]:
+        """Export to dictionary for JSON serialization."""
+        return {
+            "primer_name": self.primer_name,
+            "primer_seq": self.primer_seq,
+            "strand": self.strand,
+            "position": self.position,
+            "match_percent": self.match_percent,
+            "mismatches": self.mismatches,
+            "three_prime_match": self.three_prime_match,
+            "binding_tm": self.binding_tm,
+            "is_valid": self.is_valid,
+            "alignment": self.alignment
+        }
+
 
 @dataclass  
 class AmpliconPrediction:
@@ -73,6 +88,21 @@ class AmpliconPrediction:
     is_primary: bool = False        # primary (best) product
     warnings: List[str] = field(default_factory=list)
     extension_time_sec: float = 0.0  # v0.2.5: Estimated extension time
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Export to dictionary for JSON serialization."""
+        return {
+            "forward_binding": self.forward_binding.to_dict(),
+            "reverse_binding": self.reverse_binding.to_dict(),
+            "product_size": self.product_size,
+            "product_sequence": self.product_sequence,
+            "start_position": self.start_position,
+            "end_position": self.end_position,
+            "likelihood_score": self.likelihood_score,
+            "is_primary": self.is_primary,
+            "warnings": self.warnings,
+            "extension_time_sec": self.extension_time_sec
+        }
 
 
 @dataclass
@@ -90,6 +120,23 @@ class InsilicoPCRResult:
     warnings: List[str] = field(default_factory=list)
     errors: List[str] = field(default_factory=list)
     primer_dimer: Optional[Dict[str, Any]] = None  # v0.2.5: Dimer check result
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Export to dictionary for JSON serialization."""
+        return {
+            "success": self.success,
+            "template_name": self.template_name,
+            "template_length": self.template_length,
+            "forward_primer": self.forward_primer,
+            "reverse_primer": self.reverse_primer,
+            "products": [p.to_dict() for p in self.products],
+            "all_forward_bindings": [b.to_dict() for b in self.all_forward_bindings],
+            "all_reverse_bindings": [b.to_dict() for b in self.all_reverse_bindings],
+            "parameters": self.parameters,
+            "warnings": self.warnings,
+            "errors": self.errors,
+            "primer_dimer": self.primer_dimer
+        }
 
 
 
