@@ -29,6 +29,17 @@ class CandidateScore:
     passes_qc: bool
     rejection_reason: Optional[str] = None
 
+    def to_dict(self) -> Dict[str, Any]:
+        """Export to dictionary for JSON serialization."""
+        return {
+            "index": self.index,
+            "primer3_penalty": self.primer3_penalty,
+            "hairpin_dg": self.hairpin_dg,
+            "homodimer_dg": self.homodimer_dg,
+            "passes_qc": self.passes_qc,
+            "rejection_reason": self.rejection_reason
+        }
+
 
 class RerankingEngine:
     """
