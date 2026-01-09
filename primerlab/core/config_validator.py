@@ -16,6 +16,14 @@ class ValidationError:
     message: str
     suggestion: Optional[str] = None
 
+    def to_dict(self) -> Dict[str, Any]:
+        """Export to dictionary for JSON serialization."""
+        return {
+            "path": self.path,
+            "message": self.message,
+            "suggestion": self.suggestion
+        }
+
 
 @dataclass
 class ValidationResult:
@@ -23,6 +31,14 @@ class ValidationResult:
     valid: bool
     errors: List[ValidationError]
     warnings: List[ValidationError]
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Export to dictionary for JSON serialization."""
+        return {
+            "valid": self.valid,
+            "errors": [e.to_dict() for e in self.errors],
+            "warnings": [w.to_dict() for w in self.warnings]
+        }
 
 
 class ConfigValidator:
