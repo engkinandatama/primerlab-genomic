@@ -64,46 +64,42 @@ PrimerLab focuses on **deterministic, transparent bioinformatics**, following st
 
 ### Installation
 
-#### Option 1: For Developers (Source)
+#### Option 1: PyPI (Recommended)
 
 ```bash
-# Clone the repository
+pip install primerlab-genomic
+```
+
+#### Option 2: Docker (No setup required)
+
+```bash
+# Pull and run
+docker pull ghcr.io/engkinandatama/primerlab-genomic:1.0.0
+docker run ghcr.io/engkinandatama/primerlab-genomic:1.0.0 --version
+
+# Run with your config
+docker run -v $(pwd):/data ghcr.io/engkinandatama/primerlab-genomic:1.0.0 run pcr --config /data/config.yaml
+```
+
+#### Option 3: From Source (For Development)
+
+```bash
 git clone https://github.com/engkinandatama/primerlab-genomic.git
 cd primerlab-genomic
-
-# Create virtual environment (recommended)
-python3 -m venv ~/primerlab_venv
-source ~/primerlab_venv/bin/activate  # Linux/WSL
-# or
-# .\primerlab_venv\Scripts\activate   # Windows PowerShell
-
-# Install dependencies & package in editable mode
 pip install -e .
 ```
 
 #### Optional: ViennaRNA (for Secondary Structure)
 
-For enhanced secondary structure prediction in amplicon analysis, install ViennaRNA:
-
 ```bash
-# Ubuntu/Debian
-sudo apt-get install vienna-rna
+# Via pip (recommended)
+pip install viennarna
 
-# macOS (Homebrew)  
-brew install viennarna
-
-# Conda (all platforms)
+# Via Conda
 conda install -c bioconda viennarna
 ```
 
 Without ViennaRNA, PrimerLab uses a fallback estimation method.
-
-#### Option 2: For End Users (From GitHub Release)
-
-```bash
-# Install directly from GitHub (latest release)
-pip install git+https://github.com/engkinandatama/primerlab-genomic.git@v1.0.0
-```
 
 Once installed, verify the installation:
 
