@@ -1,7 +1,7 @@
 """
 Caching utilities for expensive computations.
 
-v0.8.4 - Performance optimization
+v0.8.3 - Performance optimization
 
 Provides LRU caching for frequently called functions:
 - Tm calculations (primer3)

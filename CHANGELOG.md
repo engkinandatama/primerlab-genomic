@@ -32,7 +32,7 @@ docker run -v $(pwd):/data primerlab-genomic run pcr --config /data/config.yaml
 
 ---
 
-## [0.8.4] - 2026-01-11 - Performance Optimization
+## [0.8.3] - 2026-01-11 - Performance Optimization
 
 ### Added
 
