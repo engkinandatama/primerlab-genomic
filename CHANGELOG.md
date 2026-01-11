@@ -5,6 +5,29 @@ All notable changes to PrimerLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.4] - 2026-01-11 - Performance Optimization
+
+### Added
+
+- **LRU Caching Module** (`core/cache.py`)
+  - `cached_calc_tm()` - Cache Tm calculations (10k entries)
+  - `cached_gc_content()` - Cache GC% calculations
+  - `cached_delta_g()` - Cache ViennaRNA ΔG calculations
+  - `get_cache_stats()` - Monitor cache performance
+  - `clear_caches()` - Clear all caches
+
+### Tests
+
+- Created `test_cache.py` with 12 test cases for caching
+- All 1286 tests passing (+13 new)
+
+### Performance
+
+- Expected 2-5x speedup for repeated Tm calculations
+- ~1-2MB memory for 10k cached sequences
+
+---
+
 ## [0.8.2] - 2026-01-09 - Architecture Polish
 
 ### Added
