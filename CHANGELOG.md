@@ -5,6 +5,43 @@ All notable changes to PrimerLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-01-11 - Stable Release 🎉
+
+### Highlights
+
+**First production-ready release of PrimerLab!**
+
+- 1286+ passing tests with 76% code coverage
+- Full PCR, qPCR, Nested PCR, and In-silico workflows
+- Docker, Conda, and Pip installation options
+- Comprehensive API documentation
+
+### Added
+
+- **Production Status**: Changed from Beta to Production/Stable
+- **Documentation**: Complete tutorials, API reference, configuration guide
+- **Report Standardization**: Unified report format across all workflows
+
+### Changed
+
+- Version bump from 0.9.x to 1.0.0
+- Updated all badges and documentation to reflect stable release
+
+### Installation
+
+```bash
+# PyPI (recommended)
+pip install primerlab-genomic
+
+# Docker
+docker pull ghcr.io/engkinandatama/primerlab-genomic:1.0.0
+
+# Conda
+conda env create -f environment.yml
+```
+
+---
+
 ## [0.9.0] - 2026-01-11 - Docker Foundation
 
 ### Added
