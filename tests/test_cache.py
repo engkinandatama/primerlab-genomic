@@ -1,5 +1,5 @@
 """
-Tests for cache module (v0.8.4).
+Tests for cache module (v0.8.3).
 
 Tests LRU caching for Tm, GC, and ΔG calculations.
 """

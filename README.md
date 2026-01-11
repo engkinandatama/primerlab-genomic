@@ -5,9 +5,9 @@ A modular bioinformatics framework for automated **primer and probe design**, bu
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-BSD%203--Clause-green.svg)](LICENSE)
 [![Tests](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml/badge.svg)](https://github.com/engkinandatama/primerlab-genomic/actions/workflows/test.yml)
-[![Status](https://img.shields.io/badge/status-v0.8.4-blue.svg)](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.8.4)
+[![Status](https://img.shields.io/badge/status-v0.8.3-blue.svg)](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.8.3)
 
-> 🔰 **Latest Release**: [**v0.8.4 - Performance Optimization**](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.8.4) 🎉
+> 🔰 **Latest Release**: [**v0.8.3 - Performance Optimization**](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v0.8.3) 🎉
 
 ---
 
@@ -82,11 +82,11 @@ PrimerLab focuses on **deterministic, transparent bioinformatics**, following st
 
 * **Code Quality Foundation** (v0.8.0): Type hints, mypy config, exception testing, flake8 fixes
 * **Model Standardization** (v0.8.2): `to_dict()` methods for all dataclasses, comprehensive STRUCTURE.md
-* **LRU Caching** (v0.8.4): Performance optimization for Tm, GC, and ΔG calculations
+* **LRU Caching** (v0.8.3): Performance optimization for Tm, GC, and ΔG calculations
   * `cached_calc_tm()` - 10k entry cache for melting temperature
   * `cached_gc_content()` - 10k entry cache for GC percentage
   * `cached_delta_g()` - Cache for ViennaRNA ΔG calculations
-* **1286+ Tests** (v0.8.4): Comprehensive test coverage with model serialization tests
+* **1286+ Tests** (v0.8.3): Comprehensive test coverage with model serialization tests
 
 ---
 
@@ -132,7 +132,7 @@ Without ViennaRNA, PrimerLab uses a fallback estimation method.
 
 ```bash
 # Install directly from GitHub (latest release)
-pip install git+https://github.com/engkinandatama/primerlab-genomic.git@v0.8.4
+pip install git+https://github.com/engkinandatama/primerlab-genomic.git@v0.8.3
 ```
 
 Once installed, verify the installation:
@@ -422,7 +422,7 @@ primerlab-genomic/
 
 ## 📌 Development Status
 
-### ✅ **v0.8.4** (Current)
+### ✅ **v0.8.3** (Current)
 
 * **Performance Optimization** (`core/cache.py`):
   * LRU caching for Tm, GC, and ΔG calculations
