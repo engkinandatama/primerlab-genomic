@@ -34,10 +34,8 @@ LABEL version="1.0.0"
 
 WORKDIR /app
 
-# Install system dependencies for bioinformatics tools
+# Install system dependencies (BLAST+ only - ViennaRNA via pip)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    # ViennaRNA for secondary structure prediction
-    vienna-rna \
     # BLAST+ for off-target detection
     ncbi-blast+ \
     # Utilities
@@ -45,9 +43,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
-# Copy wheel from builder and install
+# Copy wheel from builder and install with ViennaRNA
 COPY --from=builder /build/dist/*.whl /tmp/
-RUN pip install --no-cache-dir /tmp/*.whl && \
+RUN pip install --no-cache-dir /tmp/*.whl viennarna && \
     rm -rf /tmp/*.whl
 
 # Copy example configs (optional, for user convenience)
