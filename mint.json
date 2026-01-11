@@ -1,0 +1,82 @@
+{
+  "name": "PrimerLab Genomic",
+  "logo": {
+    "light": "docs/assets/logo.png",
+    "dark": "docs/assets/logo.png"
+  },
+  "favicon": "docs/assets/logo.png",
+  "colors": {
+    "primary": "#0D9488",
+    "light": "#14B8A6",
+    "dark": "#0F766E",
+    "anchors": "#0D9488"
+  },
+  "topbarLinks": [
+    {
+      "name": "GitHub",
+      "url": "https://github.com/engkinandatama/primerlab-genomic"
+    },
+    {
+      "name": "PyPI",
+      "url": "https://pypi.org/project/primerlab-genomic/"
+    }
+  ],
+  "navigation": [
+    {
+      "group": "Overview",
+      "pages": [
+        "docs/index",
+        "docs/getting-started",
+        "docs/changelog",
+        "docs/troubleshooting"
+      ]
+    },
+    {
+      "group": "User Guide",
+      "pages": [
+        "docs/cli/README",
+        "docs/configuration/README",
+        "docs/configuration/reference"
+      ]
+    },
+    {
+      "group": "Tutorials",
+      "pages": [
+        "docs/tutorials/quickstart",
+        "docs/tutorials/pcr-walkthrough",
+        "docs/tutorials/qpcr-design",
+        "docs/tutorials/qpcr-advanced",
+        "docs/tutorials/nested-pcr",
+        "docs/tutorials/multiplex-dimer",
+        "docs/tutorials/species-check",
+        "docs/tutorials/offtarget-tutorial"
+      ]
+    },
+    {
+      "group": "Features",
+      "pages": [
+        "docs/features/README",
+        "docs/features/batch-processing",
+        "docs/features/species-specificity",
+        "docs/features/melt-curve"
+      ]
+    },
+    {
+      "group": "API Reference",
+      "pages": [
+        "docs/api/README",
+        "docs/api/public",
+        "docs/api/models"
+      ]
+    },
+    {
+      "group": "Examples",
+      "pages": [
+        "docs/examples/README"
+      ]
+    }
+  ],
+  "footerSocials": {
+    "github": "https://github.com/engkinandatama/primerlab-genomic"
+  }
+}
