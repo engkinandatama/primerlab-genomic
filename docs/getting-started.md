@@ -5,7 +5,7 @@
 ### Option 1: From GitHub (Recommended)
 
 ```bash
-pip install git+https://github.com/engkinandatama/primerlab-genomic.git@v0.3.5
+pip install git+https://github.com/engkinandatama/primerlab-genomic.git@v0.8.4
 ```
 
 ### Option 2: From Source (Development)
@@ -41,7 +41,7 @@ See [WSL Quickstart Guide](../.dev/Guide/wsl_quickstart.md) for detailed setup.
 
 ```bash
 primerlab --version
-# Output: PrimerLab v0.3.5
+# Output: PrimerLab v0.8.4
 
 primerlab health
 # Shows dependency status
