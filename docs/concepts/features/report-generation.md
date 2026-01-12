@@ -69,5 +69,5 @@ exporter.export("report.html", format="html")
 
 ## See Also
 
-- [Run Command](../cli/run) - Report generation flags
-- [Examples](../../examples/report/README) - Sample outputs
+- [Run Command](/docs/reference/cli/run) - Report generation flags
+- [Examples](#) - Sample outputs

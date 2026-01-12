@@ -95,4 +95,4 @@ primerlab melt-curve --amplicon ATGCGATCGATCGATCGATCG --format json
 
 - [probe-check](probe-check) - TaqMan probe binding
 - [amplicon-qc](amplicon-qc) - Amplicon quality check
-- [Melt Curve Feature](../features/melt-curve)
+- [Melt Curve Feature](/docs/concepts/features/melt-curve)

@@ -129,6 +129,6 @@ P3: 400 bp  (+150)
 
 ## See Also
 
-- [CLI: check-compat](../cli/compat_check)
-- [CLI: dimer-matrix](../cli/README)
-- [Features: Compatibility Check](../features/compat_check)
+- [CLI: check-compat](/docs/reference/cli/compat_check)
+- [CLI: dimer-matrix](#)
+- [Features: Compatibility Check](/docs/concepts/features/compat_check)

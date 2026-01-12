@@ -1,4 +1,4 @@
----
+﻿---
 title: "Case Study: Housekeeping Gene Primers"
 description: "Design PCR primers for GAPDH reference gene normalization"
 ---
@@ -210,6 +210,6 @@ We successfully designed primers for GAPDH with:
 
 ## See Also
 
-- [PCR Design Guide](../guides/pcr-design)
-- [Understanding Results](../concepts/understanding-results)
-- [Batch Processing](../guides/batch-design)
+- [PCR Design Guide](/docs/guides/pcr-design)
+- [Understanding Results](/docs/concepts/understanding-results)
+- [Batch Processing](/docs/guides/batch-design)

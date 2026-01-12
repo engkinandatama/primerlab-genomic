@@ -142,5 +142,5 @@ class BatchSpeciesResult:
 ## See Also
 
 - [Species Specificity](species-specificity)
-- [Batch Tutorial](../tutorials/batch-species-check)
-- [CLI Reference](../cli/species-check)
+- [Batch Tutorial](/docs/tutorials/batch-species-check)
+- [CLI Reference](/docs/reference/cli/species-check)

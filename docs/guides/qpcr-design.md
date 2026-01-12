@@ -1,4 +1,4 @@
-# qPCR Assay Design Guide
+﻿# qPCR Assay Design Guide
 
 Design TaqMan or SYBR Green quantitative PCR assays.
 
@@ -191,4 +191,4 @@ primerlab melt-curve \
 
 - [PCR Design](pcr-design) — Standard PCR primers
 - [Nested PCR](nested-pcr) — Species specificity check
-- [Configuration Reference](../reference/config) — All parameters
+- [Configuration Reference](/docs/reference/config) — All parameters

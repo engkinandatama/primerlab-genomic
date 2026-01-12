@@ -107,4 +107,4 @@ for primer in result["primers"]:
 ## Next Steps
 
 - [Species Specificity Check](species-check)
-- [Tm Gradient Feature Docs](../features/tm-gradient)
+- [Tm Gradient Feature Docs](/docs/concepts/features/tm-gradient)

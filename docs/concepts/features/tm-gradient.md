@@ -86,5 +86,5 @@ See `primerlab/config/tm_gradient_default.yaml` for default settings.
 
 ## See Also
 
-- [Tutorial: Tm Gradient Simulation](../tutorials/tm-gradient)
+- [Tutorial: Tm Gradient Simulation](/docs/tutorials/tm-gradient)
 - [Species Specificity](species-specificity)

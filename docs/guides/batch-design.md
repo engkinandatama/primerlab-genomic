@@ -1,4 +1,4 @@
-# Batch Processing Guide
+﻿# Batch Processing Guide
 
 Design primers for multiple sequences in a single run.
 
@@ -167,4 +167,4 @@ cat batch_results/summary.json | jq '.failed[]'
 ## See Also
 
 - [PCR Design](pcr-design) — Single sequence design
-- [CLI Reference](../reference/cli) — All batch options
+- [CLI Reference](/docs/reference/cli) — All batch options

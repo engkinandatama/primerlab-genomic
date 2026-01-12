@@ -109,6 +109,6 @@ class Primer:
 
 ## See Also
 
-- [CLI Reference](../cli/README) - Command-line interface
-- [Configuration](../configuration/README) - Config file options
-- [Examples](../../examples/README) - Example use cases
+- [CLI Reference](#) - Command-line interface
+- [Configuration](#) - Config file options
+- [Examples](#) - Example use cases

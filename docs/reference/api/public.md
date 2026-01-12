@@ -560,4 +560,4 @@ except PrimerLabException as e:
 - [In-silico API](insilico)
 - [Report API](report)
 - [Models Reference](models)
-- [Batch Processing](../features/batch-processing)
+- [Batch Processing](/docs/concepts/features/batch-processing)

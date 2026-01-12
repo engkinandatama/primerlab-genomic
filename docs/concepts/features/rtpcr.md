@@ -75,5 +75,5 @@ For reliable RT-specificity, primers should have ≥5bp on each side of junction
 
 ## See Also
 
-- [qPCR Advanced Tutorial](../tutorials/qpcr-advanced)
+- [qPCR Advanced Tutorial](/docs/tutorials/qpcr-advanced)
 - [Melt Curve Analysis](melt-curve)

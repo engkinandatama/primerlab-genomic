@@ -1,4 +1,4 @@
----
+﻿---
 title: "API Reference"
 description: "Python API for programmatic access to PrimerLab"
 ---
@@ -294,4 +294,4 @@ print(f"Compatible: {compat.is_compatible}")
 
 - [CLI Reference](cli)
 - [Configuration](config)
-- [Getting Started](../getting-started)
+- [Getting Started](/docs/getting-started)

@@ -1,4 +1,4 @@
----
+﻿---
 title: "Configuration Reference"
 description: "YAML configuration file reference for PrimerLab"
 ---
@@ -200,6 +200,6 @@ parameters:
 
 ## See Also
 
-- [Getting Started](../getting-started)
+- [Getting Started](/docs/getting-started)
 - [CLI Reference](cli)
 - [Examples](https://github.com/engkinandatama/primerlab-genomic/tree/main/examples)

@@ -32,7 +32,7 @@ Validate your designs before ordering synthesis:
 - **[Off-target Detection](offtarget-detection)**  
   BLAST-based analysis to identify potential non-specific amplifications in the background genome.
 
-- **[In-silico PCR](../cli/insilico)**  
+- **[In-silico PCR](/docs/reference/cli/insilico)**  
   Virtual amplification simulation to predict amplicon size and specificity.
 
 - **[Primer Compatibility Check](compat_check)**  
@@ -62,5 +62,5 @@ Specialized tools for quantitative PCR:
 - **[Allele Discrimination](genotyping)**  
   Scoring system for SNP genotyping primers to maximize discrimination capability.
 
-- **[Design History](../cli/history)**  
+- **[Design History](/docs/reference/cli/history)**  
   Local SQLite database tracks every design run for complete reproducibility.

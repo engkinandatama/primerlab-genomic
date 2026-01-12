@@ -91,5 +91,5 @@ class ProbeBindingResult:
 
 ## See Also
 
-- [qPCR Workflow](../tutorials/qpcr-design)
+- [qPCR Workflow](/docs/tutorials/qpcr-design)
 - [Melt Curve Analysis](melt-curve)

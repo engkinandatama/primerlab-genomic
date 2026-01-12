@@ -1,4 +1,4 @@
-# Guides
+﻿# Guides
 
 Step-by-step tutorials for using PrimerLab.
 
@@ -32,6 +32,6 @@ Before starting, ensure you have:
 
 ## Need Help?
 
-- [Troubleshooting](../troubleshooting)
-- [CLI Reference](../reference/cli)
-- [Configuration Reference](../reference/config)
+- [Troubleshooting](/docs/troubleshooting)
+- [CLI Reference](/docs/reference/cli)
+- [Configuration Reference](/docs/reference/config)

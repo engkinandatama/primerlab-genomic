@@ -77,4 +77,4 @@ primerlab probe-check --probe ATGCGATCGATCGATCGATCG -o probe_result.txt
 
 - [melt-curve](melt-curve) - SYBR melt curve prediction
 - [amplicon-qc](amplicon-qc) - Amplicon quality check
-- [Probe Binding Feature](../features/probe-binding)
+- [Probe Binding Feature](/docs/concepts/features/probe-binding)

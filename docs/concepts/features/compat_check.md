@@ -159,6 +159,6 @@ print(f"Warnings: {result['warnings']}")
 
 ## See Also
 
-- [CLI Reference](../cli/multiplex)
-- [Configuration Guide](../configuration/README)
-- [Troubleshooting](../troubleshooting)
+- [CLI Reference](/docs/reference/cli/multiplex)
+- [Configuration Guide](#)
+- [Troubleshooting](/docs/troubleshooting)

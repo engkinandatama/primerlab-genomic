@@ -1,4 +1,4 @@
-# Customization Guide
+﻿# Customization Guide
 
 Learn how to customize PrimerLab parameters for your specific research needs.
 
@@ -245,6 +245,6 @@ primerlab run pcr --config base.yaml --qc-mode relaxed
 
 ## See Also
 
-- [Presets Reference](../reference/presets)
-- [Configuration Reference](../reference/config)
-- [Understanding Results](../concepts/understanding-results)
+- [Presets Reference](/docs/reference/presets)
+- [Configuration Reference](/docs/reference/config)
+- [Understanding Results](/docs/concepts/understanding-results)
