@@ -1,87 +1,121 @@
 # PrimerLab Documentation
 
-Welcome to PrimerLab, a modular bioinformatics framework for automated primer and probe design.
+**PrimerLab** is a modular bioinformatics framework for automated primer and probe design.
 
-## Quick Links
+<div class="grid cards" markdown>
 
-- [Getting Started](getting-started.md) - Installation and first steps
-- [Tutorials](tutorials/README.md) - Step-by-step guides
-- [CLI Reference](cli/README.md) - Command-line interface
-- [Configuration](configuration/README.md) - Config file reference
-- [Features](features/README.md) - Advanced features
-- [API Reference](api/README.md) - Programmatic interface
-- [Architecture](architecture.md) - System design
-- [Troubleshooting](troubleshooting.md) - Common issues and solutions
+- :material-rocket-launch: **Quick Start**
 
-## What is PrimerLab?
+    ---
 
-PrimerLab is a Python-based toolkit for automated primer and probe design in molecular biology workflows. It provides:
+    Design your first primers in 5 minutes
 
-- **PCR** — Standard primer design with quality control
-- **qPCR** — Probe design (TaqMan/SYBR) with thermodynamic checks
-- **Off-target Detection** — BLAST-based specificity analysis
-- **In-silico PCR** — Virtual amplification validation
-- **Batch Processing** — Multi-sequence design in one command
-- **Quality Control** — Hairpins, dimers, GC%, Tm validation
+    [:octicons-arrow-right-24: Get Started](guides/quickstart.md)
 
-## System Architecture
+- :material-book-open-variant: **Guides**
 
-PrimerLab allows for distinct separation of concerns through a three-tier design, ensuring reliability across both CLI and API usage.
+    ---
 
-```mermaid
-graph TD
-    subgraph L1[Layer 1: User Interface]
-        CLI[Command Line Interface]
-        API[Python API]
-    end
+    Step-by-step tutorials for PCR and qPCR design
 
-    subgraph L2[Layer 2: Workflow Orchestration]
-        PCR[PCR Workflow]
-        QPCR[qPCR Workflow]
-        DB[(Design Database)]
-    end
+    [:octicons-arrow-right-24: View Guides](guides/index.md)
 
-    subgraph L3[Layer 3: Core Utilities]
-        P3[Primer3 Wrapper]
-        BLAST[Off-target Finder]
-        Insilico[In-silico PCR]
-        Config[Config Loader]
-    end
+- :material-console: **Reference**
 
-    CLI --> PCR
-    CLI --> QPCR
-    API --> PCR
-    API --> QPCR
-    
-    PCR --> P3
-    QPCR --> P3
-    
-    PCR --> BLAST
-    PCR --> Insilico
-    
-    PCR --> DB
-    QPCR --> DB
-    
-    L2 -.-> Config
+    ---
+
+    CLI, API, and configuration documentation
+
+    [:octicons-arrow-right-24: Reference](reference/cli.md)
+
+- :material-lightbulb: **Concepts**
+
+    ---
+
+    Understand how PrimerLab works
+
+    [:octicons-arrow-right-24: Learn More](concepts/index.md)
+
+</div>
+
+---
+
+## Installation
+
+```bash
+pip install primerlab-genomic
 ```
 
-### Three-Tier Design
+Verify installation:
 
-1. **Layer 1 (User Interface)**
-    - **CLI**: Handles argument parsing, command routing, and rich output formatting.
-    - **API**: Provides programmatic access for integration into other Python scripts.
+```bash
+primerlab --version
+primerlab health
+```
 
-2. **Layer 2 (Workflow Orchestration)**
-    - **Workflows**: Orchestrates multi-step processes (e.g., `run_pcr_workflow`, `run_qpcr_workflow`) including design, validation, and reporting.
-    - **Database**: Persists design history and results to SQLite.
+---
 
-3. **Layer 3 (Core Utilities)**
-    - **Wrappers**: Interfaces with external tools like Primer3 and BLAST+.
-    - **Engines**: Core logic for In-silico PCR and specificity checking.
-    - **Config**: Centralized configuration management.
+## Key Features
+
+| Feature | Description |
+|---------|-------------|
+| **PCR Design** | Standard primer design with quality control |
+| **qPCR Design** | TaqMan and SYBR Green assay design |
+| **In-silico PCR** | Virtual amplification validation |
+| **Off-target Check** | BLAST-based specificity analysis |
+| **Batch Processing** | Multi-sequence design |
+| **Species Specificity** | Cross-reactivity testing |
+
+---
+
+## Quick Example
+
+```bash
+# Create configuration
+cat > my_config.yaml << 'EOF'
+input:
+  sequence_path: ./gene.fasta
+parameters:
+  tm:
+    opt: 60.0
+  product_size:
+    min: 150
+    max: 300
+EOF
+
+# Design primers
+primerlab run pcr --config my_config.yaml
+```
+
+---
+
+## Architecture
+
+PrimerLab uses a three-tier design:
+
+```mermaid
+graph LR
+    CLI[CLI] --> Workflow[Workflows]
+    API[Python API] --> Workflow
+    Workflow --> Core[Core Utilities]
+    Core --> P3[Primer3]
+    Core --> BLAST[BLAST+]
+```
+
+Learn more: [System Architecture](concepts/architecture.md)
+
+---
 
 ## Version
 
-Current version: **v1.0.0**
+Current version: **v1.0.1**
 
-See [CHANGELOG](../CHANGELOG.md) for version history.
+See [Changelog](changelog.md) for version history.
+
+---
+
+## Links
+
+- [GitHub Repository](https://github.com/engkinandatama/primerlab-genomic)
+- [PyPI Package](https://pypi.org/project/primerlab-genomic/)
+- [DeepWiki Docs](https://deepwiki.com/engkinandatama/primerlab-genomic)
