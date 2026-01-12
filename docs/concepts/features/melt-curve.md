@@ -124,4 +124,4 @@ class MeltPeak:
 ## See Also
 
 - [Probe Binding](probe-binding)
-- [qPCR Amplicon QC](../features/amplicon)
+- [qPCR Amplicon QC](/docs/concepts/features/amplicon)

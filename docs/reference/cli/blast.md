@@ -130,4 +130,4 @@ offtarget:
 ## See Also
 
 - [In-silico PCR](insilico) - Validate primers against template
-- [PCR Workflow](../workflows/pcr) - Full primer design pipeline
+- [PCR Workflow](/docs/guides/pcr-design) - Full primer design pipeline

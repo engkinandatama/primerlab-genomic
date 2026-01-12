@@ -1,4 +1,4 @@
----
+﻿---
 title: "Getting Started"
 description: "Install PrimerLab and run your first primer design"
 ---
@@ -167,6 +167,6 @@ sudo apt-get install ncbi-blast+
 
 ## Next Steps
 
-- [CLI Reference](reference/cli) - All available commands
-- [Configuration](reference/config) - Config file options
+- [CLI Reference](/docs/reference/cli) - All available commands
+- [Configuration](/docs/reference/config) - Config file options
 - [Examples](https://github.com/engkinandatama/primerlab-genomic/tree/main/examples) - Example configurations

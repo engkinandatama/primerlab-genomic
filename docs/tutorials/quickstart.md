@@ -136,4 +136,4 @@ primerlab insilico \
 | File not found | Check file path |
 | Invalid sequence | Ensure FASTA format |
 
-See [Troubleshooting](../troubleshooting) for more.
+See [Troubleshooting](/docs/troubleshooting) for more.

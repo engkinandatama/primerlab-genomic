@@ -1,4 +1,4 @@
-# Specificity Analysis
+﻿# Specificity Analysis
 
 Ensuring primers amplify only the intended target.
 
@@ -164,5 +164,5 @@ primerlab insilico -p primers.json -t template.fasta
 
 ## See Also
 
-- [CLI Reference](../reference/cli) — All specificity commands
-- [Quality Control](../guides/quality-control) — Other QC checks
+- [CLI Reference](/docs/reference/cli) — All specificity commands
+- [Quality Control](/docs/guides/quality-control) — Other QC checks

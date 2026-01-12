@@ -96,5 +96,5 @@ primerlab run pcr --config design.yaml --check-multiplex
 
 ## See Also
 
-- [Multiplex Feature Guide](../features/multiplex)
-- [Configuration Reference](../configuration/README)
+- [Multiplex Feature Guide](/docs/concepts/features/multiplex)
+- [Configuration Reference](#)

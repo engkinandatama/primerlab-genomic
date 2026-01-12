@@ -245,5 +245,5 @@ primerlab blast \
 ## Next Steps
 
 - [qPCR Design](qpcr-design)
-- [Presets](../configuration/presets)
-- [Troubleshooting](../troubleshooting)
+- [Presets](/docs/reference/presets)
+- [Troubleshooting](/docs/troubleshooting)

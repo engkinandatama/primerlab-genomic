@@ -93,4 +93,4 @@ print(result.inner_primers)
 ## See Also
 
 - [PCR Workflow](pcr-walkthrough)
-- [CLI Reference: nested-design](../cli/README)
+- [CLI Reference: nested-design](#)

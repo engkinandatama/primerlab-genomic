@@ -124,5 +124,5 @@ Uses Santa Lucia (1998) nearest-neighbor parameters:
 
 ## See Also
 
-- [Tm Gradient Feature](../features/tm-gradient)
-- [Tm Gradient Tutorial](../tutorials/tm-gradient)
+- [Tm Gradient Feature](/docs/concepts/features/tm-gradient)
+- [Tm Gradient Tutorial](/docs/tutorials/tm-gradient)

@@ -1,4 +1,4 @@
-# Quality Control
+﻿# Quality Control
 
 How PrimerLab evaluates and scores primers.
 
@@ -190,5 +190,5 @@ primerlab amplicon-qc --amplicon output/amplicon.fasta
 
 ## See Also
 
-- [Configuration Reference](../reference/config.md) — Adjust thresholds
+- [Configuration Reference](/docs/reference/config.md) — Adjust thresholds
 - [Primer Design Logic](primer-design.md) — How candidates are generated

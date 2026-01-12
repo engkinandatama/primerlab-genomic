@@ -1,4 +1,4 @@
----
+﻿---
 title: "Presets Reference"
 description: "Pre-configured parameter sets for common PCR applications"
 ---
@@ -185,5 +185,5 @@ qc:
 ## See Also
 
 - [Configuration Reference](config)
-- [Customization Guide](../guides/customization)
+- [Customization Guide](/docs/guides/customization)
 - [CLI Reference](cli)

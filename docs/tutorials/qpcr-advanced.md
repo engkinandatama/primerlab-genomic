@@ -197,5 +197,5 @@ print(f"Efficiency: {efficiency:.1f}%")
 
 ## See Also
 
-- [Probe Binding Feature](../features/probe-binding)
-- [Melt Curve Feature](../features/melt-curve)
+- [Probe Binding Feature](/docs/concepts/features/probe-binding)
+- [Melt Curve Feature](/docs/concepts/features/melt-curve)

@@ -1,4 +1,4 @@
-# Understanding Results
+﻿# Understanding Results
 
 A comprehensive guide to interpreting PrimerLab output, scores, warnings, and recommendations.
 
@@ -131,5 +131,5 @@ qc:
 ## See Also
 
 - [Scoring System](scoring) — Detailed algorithm explanation
-- [Quality Control](../guides/quality-control) — QC workflow guide
-- [Troubleshooting](../troubleshooting) — Common issues and fixes
+- [Quality Control](/docs/guides/quality-control) — QC workflow guide
+- [Troubleshooting](/docs/troubleshooting) — Common issues and fixes

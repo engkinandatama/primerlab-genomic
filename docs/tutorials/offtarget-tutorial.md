@@ -141,4 +141,4 @@ offtarget:
 
 - [PCR Walkthrough](pcr-walkthrough)
 - [qPCR Design](qpcr-design)
-- [Troubleshooting](../troubleshooting)
+- [Troubleshooting](/docs/troubleshooting)

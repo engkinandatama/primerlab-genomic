@@ -1,4 +1,4 @@
-# Quick Start
+﻿# Quick Start
 
 Design your first PCR primers in 5 minutes.
 
@@ -90,7 +90,7 @@ Files generated:
 
 - [Full PCR Tutorial](pcr-design) — Learn all PCR options
 - [qPCR Design](qpcr-design) — Design TaqMan probes
-- [CLI Reference](../reference/cli) — All command options
+- [CLI Reference](/docs/reference/cli) — All command options
 
 ---
 

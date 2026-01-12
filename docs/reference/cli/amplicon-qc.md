@@ -93,4 +93,4 @@ primerlab amplicon-qc --amplicon ATGCGATCGATCGATCGATCG --format json -o result.j
 
 - [probe-check](probe-check) - TaqMan probe binding
 - [melt-curve](melt-curve) - SYBR melt curve prediction
-- [qPCR Advanced Tutorial](../tutorials/qpcr-advanced)
+- [qPCR Advanced Tutorial](/docs/tutorials/qpcr-advanced)

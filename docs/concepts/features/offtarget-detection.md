@@ -76,5 +76,5 @@ offtarget:
 
 ## See Also
 
-- [BLAST Command](../cli/blast) - Detailed CLI options
-- [In-silico PCR](../cli/insilico) - Template validation
+- [BLAST Command](/docs/reference/cli/blast) - Detailed CLI options
+- [In-silico PCR](/docs/reference/cli/insilico) - Template validation

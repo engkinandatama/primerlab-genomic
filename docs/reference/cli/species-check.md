@@ -127,6 +127,6 @@ ATGCGATCGATCGATCGATCG...
 
 ## See Also
 
-- [Species Specificity Feature](../features/species-specificity)
-- [Species Check Tutorial](../tutorials/species-check)
-- [Batch Processing](../features/batch-processing)
+- [Species Specificity Feature](/docs/concepts/features/species-specificity)
+- [Species Check Tutorial](/docs/tutorials/species-check)
+- [Batch Processing](/docs/concepts/features/batch-processing)

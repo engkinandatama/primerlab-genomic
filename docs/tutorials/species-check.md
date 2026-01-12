@@ -160,5 +160,5 @@ else:
 
 ## Next Steps
 
-- [Species Specificity Documentation](../../features/species-specificity)
-- [Example Files](../../examples/species_check/)
+- [Species Specificity Documentation](/docs/concepts/features/species-specificity)
+- [Example Files](https://github.com/engkinandatama/primerlab-genomic/tree/main/examples)

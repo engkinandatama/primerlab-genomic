@@ -131,4 +131,4 @@ primerlab insilico \
 
 - [Off-target Analysis](offtarget-tutorial)
 - [PCR Walkthrough](pcr-walkthrough)
-- [Troubleshooting](../troubleshooting)
+- [Troubleshooting](/docs/troubleshooting)
