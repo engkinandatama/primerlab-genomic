@@ -1,4 +1,5 @@
 {
+  "$schema": "https://mintlify.com/schema.json",
   "name": "PrimerLab Genomic",
   "logo": {
     "light": "docs/assets/logo.png",
@@ -26,53 +27,42 @@
       "group": "Overview",
       "pages": [
         "docs/index",
-        "docs/getting-started",
-        "docs/changelog",
-        "docs/troubleshooting"
+        "docs/getting-started"
       ]
     },
     {
-      "group": "User Guide",
+      "group": "Guides",
       "pages": [
-        "docs/cli/README",
-        "docs/configuration/README",
-        "docs/configuration/reference"
+        "docs/guides/index",
+        "docs/guides/quickstart",
+        "docs/guides/pcr-design",
+        "docs/guides/qpcr-design",
+        "docs/guides/batch-design",
+        "docs/guides/advanced"
       ]
     },
     {
-      "group": "Tutorials",
+      "group": "Reference",
       "pages": [
-        "docs/tutorials/quickstart",
-        "docs/tutorials/pcr-walkthrough",
-        "docs/tutorials/qpcr-design",
-        "docs/tutorials/qpcr-advanced",
-        "docs/tutorials/nested-pcr",
-        "docs/tutorials/multiplex-dimer",
-        "docs/tutorials/species-check",
-        "docs/tutorials/offtarget-tutorial"
+        "docs/reference/cli",
+        "docs/reference/config",
+        "docs/reference/api"
       ]
     },
     {
-      "group": "Features",
+      "group": "Concepts",
       "pages": [
-        "docs/features/README",
-        "docs/features/batch-processing",
-        "docs/features/species-specificity",
-        "docs/features/melt-curve"
+        "docs/concepts/index",
+        "docs/concepts/architecture",
+        "docs/concepts/quality-control",
+        "docs/concepts/specificity"
       ]
     },
     {
-      "group": "API Reference",
+      "group": "Help",
       "pages": [
-        "docs/api/README",
-        "docs/api/public",
-        "docs/api/models"
-      ]
-    },
-    {
-      "group": "Examples",
-      "pages": [
-        "docs/examples/README"
+        "docs/troubleshooting",
+        "docs/changelog"
       ]
     }
   ],
