@@ -1,4 +1,7 @@
-# Case Study: Housekeeping Gene Primers
+---
+title: "Case Study: Housekeeping Gene Primers"
+description: "Design PCR primers for GAPDH reference gene normalization"
+---
 
 A practical tutorial for designing primers for reference gene normalization in qPCR experiments.
 

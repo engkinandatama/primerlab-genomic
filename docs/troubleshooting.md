@@ -1,4 +1,7 @@
-# Troubleshooting
+---
+title: "Troubleshooting"
+description: "Solutions for common PrimerLab issues"
+---
 
 Comprehensive solutions for common issues when using PrimerLab.
 

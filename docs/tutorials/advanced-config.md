@@ -1,4 +1,7 @@
-# Advanced Configuration
+---
+title: "Advanced Configuration"
+description: "In-depth guide to PrimerLab configuration options"
+---
 
 A deep dive into every possible configuration parameter in PrimerLab. Use this guide to fine-tune your designs.
 

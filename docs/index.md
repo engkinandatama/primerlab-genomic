@@ -1,4 +1,7 @@
-# PrimerLab Documentation
+---
+title: "PrimerLab Documentation"
+description: "Modular bioinformatics framework for automated primer and probe design"
+---
 
 **PrimerLab** is a modular bioinformatics framework for automated primer and probe design.
 

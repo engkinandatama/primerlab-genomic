@@ -1,4 +1,7 @@
-# Getting Started
+---
+title: "Getting Started"
+description: "Install PrimerLab and run your first primer design"
+---
 
 ## Installation Options
 

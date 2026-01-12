@@ -1,4 +1,7 @@
-# API Reference
+---
+title: "API Reference"
+description: "Python API for programmatic access to PrimerLab"
+---
 
 Python API for programmatic access to PrimerLab.
 
