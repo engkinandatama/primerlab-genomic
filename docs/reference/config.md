@@ -1,4 +1,7 @@
-# Configuration Reference
+---
+title: "Configuration Reference"
+description: "YAML configuration file reference for PrimerLab"
+---
 
 Complete reference for all PrimerLab configuration parameters.
 

@@ -1,4 +1,7 @@
-# CLI Reference
+---
+title: "CLI Reference"
+description: "Command-line interface reference for PrimerLab"
+---
 
 Complete command-line reference for PrimerLab Genomic v1.0.1.
 

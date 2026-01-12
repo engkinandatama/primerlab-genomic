@@ -1,4 +1,7 @@
-# Presets Reference
+---
+title: "Presets Reference"
+description: "Pre-configured parameter sets for common PCR applications"
+---
 
 PrimerLab includes optimized presets for common PCR applications. Presets provide pre-configured parameters that you can use as-is or customize.
 
