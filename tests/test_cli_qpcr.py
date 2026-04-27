@@ -1,3 +1,4 @@
+import sys
 """
 Unit tests for v0.6.0 qPCR CLI commands.
 Tests: probe-check, melt-curve, amplicon-qc
@@ -14,7 +15,7 @@ class TestProbeCheckCLI:
     def test_probe_check_basic(self):
         """Test basic probe-check command."""
         result = subprocess.run(
-            ["python", "-m", "primerlab.cli.main", "probe-check",
+            [sys.executable, "-m", "primerlab.cli.main", "probe-check",
              "--probe", "ATGCGATCGATCGATCGATCG"],
             capture_output=True,
             text=True
@@ -26,7 +27,7 @@ class TestProbeCheckCLI:
     def test_probe_check_json_output(self):
         """Test probe-check with JSON output."""
         result = subprocess.run(
-            ["python", "-m", "primerlab.cli.main", "probe-check",
+            [sys.executable, "-m", "primerlab.cli.main", "probe-check",
              "--probe", "ATGCGATCGATCGATCGATCG",
              "--format", "json"],
             capture_output=True,
@@ -40,7 +41,7 @@ class TestProbeCheckCLI:
     def test_probe_check_with_amplicon(self):
         """Test probe-check with amplicon context."""
         result = subprocess.run(
-            ["python", "-m", "primerlab.cli.main", "probe-check",
+            [sys.executable, "-m", "primerlab.cli.main", "probe-check",
              "--probe", "ATGCGATCGATCGATCGATCG",
              "--amplicon", "ATGCGATCGATCGATCGATCGATCGATCGATCGATCGATCG"],
             capture_output=True,
@@ -56,7 +57,7 @@ class TestMeltCurveCLI:
     def test_melt_curve_basic(self):
         """Test basic melt-curve command."""
         result = subprocess.run(
-            ["python", "-m", "primerlab.cli.main", "melt-curve",
+            [sys.executable, "-m", "primerlab.cli.main", "melt-curve",
              "--amplicon", "ATGCGATCGATCGATCGATCGATCGATCGATCG"],
             capture_output=True,
             text=True
@@ -68,7 +69,7 @@ class TestMeltCurveCLI:
     def test_melt_curve_json_output(self):
         """Test melt-curve with JSON output."""
         result = subprocess.run(
-            ["python", "-m", "primerlab.cli.main", "melt-curve",
+            [sys.executable, "-m", "primerlab.cli.main", "melt-curve",
              "--amplicon", "ATGCGATCGATCGATCGATCGATCGATCGATCG",
              "--format", "json"],
             capture_output=True,
@@ -88,7 +89,7 @@ class TestAmpliconQcCLI:
         # 97bp amplicon
         amplicon = "ATGCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCG"
         result = subprocess.run(
-            ["python", "-m", "primerlab.cli.main", "amplicon-qc",
+            [sys.executable, "-m", "primerlab.cli.main", "amplicon-qc",
              "--amplicon", amplicon],
             capture_output=True,
             text=True
@@ -102,7 +103,7 @@ class TestAmpliconQcCLI:
         """Test amplicon-qc with JSON output."""
         amplicon = "ATGCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCG"
         result = subprocess.run(
-            ["python", "-m", "primerlab.cli.main", "amplicon-qc",
+            [sys.executable, "-m", "primerlab.cli.main", "amplicon-qc",
              "--amplicon", amplicon,
              "--format", "json"],
             capture_output=True,
@@ -119,7 +120,7 @@ class TestAmpliconQcCLI:
         """Test amplicon-qc with custom length range."""
         amplicon = "ATGCGATCGATCGATCGATCGATCGATCGATCG"  # 33bp
         result = subprocess.run(
-            ["python", "-m", "primerlab.cli.main", "amplicon-qc",
+            [sys.executable, "-m", "primerlab.cli.main", "amplicon-qc",
              "--amplicon", amplicon,
              "--min-length", "20",
              "--max-length", "50"],
@@ -136,7 +137,7 @@ class TestPlotMeltOption:
     def test_plot_melt_help(self):
         """Test --plot-melt appears in run help."""
         result = subprocess.run(
-            ["python", "-m", "primerlab.cli.main", "run", "--help"],
+            [sys.executable, "-m", "primerlab.cli.main", "run", "--help"],
             capture_output=True,
             text=True
         )

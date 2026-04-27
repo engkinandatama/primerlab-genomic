@@ -5,6 +5,79 @@ All notable changes to PrimerLab will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-04-27 - Thermodynamic Engine & Advanced Primer3 Features
+
+### Highlights
+
+**Major feature release completing the Thermodynamic Engine initiative (Phases 1–4)**
+
+- Full Primer3 configuration coverage — 40+ new YAML parameters exposed
+- Advanced PRIMER_TASK variants: `check_primers`, `pick_sequencing_primers`, `pick_discriminative_primers`
+- Restriction site (cloning) overhang addition with 24 built-in enzymes
+- IUPAC template preservation and degenerate primer analysis
+- Multi-library mispriming/mishybridization support
+- Windows multiprocessing stability fix (pickle-safe worker functions)
+
+### Added
+
+**Phase 1 — Configuration Expansion**
+- Config `thermodynamics.*`: `tm_method`, `salt_corrections`, `salt_monovalent`, `salt_divalent`, `dntp_conc`, `dna_conc`
+- Config `parameters.max_poly_x`, `parameters.max_ns` exposed via YAML and CLI
+- CLI `--max-poly-x`, `--max-ns`, `--num-candidates` flags for `run` command
+- Config `parameters.gc.opt`, `gc.min`, `gc.max` → `PRIMER_OPT_GC_PERCENT`
+- Config `parameters.included_region`, `parameters.excluded_regions`
+- Config `parameters.force_left_start/end`, `parameters.force_right_start/end`
+- Config `parameters.must_match_five_prime`, `parameters.must_match_three_prime`
+- Config `parameters.qc_method` (`threshold` vs `any`) for self-complementarity checks
+- Config `parameters.weights.*` → `PRIMER_WT_*` penalty weights
+- 8 new tests in `tests/test_config_thermo.py`
+
+**Phase 2 — Re-ranking & ViennaRNA Integration**
+- Re-ranking pipeline: `RerankingEngine` with pluggable scoring functions
+- Pre-Primer3 filtering and post-design ranking integrated in workflow
+- ViennaRNA amplicon structure evaluation (optional dependency)
+- `SEQUENCE_INTERNAL_OLIGO_EXCLUDED_REGION` support for probe exclusions
+
+**Phase 3 — Workflow Orchestration**
+- `QCResult.end_stability_ok`, `QCResult.end_stability_dg` fields
+- Semi-nested PCR workflow (`primerlab run seminested`)
+- Genotyping/variant-aware primer design improvements
+
+**Phase 4 — New Primer3 Features**
+- `SequenceLoader.load()` now accepts `preserve_iupac` (default: `True`) and `input_type` (`auto|dna|rna`) parameters
+- CLI `--input-type dna|rna|auto` for the `run` command
+- `Primer.degeneracy_multiplier` and `Primer.possible_sequences` auto-calculated from IUPAC codes
+- Automatic warning when primer degeneracy > 256
+- New CLI subcommand: `check-primers --forward SEQ --reverse SEQ --template FILE`
+- New CLI subcommand: `design-probe --primers FILE --template FILE`
+- CLI `--pick-only left|right` for single-sided primer design
+- Config `parameters.mispriming_library` → `PRIMER_MISPRIMING_LIBRARY` with path validation
+- Config `parameters.repeat_library` → `PRIMER_INTERNAL_MIPO_LIBRARY` with path validation
+- Config `parameters.probe.mishyb_library_path` → `PRIMER_INTERNAL_MISHYB_LIBRARY`
+- `workflow: sequencing` → Primer3 `pick_sequencing_primers` TASK
+- Config `parameters.sequencing_lead`, `sequencing_spacing`, `sequencing_accuracy`
+- `workflow: discriminative` → Primer3 `pick_discriminative_primers` TASK
+- CLI `--add-sites EcoRI,BamHI` with 24 built-in restriction enzyme sequences
+- `Primer3Wrapper._apply_restriction_overhangs()` — prepends recognition site + GC clamp to 5' ends
+- Right primer gets reverse-complement of recognition site for correct sense-strand appearance post-PCR
+- New tests: `test_p3_wrapper_pick_only.py`, `test_p3_wrapper_tasks.py`, `test_primer_degeneracy.py`, `test_p3_wrapper_libraries.py`
+
+### Fixed
+
+- **Critical**: `UnboundLocalError: cannot access local variable 'load_and_merge_config'` — local imports inside `main()` were shadowing the module-level import, causing all `run` and `compat-check` commands to crash
+- Windows multiprocessing `pickle` error: moved `_run_p3_process` worker to module-level (top-level function)
+- Unicode `❌` characters removed from terminal print statements to prevent `UnicodeEncodeError` on Windows cp1252
+- `test_export.py` fixtures updated with missing `QCResult.end_stability_ok` / `end_stability_dg` fields
+- Subprocess tests fixed to use `sys.executable` instead of hardcoded `python`
+
+### Changed
+
+- Version: `1.0.1` → `1.1.0`
+- Default `input.preserve_iupac` is now `True` (IUPAC codes kept in template sequences)
+- `Primer3Wrapper` imports moved to top-level of `cli/main.py` for correct Python scoping
+
+---
+
 ## [1.0.0] - 2026-01-11 - Stable Release 🎉
 
 ### Highlights

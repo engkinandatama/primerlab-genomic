@@ -82,32 +82,74 @@ class TestRNAConversion:
         assert 'u' not in result
         assert 'T' in result
 
+    def test_explicit_input_type_dna_raises_on_rna(self):
+        """Test input_type='dna' raises error when RNA is provided."""
+        from primerlab.core.sequence import SequenceLoader
+        from primerlab.core.exceptions import SequenceError
+        
+        rna = "AUGCAUGCAUGCAUGCAUGCAUGCAUGCAUGCAUGCAUGCAUGCAUGCAUGC"
+        
+        with pytest.raises(SequenceError) as exc_info:
+            SequenceLoader._clean_and_validate(rna, input_type="dna")
+            
+        assert "ERR_SEQ_TYPE_MISMATCH" in str(exc_info.value)
+
+    def test_explicit_input_type_rna_converts(self):
+        """Test input_type='rna' converts normally, even without U."""
+        from primerlab.core.sequence import SequenceLoader
+        
+        dna = "ATGCATGCATGCATGCATGCATGCATGCATGCATGCATGCATGCATGCATGC"
+        # even though it's DNA, input_type='rna' should just process it
+        result = SequenceLoader._clean_and_validate(dna, input_type="rna")
+        assert result == dna
+
 
 class TestIUPACCodes:
     """Tests for IUPAC ambiguous code handling."""
     
-    def test_iupac_codes_converted_to_n(self):
-        """Test IUPAC codes (R,Y,W,S,K,M,B,D,H,V) are converted to N."""
+    def test_iupac_codes_preserved_by_default(self):
+        """Test IUPAC codes are preserved by default in v1.1.0."""
         from primerlab.core.sequence import SequenceLoader
         
-        # Sequence with IUPAC codes: R (A/G), Y (C/T)
         sequence = "ATGCATGCATGCATGCATGCATGCATGCATGCATGCATGCATGCRYSWATGC"
         result = SequenceLoader._clean_and_validate(sequence)
+        
+        assert 'R' in result
+        assert 'Y' in result
+        assert 'S' in result
+        assert 'W' in result
+        assert 'N' not in result
+
+    def test_iupac_codes_converted_to_n(self):
+        """Test IUPAC codes are converted to N when preserve_iupac=False."""
+        from primerlab.core.sequence import SequenceLoader
+        
+        sequence = "ATGCATGCATGCATGCATGCATGCATGCATGCATGCATGCATGCRYSWATGC"
+        result = SequenceLoader._clean_and_validate(sequence, preserve_iupac=False)
         
         assert 'R' not in result
         assert 'Y' not in result
         assert 'S' not in result
         assert 'W' not in result
-        # IUPAC codes should be replaced with N
         assert 'N' in result
     
-    def test_all_iupac_codes(self):
-        """Test all IUPAC ambiguous codes are handled."""
+    def test_all_iupac_codes_preserved(self):
+        """Test all IUPAC ambiguous codes are preserved."""
         from primerlab.core.sequence import SequenceLoader
         
-        # Sequence with all IUPAC codes
         sequence = "ATGCATGCATGCATGCATGCATGCATGCATGCATGCATGCRYSWKMBDHVATGC"
         result = SequenceLoader._clean_and_validate(sequence)
+        
+        iupac_codes = set("RYSWKMBDHV")
+        for code in iupac_codes:
+            assert code in result
+
+    def test_all_iupac_codes_converted(self):
+        """Test all IUPAC ambiguous codes are converted when preserve_iupac=False."""
+        from primerlab.core.sequence import SequenceLoader
+        
+        sequence = "ATGCATGCATGCATGCATGCATGCATGCATGCATGCATGCRYSWKMBDHVATGC"
+        result = SequenceLoader._clean_and_validate(sequence, preserve_iupac=False)
         
         iupac_codes = set("RYSWKMBDHV")
         for code in iupac_codes:

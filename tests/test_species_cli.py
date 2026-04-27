@@ -1,3 +1,4 @@
+import sys
 """
 Tests for species-check CLI command.
 """
@@ -15,7 +16,7 @@ class TestSpeciesCheckCLI:
     def test_help_output(self):
         """Verify species-check --help shows all options."""
         result = subprocess.run(
-            ["python", "-m", "primerlab.cli.main", "species-check", "--help"],
+            [sys.executable, "-m", "primerlab.cli.main", "species-check", "--help"],
             capture_output=True,
             text=True,
             timeout=30
@@ -30,7 +31,7 @@ class TestSpeciesCheckCLI:
     def test_missing_required_args(self):
         """Verify error when required args missing."""
         result = subprocess.run(
-            ["python", "-m", "primerlab.cli.main", "species-check"],
+            [sys.executable, "-m", "primerlab.cli.main", "species-check"],
             capture_output=True,
             text=True,
             timeout=30
@@ -83,7 +84,7 @@ NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
         
         result = subprocess.run(
             [
-                "python", "-m", "primerlab.cli.main", "species-check",
+                sys.executable, "-m", "primerlab.cli.main", "species-check",
                 "--primers", sample_primers_json,
                 "--target", sample_target_fasta,
                 "--output", str(output_dir),
@@ -103,7 +104,7 @@ NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
         
         result = subprocess.run(
             [
-                "python", "-m", "primerlab.cli.main", "species-check",
+                sys.executable, "-m", "primerlab.cli.main", "species-check",
                 "--primers", sample_primers_json,
                 "--target", sample_target_fasta,
                 "--offtargets", sample_offtarget_fasta,
@@ -123,7 +124,7 @@ NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
         
         subprocess.run(
             [
-                "python", "-m", "primerlab.cli.main", "species-check",
+                sys.executable, "-m", "primerlab.cli.main", "species-check",
                 "--primers", sample_primers_json,
                 "--target", sample_target_fasta,
                 "--output", str(output_dir),

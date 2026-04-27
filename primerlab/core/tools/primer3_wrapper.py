@@ -1,10 +1,20 @@
 import primer3
 from typing import Dict, Any, List
-from primerlab.core.exceptions import ToolExecutionError
+from primerlab.core.exceptions import ToolExecutionError, PrimerLabException
 from primerlab.core.logger import get_logger
 
 logger = get_logger()
 
+# Helper function for the worker process (must be top-level for multiprocessing on Windows)
+def _run_p3_process(seq_args, global_args, queue):
+    try:
+        res = primer3.bindings.design_primers(
+            seq_args=seq_args,
+            global_args=global_args
+        )
+        queue.put({"success": True, "data": res})
+    except Exception as e:
+        queue.put({"success": False, "error": str(e)})
 
 class Primer3Wrapper:
     """
@@ -30,10 +40,30 @@ class Primer3Wrapper:
         """
         default_num_candidates = 30 if workflow_type == 'qpcr' else 50
 
+        # Task 4.4 and 4.5: pick_only support
+        pick_left = 1
+        pick_right = 1
+        pick_internal = 1 if workflow_type == 'qpcr' else 0
+        
+        pick_only = params.get('pick_only', None)
+        if pick_only == 'left':
+            pick_right = 0
+            pick_internal = 0
+        elif pick_only == 'right':
+            pick_left = 0
+            pick_internal = 0
+        elif pick_only == 'probe':
+            pick_left = 0
+            pick_right = 0
+            pick_internal = 1
+
         p3_settings = {
-            'PRIMER_TASK': 'generic',
-            'PRIMER_PICK_LEFT_PRIMER': 1,
-            'PRIMER_PICK_RIGHT_PRIMER': 1,
+            'PRIMER_TASK': 'pick_sequencing_primers' if workflow_type == 'sequencing' else (
+                'pick_discriminative_primers' if workflow_type == 'discriminative' else 'generic'
+            ),
+            'PRIMER_PICK_LEFT_PRIMER': pick_left,
+            'PRIMER_PICK_RIGHT_PRIMER': pick_right,
+            'PRIMER_PICK_INTERNAL_OLIGO': pick_internal,
             'PRIMER_NUM_RETURN': params.get('num_candidates', default_num_candidates),
 
             # Size
@@ -56,6 +86,34 @@ class Primer3Wrapper:
             'PRIMER_MAX_POLY_X': params.get('max_poly_x', 4),
             'PRIMER_MAX_NS_ACCEPTED': params.get('max_ns', 0),
         }
+
+        if workflow_type == 'sequencing':
+            p3_settings['PRIMER_SEQUENCING_LEAD'] = params.get('sequencing_lead', 50)
+            p3_settings['PRIMER_SEQUENCING_SPACING'] = params.get('sequencing_spacing', 500)
+            p3_settings['PRIMER_SEQUENCING_ACCURACY'] = params.get('sequencing_accuracy', 20)
+
+        # Task 4.6 - Mispriming and Repeat Libraries
+        if 'mispriming_library' in params:
+            import os
+            lib_path = params['mispriming_library']
+            if os.path.exists(lib_path):
+                p3_settings['PRIMER_MISPRIMING_LIBRARY'] = lib_path
+                logger.info(f"Using mispriming library: {lib_path}")
+            else:
+                from primerlab.core.exceptions import PrimerLabException
+                logger.error(f"Mispriming library not found: {lib_path}")
+                raise PrimerLabException(f"Mispriming library not found: {lib_path}", "ERR_P3_LIB_NOT_FOUND")
+
+        if 'repeat_library' in params:
+            import os
+            lib_path = params['repeat_library']
+            if os.path.exists(lib_path):
+                p3_settings['PRIMER_INTERNAL_MIPO_LIBRARY'] = lib_path
+                logger.info(f"Using repeat library: {lib_path}")
+            else:
+                from primerlab.core.exceptions import PrimerLabException
+                logger.error(f"Repeat library not found: {lib_path}")
+                raise PrimerLabException(f"Repeat library not found: {lib_path}", "ERR_P3_LIB_NOT_FOUND")
 
         return p3_settings
 
@@ -159,12 +217,150 @@ class Primer3Wrapper:
             'force_left_end':    'SEQUENCE_FORCE_LEFT_END',
             'force_right_start': 'SEQUENCE_FORCE_RIGHT_START',
             'force_right_end':   'SEQUENCE_FORCE_RIGHT_END',
+            'existing_forward':  'SEQUENCE_PRIMER',
+            'existing_reverse':  'SEQUENCE_PRIMER_REVCOMP',
         }
         for cfg_key, p3_key in forced_map.items():
             if cfg_key in params:
                 seq_args[p3_key] = params[cfg_key]
 
         return seq_args
+
+    # Built-in restriction enzyme recognition sequences (5'→3' sense strand)
+    RESTRICTION_SITES: Dict[str, str] = {
+        # Type II enzymes (most common in cloning)
+        'EcoRI':   'GAATTC',
+        'EcoRV':   'GATATC',
+        'BamHI':   'GGATCC',
+        'BglII':   'AGATCT',
+        'HindIII': 'AAGCTT',
+        'NcoI':    'CCATGG',
+        'NdeI':    'CATATG',
+        'NheI':    'GCTAGC',
+        'NotI':    'GCGGCCGC',
+        'SalI':    'GTCGAC',
+        'SpeI':    'ACTAGT',
+        'XbaI':    'TCTAGA',
+        'XhoI':    'CTCGAG',
+        'XmaI':    'CCCGGG',
+        'KpnI':    'GGTACC',
+        'SacI':    'GAGCTC',
+        'PstI':    'CTGCAG',
+        'SmaI':    'CCCGGG',
+        'SphI':    'GCATGC',
+        'AvaI':    'CYCGRG',
+        'ClaI':    'ATCGAT',
+        'MluI':    'ACGCGT',
+        'AgeI':    'ACCGGT',
+    }
+
+    # GC clamp added between restriction site and primer to ensure cutting efficiency
+    CLAMP = 'GC'
+
+    def _apply_restriction_overhangs(
+        self,
+        p3_data: Dict[str, Any],
+        add_sites: List[str],
+        num_pairs: int
+    ) -> Dict[str, Any]:
+        """
+        Task 4.10: Appends restriction site overhangs to the 5' end of
+        primer sequences in raw Primer3 output.
+
+        For each primer pair, prepend:
+        - site[0] recognition sequence (+ GC clamp) to LEFT primers
+        - site[1] recognition sequence (+ GC clamp) to RIGHT primers
+        - If only one site given, applies to both ends
+
+        Args:
+            p3_data: Raw dict output from Primer3.
+            add_sites: List of restriction enzyme names (e.g. ['EcoRI', 'BamHI']).
+            num_pairs: Number of primer pairs returned.
+
+        Returns:
+            Modified p3_data with overhang-appended sequences.
+        """
+        if not add_sites:
+            return p3_data
+
+        # Resolve enzyme names (case-insensitive lookup)
+        site_lookup = {k.upper(): v for k, v in self.RESTRICTION_SITES.items()}
+
+        left_site_name  = add_sites[0].upper()
+        right_site_name = add_sites[1].upper() if len(add_sites) > 1 else left_site_name
+
+        left_recog  = site_lookup.get(left_site_name)
+        right_recog = site_lookup.get(right_site_name)
+
+        if not left_recog:
+            logger.warning(f"Unknown restriction enzyme: {add_sites[0]}. Overhang not added to left primer.")
+        if not right_recog:
+            logger.warning(f"Unknown restriction enzyme: {add_sites[-1]}. Overhang not added to right primer.")
+
+        for i in range(num_pairs):
+            left_key  = f'PRIMER_LEFT_{i}_SEQUENCE'
+            right_key = f'PRIMER_RIGHT_{i}_SEQUENCE'
+
+            if left_recog and left_key in p3_data:
+                original = p3_data[left_key]
+                overhang = left_recog + self.CLAMP
+                p3_data[left_key] = overhang + original
+                p3_data[f'PRIMER_LEFT_{i}_OVERHANG'] = overhang
+                logger.debug(
+                    f"Pair {i} LEFT: added {add_sites[0]} overhang "
+                    f"({overhang}) → {p3_data[left_key]}"
+                )
+
+            if right_recog and right_key in p3_data:
+                original = p3_data[right_key]
+                # Right primer overhang: reverse complement of recognition site
+                # so it will appear as the correct site on the sense strand after PCR
+                rc_map = str.maketrans('ATCG', 'TAGC')
+                rc_recog = right_recog.translate(rc_map)[::-1]
+                overhang = rc_recog + self.CLAMP
+                p3_data[right_key] = overhang + original
+                p3_data[f'PRIMER_RIGHT_{i}_OVERHANG'] = overhang
+                logger.debug(
+                    f"Pair {i} RIGHT: added {add_sites[-1]} RC overhang "
+                    f"({overhang}) → {p3_data[right_key]}"
+                )
+
+        enzyme_summary = f"{add_sites[0]}" + (f" / {add_sites[1]}" if len(add_sites) > 1 else "")
+        logger.info(
+            f"Restriction site overhangs added: {enzyme_summary} "
+            f"({num_pairs} pair(s) modified)"
+        )
+        return p3_data
+
+    def check_existing_primers(self, forward: str, reverse: str, target: str, settings: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Evaluates existing primers against a target sequence using Primer3.
+        
+        Args:
+            forward: Forward primer sequence.
+            reverse: Reverse primer sequence.
+            target: Template DNA sequence.
+            settings: Dictionary of Primer3 settings (thermodynamics, salt, etc.).
+            
+        Returns:
+            Raw dictionary output from primer3.
+        """
+        seq_args = {
+            'SEQUENCE_ID': 'check_run',
+            'SEQUENCE_TEMPLATE': target,
+            'SEQUENCE_PRIMER': forward,
+            'SEQUENCE_PRIMER_REVCOMP': reverse
+        }
+        
+        p3_settings = dict(settings)
+        p3_settings['PRIMER_TASK'] = 'check_primers'
+        
+        logger.info(f"Checking existing primer pair against target...")
+        try:
+            return primer3.bindings.design_primers(seq_args, p3_settings)
+        except Exception as e:
+            logger.error(f"Failed to check primers: {str(e)}")
+            raise PrimerLabException(f"Primer3 check failed: {str(e)}", "ERR_P3_CHECK")
 
     def design_primers(self, sequence: str, config: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -198,24 +394,37 @@ class Primer3Wrapper:
         # Probe Design (qPCR)
         probe_params = params.get('probe')
         if probe_params:
-            p3_settings.update({
-                'PRIMER_PICK_INTERNAL_OLIGO':   1,
-                'PRIMER_INTERNAL_OPT_SIZE':     probe_params.get('size', {}).get('opt', 20),
-                'PRIMER_INTERNAL_MIN_SIZE':     probe_params.get('size', {}).get('min', 18),
-                'PRIMER_INTERNAL_MAX_SIZE':     probe_params.get('size', {}).get('max', 27),
-                'PRIMER_INTERNAL_OPT_TM':       probe_params.get('tm', {}).get('opt', 70.0),
-                'PRIMER_INTERNAL_MIN_TM':       probe_params.get('tm', {}).get('min', 68.0),
-                'PRIMER_INTERNAL_MAX_TM':       probe_params.get('tm', {}).get('max', 72.0),
-                'PRIMER_INTERNAL_MIN_GC':       probe_params.get('gc', {}).get('min', 30.0),
-                'PRIMER_INTERNAL_MAX_GC':       probe_params.get('gc', {}).get('max', 80.0),
-            })
-            if thermo_params:
+            if 'PRIMER_PICK_INTERNAL_OLIGO' not in p3_settings or p3_settings['PRIMER_PICK_INTERNAL_OLIGO'] != 0:
                 p3_settings.update({
-                    'PRIMER_INTERNAL_SALT_MONOVALENT': thermo_params.get('salt_monovalent', 50.0),
-                    'PRIMER_INTERNAL_SALT_DIVALENT':   thermo_params.get('salt_divalent', 1.5),
-                    'PRIMER_INTERNAL_DNTP_CONC':       thermo_params.get('dntp_conc', 0.6),
-                    'PRIMER_INTERNAL_DNA_CONC':        thermo_params.get('dna_conc', 50.0),
+                    'PRIMER_PICK_INTERNAL_OLIGO':   1,
+                    'PRIMER_INTERNAL_OPT_SIZE':     probe_params.get('size', {}).get('opt', 20),
+                    'PRIMER_INTERNAL_MIN_SIZE':     probe_params.get('size', {}).get('min', 18),
+                    'PRIMER_INTERNAL_MAX_SIZE':     probe_params.get('size', {}).get('max', 27),
+                    'PRIMER_INTERNAL_OPT_TM':       probe_params.get('tm', {}).get('opt', 70.0),
+                    'PRIMER_INTERNAL_MIN_TM':       probe_params.get('tm', {}).get('min', 68.0),
+                    'PRIMER_INTERNAL_MAX_TM':       probe_params.get('tm', {}).get('max', 72.0),
+                    'PRIMER_INTERNAL_MIN_GC':       probe_params.get('gc', {}).get('min', 30.0),
+                    'PRIMER_INTERNAL_MAX_GC':       probe_params.get('gc', {}).get('max', 80.0),
                 })
+                if thermo_params:
+                    p3_settings.update({
+                        'PRIMER_INTERNAL_SALT_MONOVALENT': thermo_params.get('salt_monovalent', 50.0),
+                        'PRIMER_INTERNAL_SALT_DIVALENT':   thermo_params.get('salt_divalent', 1.5),
+                        'PRIMER_INTERNAL_DNTP_CONC':       thermo_params.get('dntp_conc', 0.6),
+                        'PRIMER_INTERNAL_DNA_CONC':        thermo_params.get('dna_conc', 50.0),
+                    })
+                
+                # Task 4.7 Mishybridization library for probes
+                if 'mishyb_library_path' in probe_params:
+                    import os
+                    lib_path = probe_params['mishyb_library_path']
+                    if os.path.exists(lib_path):
+                        p3_settings['PRIMER_INTERNAL_MISHYB_LIBRARY'] = lib_path
+                        logger.info(f"Using probe mishybridization library: {lib_path}")
+                    else:
+                        from primerlab.core.exceptions import PrimerLabException
+                        logger.error(f"Probe mishybridization library not found: {lib_path}")
+                        raise PrimerLabException(f"Probe mishybridization library not found: {lib_path}", "ERR_P3_LIB_NOT_FOUND")
 
         # QC method — Task 3.8
         self._apply_qc_method_settings(p3_settings, params)
@@ -244,23 +453,12 @@ class Primer3Wrapper:
 
         timeout_seconds = config.get("advanced", {}).get("timeout", 30)
 
-        # Helper function for the worker process
-        def _run_p3(seq_args, global_args, queue):
-            try:
-                res = primer3.bindings.design_primers(
-                    seq_args=seq_args,
-                    global_args=global_args
-                )
-                queue.put({"success": True, "data": res})
-            except Exception as e:
-                queue.put({"success": False, "error": str(e)})
-
         # Create a Queue to get results
         queue = multiprocessing.Queue()
 
         # Create and start the process
         p = multiprocessing.Process(
-            target=_run_p3, 
+            target=_run_p3_process, 
             args=(seq_args, p3_settings, queue)
         )
         p.start()
@@ -318,6 +516,12 @@ class Primer3Wrapper:
                     )
 
                 logger.info(f"Primer3 returned {num_returned} pairs.")
+
+                # Task 4.10 — Restriction site overhang addition (cloning)
+                add_sites = params.get('add_sites', [])
+                if add_sites:
+                    data = self._apply_restriction_overhangs(data, add_sites, num_returned)
+
                 return data
             else:
                 raise ToolExecutionError(f"Primer3 failed: {result_wrapper['error']}", "ERR_TOOL_P3_001")

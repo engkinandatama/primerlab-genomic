@@ -19,14 +19,17 @@ class SequenceLoader:
         return cls._last_sequence_name
 
     @staticmethod
-    def load(input_data: str) -> str:
+    def load(input_data: str, preserve_iupac: bool = True, input_type: str = "auto") -> str:
         """
         Loads sequence from a raw string or a file path.
         
         v0.1.5: Enhanced FASTA support with multi-sequence handling.
+        v1.1.0: Added preserve_iupac flag (default True) and input_type (dna|rna|auto).
         
         Args:
             input_data: Raw DNA string or path to a FASTA/text file.
+            preserve_iupac: If True, keep IUPAC codes instead of converting to N.
+            input_type: "auto", "dna", or "rna"
             
         Returns:
             Cleaned uppercase DNA sequence.
@@ -78,7 +81,7 @@ class SequenceLoader:
         SequenceLoader._last_sequence_name = sequence_name
 
         # Clean and Validate
-        cleaned_seq = SequenceLoader._clean_and_validate(sequence)
+        cleaned_seq = SequenceLoader._clean_and_validate(sequence, preserve_iupac=preserve_iupac, input_type=input_type)
         return cleaned_seq
 
     @staticmethod
@@ -114,13 +117,17 @@ class SequenceLoader:
         return sequences
 
     @staticmethod
-    def _clean_and_validate(sequence: str) -> str:
+    def _clean_and_validate(sequence: str, preserve_iupac: bool = True, input_type: str = "auto") -> str:
         """
         Validates DNA characters and converts to uppercase.
         
         v0.1.6 Enhancements:
         - Converts RNA (U) to DNA (T) with warning
         - Converts IUPAC ambiguous codes to N with warning
+        
+        v1.1.0 Enhancements:
+        - Optionally preserves IUPAC ambiguous codes
+        - Handles explicit input_type (dna, rna, auto)
         """
         if not sequence:
             raise SequenceError("Input sequence is empty.", "ERR_SEQ_EMPTY")
@@ -128,38 +135,55 @@ class SequenceLoader:
         # v0.1.6: Convert to uppercase first, then handle special cases
         sequence = sequence.replace(" ", "").replace("\n", "").replace("\r", "")
 
-        # v0.1.6: Check for RNA (U/u) and convert to DNA
-        if 'U' in sequence or 'u' in sequence:
-            logger.warning("RNA sequence detected (contains U). Converting to DNA (U→T).")
+        # v0.1.6 / v1.1.0: Check for RNA (U/u) and convert to DNA
+        is_rna = 'U' in sequence or 'u' in sequence
+        input_type = input_type.lower()
+        
+        if input_type == "rna" or (input_type == "auto" and is_rna):
+            if is_rna:
+                logger.warning("RNA sequence detected (contains U). Converting to cDNA (U→T) for primer design.")
+            else:
+                logger.warning("Input type specified as RNA, but no U detected. Processing as cDNA.")
             sequence = sequence.replace('U', 'T').replace('u', 't')
+            # Suggest RT-qPCR if workflow context allows (usually handled upstream)
+            
+        elif input_type == "dna" and is_rna:
+            raise SequenceError("Input type specified as DNA, but RNA sequence detected (contains U).", "ERR_SEQ_TYPE_MISMATCH")
 
         # Now convert to uppercase
         sequence = sequence.upper()
 
-        # v0.1.6: IUPAC ambiguous codes
+        # v0.1.6 / v1.1.0: IUPAC ambiguous codes
         IUPAC_AMBIGUOUS = set("RYSWKMBDHV")
         standard_chars = set("ATCGN")
+        if preserve_iupac:
+            standard_chars.update(IUPAC_AMBIGUOUS)
+
         unique_chars = set(sequence)
 
         # Find any IUPAC codes in the sequence
         iupac_found = unique_chars & IUPAC_AMBIGUOUS
         if iupac_found:
-            logger.warning(
-                f"IUPAC ambiguous codes detected: {iupac_found}. "
-                f"Converting to N (will be masked/excluded from primer placement)."
-            )
-            # Convert all IUPAC codes to N
-            for code in IUPAC_AMBIGUOUS:
-                sequence = sequence.replace(code, 'N')
+            if preserve_iupac:
+                logger.debug(f"IUPAC ambiguous codes preserved: {iupac_found}.")
+            else:
+                logger.warning(
+                    f"IUPAC ambiguous codes detected: {iupac_found}. "
+                    f"Converting to N (will be masked/excluded from primer placement)."
+                )
+                # Convert all IUPAC codes to N
+                for code in IUPAC_AMBIGUOUS:
+                    sequence = sequence.replace(code, 'N')
 
         # Check for remaining invalid characters
         unique_chars = set(sequence)
         invalid_chars = unique_chars - standard_chars
 
         if invalid_chars:
+            allowed_desc = "A, T, G, C, N. IUPAC codes are allowed if preserve_iupac is True." if preserve_iupac else "A, T, G, C, N. IUPAC codes (R,Y,W,S,K,M,B,D,H,V) are converted to N."
             raise SequenceError(
                 f"Invalid characters found in sequence: {invalid_chars}. "
-                f"Allowed: A, T, G, C, N. IUPAC codes (R,Y,W,S,K,M,B,D,H,V) are converted to N.",
+                f"Allowed: {allowed_desc}",
                 "ERR_SEQ_INVALID_CHAR"
             )
 

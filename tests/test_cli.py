@@ -16,7 +16,7 @@ class TestCLIVersion:
     def test_version_command(self):
         """Test --version flag."""
         result = subprocess.run(
-            ["python", "-m", "primerlab.cli.main", "--version"],
+            [sys.executable, "-m", "primerlab.cli.main", "--version"],
             capture_output=True,
             text=True
         )
@@ -26,7 +26,7 @@ class TestCLIVersion:
     def test_version_subcommand(self):
         """Test version subcommand."""
         result = subprocess.run(
-            ["python", "-m", "primerlab.cli.main", "version"],
+            [sys.executable, "-m", "primerlab.cli.main", "version"],
             capture_output=True,
             text=True
         )

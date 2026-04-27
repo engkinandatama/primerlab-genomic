@@ -67,15 +67,11 @@ class qPCRQC(BaseQC):
             msg = f"Probe Tm ({probe.tm:.2f}°C) is not significantly higher than primers ({avg_primer_tm:.2f}°C). Diff: {tm_diff:.2f}°C < {self.probe_tm_min_diff}°C"
             warnings.append(msg)
 
-        # 2. Probe Secondary Structure (using ViennaRNA)
-        probe_fold = self.vienna.fold(probe.sequence)
-        probe_dg = probe_fold.get("mfe", 0.0)
+        # 2. Probe Secondary Structure (using ThermoAnalysis)
+        probe_res = self.thermo.calc_hairpin(probe.sequence)
+        probe_dg = probe_res.dg
 
-        if "error" in probe_fold:
-            warnings.append("Probe secondary structure QC skipped: ViennaRNA (RNAfold) not available or failed.")
-            probe_hairpin_ok = True
-        else:
-            probe_hairpin_ok = probe_dg >= self.hairpin_dg_min
+        probe_hairpin_ok = probe_dg >= self.hairpin_dg_min
 
         if not probe_hairpin_ok:
             warnings.append(f"Probe hairpin ΔG ({probe_dg:.2f}) too stable (threshold: {self.hairpin_dg_min})")

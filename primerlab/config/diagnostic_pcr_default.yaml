@@ -9,6 +9,14 @@ preset: diagnostic_pcr
 # stringent conditions to avoid false positives in clinical settings.
 
 parameters:
+
+  thermodynamics:
+    salt_monovalent: 50.0
+    salt_divalent: 2.0
+    dntp_conc: 0.6
+    dna_conc: 50.0
+    tm_method: santalucia
+    salt_corrections: santalucia
   # Primer size - slightly longer for higher specificity
   primer_size:
     min: 20

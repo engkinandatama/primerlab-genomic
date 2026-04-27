@@ -12,6 +12,7 @@ from typing import Dict, Any, List, Optional
 from primerlab.core.models import Primer, QCResult
 from primerlab.core.logger import get_logger
 from primerlab.core.tools.vienna_wrapper import ViennaWrapper
+from primerlab.core.tools.thermocalc_wrapper import ThermocalcWrapper
 
 logger = get_logger()
 
@@ -21,9 +22,11 @@ class BaseQC:
     Base Quality Control class for primer pair evaluation.
     
     Provides shared functionality for:
-    - ViennaRNA thermodynamic analysis (hairpin, homodimer, heterodimer)
+    - Primer3 ThermoAnalysis for individual primer/probe QC
+      (hairpin, homodimer, heterodimer, end-stability)
+    - ViennaRNA remains available for amplicon secondary structure (separate module)
     - Tm balance checking
-    - Configurable thresholds
+    - Configurable thresholds per QC mode (strict/standard/relaxed)
     
     Workflow-specific QC modules should extend this class and add
     their specific validation logic.
@@ -43,9 +46,25 @@ class BaseQC:
         self.tm_diff_max = self.qc_config.get("tm_diff_max", 5.0)
         self.hairpin_dg_min = self.qc_config.get("hairpin_dg_min", -3.0)
         self.dimer_dg_min = self.qc_config.get("dimer_dg_min", -6.0)
+        # end_stability: primer 3' end should be moderately stable
+        # Too stable (< dg_min) = non-specific priming risk
+        # Too weak (> dg_max) = primer won't bind at all
+        self.end_stability_dg_min = self.qc_config.get("end_stability_dg_min", -6.0)
+        self.end_stability_dg_max = self.qc_config.get("end_stability_dg_max", -1.0)
 
-        # Initialize ViennaRNA wrapper
+        # Initialize wrappers
         self.vienna = ViennaWrapper()
+        
+        # Initialize ThermocalcWrapper using parameters.thermodynamics config
+        thermo_config = config.get("parameters", {}).get("thermodynamics", {})
+        self.thermo = ThermocalcWrapper(
+            mv_conc=thermo_config.get("salt_monovalent", 50.0),
+            dv_conc=thermo_config.get("salt_divalent", 1.5),
+            dntp_conc=thermo_config.get("dntp_conc", 0.6),
+            dna_conc=thermo_config.get("dna_conc", 50.0),
+            tm_method=thermo_config.get("tm_method", "santalucia"),
+            salt_corrections=thermo_config.get("salt_corrections", "santalucia")
+        )
 
     def check_tm_balance(self, fwd: Primer, rev: Primer) -> Dict[str, Any]:
         """
@@ -74,7 +93,7 @@ class BaseQC:
 
     def check_hairpin(self, fwd: Primer, rev: Primer) -> Dict[str, Any]:
         """
-        Check hairpin formation using ViennaRNA RNAfold.
+        Check hairpin formation using Primer3 ThermoAnalysis.
         
         Args:
             fwd: Forward primer
@@ -85,28 +104,25 @@ class BaseQC:
         """
         warnings = []
 
-        # Calculate MFE using RNAfold
-        fwd_fold = self.vienna.fold(fwd.sequence)
-        rev_fold = self.vienna.fold(rev.sequence)
+        # Calculate MFE using ThermoAnalysis
+        fwd_res = self.thermo.calc_hairpin(fwd.sequence)
+        rev_res = self.thermo.calc_hairpin(rev.sequence)
 
-        fwd_dg = fwd_fold.get("mfe", 0.0)
-        rev_dg = rev_fold.get("mfe", 0.0)
+        fwd_dg = fwd_res.dg
+        rev_dg = rev_res.dg
+        
+        fwd.hairpin_dg = fwd_dg
+        rev.hairpin_dg = rev_dg
 
-        # Check if ViennaRNA failed or is missing
-        if "error" in fwd_fold or "error" in rev_fold:
-            warnings.append("Secondary structure QC skipped: ViennaRNA (RNAfold) not available or failed.")
-            fwd_hairpin_ok = True
-            rev_hairpin_ok = True
-        else:
-            fwd_hairpin_ok = fwd_dg >= self.hairpin_dg_min
-            rev_hairpin_ok = rev_dg >= self.hairpin_dg_min
+        fwd_hairpin_ok = fwd_dg >= self.hairpin_dg_min
+        rev_hairpin_ok = rev_dg >= self.hairpin_dg_min
 
         hairpin_ok = fwd_hairpin_ok and rev_hairpin_ok
 
         if not fwd_hairpin_ok:
-            warnings.append(f"Forward primer hairpin ΔG ({fwd_dg}) too stable")
+            warnings.append(f"Forward primer hairpin ΔG ({fwd_dg:.2f}) too stable")
         if not rev_hairpin_ok:
-            warnings.append(f"Reverse primer hairpin ΔG ({rev_dg}) too stable")
+            warnings.append(f"Reverse primer hairpin ΔG ({rev_dg:.2f}) too stable")
 
         return {
             "hairpin_ok": hairpin_ok,
@@ -117,7 +133,7 @@ class BaseQC:
 
     def check_homodimer(self, fwd: Primer, rev: Primer) -> Dict[str, Any]:
         """
-        Check homodimer formation using ViennaRNA RNAcofold.
+        Check homodimer formation using Primer3 ThermoAnalysis.
         
         Args:
             fwd: Forward primer
@@ -129,11 +145,11 @@ class BaseQC:
         warnings = []
 
         # Calculate homodimer MFE
-        fwd_homo = self.vienna.cofold(fwd.sequence, fwd.sequence)
-        rev_homo = self.vienna.cofold(rev.sequence, rev.sequence)
+        fwd_res = self.thermo.calc_homodimer(fwd.sequence)
+        rev_res = self.thermo.calc_homodimer(rev.sequence)
 
-        fwd_homo_dg = fwd_homo["mfe"]
-        rev_homo_dg = rev_homo["mfe"]
+        fwd_homo_dg = fwd_res.dg
+        rev_homo_dg = rev_res.dg
 
         # Update Primer objects
         fwd.homodimer_dg = fwd_homo_dg
@@ -145,9 +161,9 @@ class BaseQC:
         homodimer_ok = fwd_homo_ok and rev_homo_ok
 
         if not fwd_homo_ok:
-            warnings.append(f"Forward primer homodimer ΔG ({fwd_homo_dg}) too stable")
+            warnings.append(f"Forward primer homodimer ΔG ({fwd_homo_dg:.2f}) too stable")
         if not rev_homo_ok:
-            warnings.append(f"Reverse primer homodimer ΔG ({rev_homo_dg}) too stable")
+            warnings.append(f"Reverse primer homodimer ΔG ({rev_homo_dg:.2f}) too stable")
 
         return {
             "homodimer_ok": homodimer_ok,
@@ -158,7 +174,7 @@ class BaseQC:
 
     def check_heterodimer(self, fwd: Primer, rev: Primer) -> Dict[str, Any]:
         """
-        Check heterodimer formation between primers using ViennaRNA RNAcofold.
+        Check heterodimer formation between primers using Primer3 ThermoAnalysis.
         
         Args:
             fwd: Forward primer
@@ -170,8 +186,8 @@ class BaseQC:
         warnings = []
 
         # Calculate heterodimer MFE
-        hetero = self.vienna.cofold(fwd.sequence, rev.sequence)
-        hetero_dg = hetero["mfe"]
+        hetero_res = self.thermo.calc_heterodimer(fwd.sequence, rev.sequence)
+        hetero_dg = hetero_res.dg
 
         # Update Primer objects
         fwd.heterodimer_dg = hetero_dg
@@ -180,11 +196,72 @@ class BaseQC:
         heterodimer_ok = hetero_dg >= self.dimer_dg_min
 
         if not heterodimer_ok:
-            warnings.append(f"Heterodimer (Fwd+Rev) ΔG ({hetero_dg}) too stable")
+            warnings.append(f"Heterodimer (Fwd+Rev) ΔG ({hetero_dg:.2f}) too stable")
 
         return {
             "heterodimer_ok": heterodimer_ok,
             "hetero_dg": hetero_dg,
+            "warnings": warnings
+        }
+        
+    def check_end_stability(self, fwd: Primer, rev: Primer) -> Dict[str, Any]:
+        """
+        Check 3' end stability of primers.
+        
+        The 3' end ΔG should be in an optimal window:
+        - Too stable (ΔG < dg_min): risk of non-specific/false priming
+        - Too weak   (ΔG > dg_max): primer won't bind efficiently
+        
+        Args:
+            fwd: Forward primer
+            rev: Reverse primer
+            
+        Returns:
+            Dict with end_stability_ok, fwd_end_dg, rev_end_dg, and warnings
+        """
+        warnings = []
+        
+        fwd_res = self.thermo.calc_end_stability(fwd.sequence)
+        rev_res = self.thermo.calc_end_stability(rev.sequence)
+        
+        fwd_end_dg = fwd_res.dg
+        rev_end_dg = rev_res.dg
+        
+        fwd.end_stability_dg = fwd_end_dg
+        rev.end_stability_dg = rev_end_dg
+        
+        # Check both bounds: too stable (non-specific priming) OR too weak (no binding)
+        fwd_end_ok = self.end_stability_dg_min <= fwd_end_dg <= self.end_stability_dg_max
+        rev_end_ok = self.end_stability_dg_min <= rev_end_dg <= self.end_stability_dg_max
+        
+        end_stability_ok = fwd_end_ok and rev_end_ok
+        
+        if fwd_end_dg < self.end_stability_dg_min:
+            warnings.append(
+                f"Forward primer 3' end ΔG ({fwd_end_dg:.2f}) too stable "
+                f"(< {self.end_stability_dg_min}) — risk of non-specific priming"
+            )
+        elif fwd_end_dg > self.end_stability_dg_max:
+            warnings.append(
+                f"Forward primer 3' end ΔG ({fwd_end_dg:.2f}) too weak "
+                f"(> {self.end_stability_dg_max}) — primer may not bind efficiently"
+            )
+            
+        if rev_end_dg < self.end_stability_dg_min:
+            warnings.append(
+                f"Reverse primer 3' end ΔG ({rev_end_dg:.2f}) too stable "
+                f"(< {self.end_stability_dg_min}) — risk of non-specific priming"
+            )
+        elif rev_end_dg > self.end_stability_dg_max:
+            warnings.append(
+                f"Reverse primer 3' end ΔG ({rev_end_dg:.2f}) too weak "
+                f"(> {self.end_stability_dg_max}) — primer may not bind efficiently"
+            )
+            
+        return {
+            "end_stability_ok": end_stability_ok,
+            "fwd_end_dg": fwd_end_dg,
+            "rev_end_dg": rev_end_dg,
             "warnings": warnings
         }
 
@@ -220,15 +297,21 @@ class BaseQC:
         heterodimer_result = self.check_heterodimer(fwd, rev)
         all_warnings.extend(heterodimer_result["warnings"])
 
+        # 5. End Stability
+        end_stability_result = self.check_end_stability(fwd, rev)
+        all_warnings.extend(end_stability_result["warnings"])
+
         # Construct Result
         result = QCResult(
             hairpin_ok=hairpin_result["hairpin_ok"],
             homodimer_ok=homodimer_result["homodimer_ok"],
             heterodimer_ok=heterodimer_result["heterodimer_ok"],
+            end_stability_ok=end_stability_result["end_stability_ok"],
             tm_balance_ok=tm_result["tm_balance_ok"],
             hairpin_dg=min(hairpin_result["fwd_dg"], hairpin_result["rev_dg"]),
             homodimer_dg=min(homodimer_result["fwd_homo_dg"], homodimer_result["rev_homo_dg"]),
             heterodimer_dg=heterodimer_result["hetero_dg"],
+            end_stability_dg=min(end_stability_result["fwd_end_dg"], end_stability_result["rev_end_dg"]),
             tm_diff=tm_result["tm_diff"],
             warnings=all_warnings,
             errors=errors

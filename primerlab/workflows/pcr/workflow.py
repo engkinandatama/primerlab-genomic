@@ -17,14 +17,16 @@ def run_pcr_workflow(config: Dict[str, Any]) -> WorkflowResult:
     input_config = config.get("input", {})
     raw_sequence = input_config.get("sequence")
     seq_path = input_config.get("sequence_path")
+    preserve_iupac = input_config.get("preserve_iupac", True)
+    input_type = input_config.get("type", "auto")
 
     from primerlab.core.sequence import SequenceLoader
 
     try:
         if seq_path:
-            sequence = SequenceLoader.load(seq_path)
+            sequence = SequenceLoader.load(seq_path, preserve_iupac=preserve_iupac, input_type=input_type)
         elif raw_sequence:
-            sequence = SequenceLoader.load(raw_sequence)
+            sequence = SequenceLoader.load(raw_sequence, preserve_iupac=preserve_iupac, input_type=input_type)
         else:
             raise WorkflowError("No sequence provided in input (sequence or sequence_path).", "ERR_WORKFLOW_001")
     except Exception as e:
@@ -86,6 +88,7 @@ def run_pcr_workflow(config: Dict[str, Any]) -> WorkflowResult:
             end=fwd_start + fwd_len - 1,
             hairpin_dg=best_candidate["qc_details"].get("hairpin_fwd_dg", 0.0),
             homodimer_dg=best_candidate["qc_details"].get("homodimer_fwd_dg", 0.0),
+            end_stability_dg=best_candidate["qc_details"].get("end_stability_fwd_dg"),
             raw={"p3_index": idx, "passes_qc": best_candidate["passes_qc"]}
         )
         primers["forward"] = fwd_primer
@@ -102,6 +105,7 @@ def run_pcr_workflow(config: Dict[str, Any]) -> WorkflowResult:
             end=rev_start,
             hairpin_dg=best_candidate["qc_details"].get("hairpin_rev_dg", 0.0),
             homodimer_dg=best_candidate["qc_details"].get("homodimer_rev_dg", 0.0),
+            end_stability_dg=best_candidate["qc_details"].get("end_stability_rev_dg"),
             raw={"p3_index": idx, "passes_qc": best_candidate["passes_qc"]}
         )
         primers["reverse"] = rev_primer
@@ -135,7 +139,7 @@ def run_pcr_workflow(config: Dict[str, Any]) -> WorkflowResult:
 
         # Log selection info
         if best_candidate["passes_qc"]:
-            logger.info(f"Selected primer pair #{idx} (passes ViennaRNA QC)")
+            logger.info(f"Selected primer pair #{idx} (passes Primer3 ThermoAnalysis QC)")
         else:
             reasons = best_candidate["qc_details"].get("rejection_reasons", [])
             logger.warning(f"Best available primer #{idx} has QC warnings: {reasons}")

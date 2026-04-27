@@ -1,3 +1,4 @@
+import sys
 """
 Tests for Amplicon CLI integration.
 
@@ -17,7 +18,7 @@ class TestAmpliconCLIFlag:
     def test_run_help_shows_amplicon_flag(self):
         """Verify --amplicon-analysis appears in run help."""
         result = subprocess.run(
-            ["python", "-m", "primerlab.cli.main", "run", "--help"],
+            [sys.executable, "-m", "primerlab.cli.main", "run", "--help"],
             capture_output=True,
             text=True,
             timeout=30
@@ -39,7 +40,7 @@ input:
         try:
             # Just check flag is accepted (may fail for other reasons)
             result = subprocess.run(
-                ["python", "-m", "primerlab.cli.main", "run", 
+                [sys.executable, "-m", "primerlab.cli.main", "run", 
                  "--config", config_path, "--amplicon-analysis"],
                 capture_output=True,
                 text=True,

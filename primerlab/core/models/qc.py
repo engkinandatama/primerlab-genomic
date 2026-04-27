@@ -6,11 +6,13 @@ class QCResult:
     hairpin_ok: bool
     homodimer_ok: bool
     heterodimer_ok: bool
+    end_stability_ok: bool
     tm_balance_ok: bool
 
     hairpin_dg: float
     homodimer_dg: float
     heterodimer_dg: Optional[float]
+    end_stability_dg: Optional[float]
 
     tm_diff: float
 
@@ -28,10 +30,12 @@ class QCResult:
             "hairpin_ok": self.hairpin_ok,
             "homodimer_ok": self.homodimer_ok,
             "heterodimer_ok": self.heterodimer_ok,
+            "end_stability_ok": self.end_stability_ok,
             "tm_balance_ok": self.tm_balance_ok,
             "hairpin_dg": round(self.hairpin_dg, 2) if self.hairpin_dg is not None else None,
             "homodimer_dg": round(self.homodimer_dg, 2) if self.homodimer_dg is not None else None,
             "heterodimer_dg": round(self.heterodimer_dg, 2) if self.heterodimer_dg is not None else None,
+            "end_stability_dg": round(self.end_stability_dg, 2) if self.end_stability_dg is not None else None,
             "tm_diff": round(self.tm_diff, 2),
             "quality_score": self.quality_score,
             "quality_category": self.quality_category,

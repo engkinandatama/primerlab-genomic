@@ -6,6 +6,8 @@ from pathlib import Path
 from primerlab.core.logger import setup_logger
 from primerlab.core.config_loader import load_and_merge_config
 from primerlab.core.exceptions import PrimerLabException
+from primerlab.core.tools.primer3_wrapper import Primer3Wrapper
+import json
 
 # Version definition
 __version__ = "0.8.0"
@@ -157,6 +159,33 @@ def main():
                            help="Preview configuration without running workflow (v0.7.3)")
     run_parser.add_argument("--verbose", "-v", action="store_true",
                            help="Enable verbose output with progress info (v0.7.3)")
+    # Phase 3 Enhancements
+    run_parser.add_argument("--max-poly-x", type=int, default=None,
+                           help="Maximum allowed mononucleotide repeat length (e.g., AAAA)")
+    run_parser.add_argument("--max-ns", type=int, default=None,
+                           help="Maximum allowed Ns in primer sequence")
+    run_parser.add_argument("--num-candidates", type=int, default=None,
+                           help="Number of primer candidates to return from Primer3")
+    # Phase 4 Enhancements
+    run_parser.add_argument("--input-type", type=str, choices=["auto", "dna", "rna"], default=None,
+                           help="Specify input sequence type (auto, dna, rna) (Phase 4)")
+    run_parser.add_argument("--pick-only", type=str, choices=["left", "right"], default=None,
+                           help="Design only the forward (left) or reverse (right) primer (Phase 4)")
+    run_parser.add_argument("--add-sites", type=str, default=None,
+                           help="Comma-separated restriction sites to add to 5' ends (e.g. EcoRI,BamHI) (Phase 4)")
+
+    # --- CHECK-PRIMERS Command (Phase 4) ---
+    check_parser = subparsers.add_parser("check-primers", help="Evaluate existing primers against a template (Phase 4)")
+    check_parser.add_argument("--forward", type=str, required=True, help="Forward primer sequence")
+    check_parser.add_argument("--reverse", type=str, required=True, help="Reverse primer sequence")
+    check_parser.add_argument("--template", type=str, required=True, help="Template DNA sequence or path")
+    check_parser.add_argument("--config", type=str, default=None, help="Configuration file for settings")
+
+    # --- DESIGN-PROBE Command (Phase 4) ---
+    probe_parser = subparsers.add_parser("design-probe", help="Design a TaqMan probe for an existing primer pair (Phase 4)")
+    probe_parser.add_argument("--primers", type=str, required=True, help="JSON file containing validated primers")
+    probe_parser.add_argument("--template", type=str, required=True, help="Template DNA sequence or path")
+    probe_parser.add_argument("--config", type=str, default=None, help="Configuration file for settings")
 
     # --- BATCH-GENERATE Command ---
     batch_parser = subparsers.add_parser("batch-generate", help="Generate multiple configs from CSV")
@@ -1393,6 +1422,36 @@ def main():
                 overrides["output"] = {"directory": args.out}
             if args.debug:
                 overrides["advanced"] = {"debug": True}
+                
+            # Phase 3 Overrides
+            params_override = {}
+            if hasattr(args, 'max_poly_x') and args.max_poly_x is not None:
+                params_override["max_poly_x"] = args.max_poly_x
+            if hasattr(args, 'max_ns') and args.max_ns is not None:
+                params_override["max_ns"] = args.max_ns
+            if hasattr(args, 'num_candidates') and args.num_candidates is not None:
+                params_override["num_candidates"] = args.num_candidates
+                
+            if params_override:
+                overrides["parameters"] = params_override
+
+            # Phase 4 Overrides
+            input_override = {}
+            if hasattr(args, 'input_type') and args.input_type is not None:
+                input_override["type"] = args.input_type
+                
+            if input_override:
+                overrides["input"] = input_override
+
+            if hasattr(args, 'pick_only') and args.pick_only is not None:
+                if "parameters" not in overrides:
+                    overrides["parameters"] = {}
+                overrides["parameters"]["pick_only"] = args.pick_only
+
+            if hasattr(args, 'add_sites') and args.add_sites is not None:
+                if "parameters" not in overrides:
+                    overrides["parameters"] = {}
+                overrides["parameters"]["add_sites"] = args.add_sites.split(",")
 
             # 3. Load Configuration
             config = load_and_merge_config(
@@ -2965,6 +3024,64 @@ qc:
             print(f"✅ Output saved to {args.output}")
         else:
             print(output)
+        sys.exit(0)
+
+    if args.command == "check-primers":
+        config = load_and_merge_config("pcr", args.config) if args.config else {"parameters": {}}
+        wrapper = Primer3Wrapper()
+        
+        if args.template.endswith(('.fasta', '.fa', '.txt')):
+            target = Path(args.template).read_text().strip()
+            if target.startswith('>'):
+                target = "".join(target.split('\n')[1:])
+        else:
+            target = args.template
+            
+        settings = wrapper._build_p3_settings(config.get("parameters", {}), "pcr")
+        try:
+            result = wrapper.check_existing_primers(args.forward, args.reverse, target, settings)
+            print(json.dumps(result, indent=2))
+        except Exception as e:
+            print(f"Error checking primers: {e}")
+            sys.exit(1)
+        sys.exit(0)
+
+    if args.command == "design-probe":
+        config = load_and_merge_config("qpcr", args.config) if args.config else {"parameters": {}}
+        if "parameters" not in config:
+            config["parameters"] = {}
+            
+        config["parameters"]["pick_only"] = "probe"
+        if "probe" not in config["parameters"]:
+            config["parameters"]["probe"] = {}
+            
+        with open(args.primers, "r") as f:
+            primers_data = json.load(f)
+            
+        fwd = primers_data.get("forward", primers_data.get("PRIMER_LEFT_0_SEQUENCE", ""))
+        rev = primers_data.get("reverse", primers_data.get("PRIMER_RIGHT_0_SEQUENCE", ""))
+        
+        if not fwd or not rev:
+            print("Invalid primers file: must contain 'forward' and 'reverse' sequences")
+            sys.exit(1)
+            
+        if args.template.endswith(('.fasta', '.fa', '.txt')):
+            target = Path(args.template).read_text().strip()
+            if target.startswith('>'):
+                target = "".join(target.split('\n')[1:])
+        else:
+            target = args.template
+            
+        config["parameters"]["existing_forward"] = fwd
+        config["parameters"]["existing_reverse"] = rev
+        
+        wrapper = Primer3Wrapper()
+        try:
+            result = wrapper.design_primers(target, config)
+            print(json.dumps(result[1], indent=2))
+        except Exception as e:
+            print(f"Error designing probe: {e}")
+            sys.exit(1)
         sys.exit(0)
 
 if __name__ == "__main__":

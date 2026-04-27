@@ -21,12 +21,14 @@ def run_qpcr_workflow(config: Dict[str, Any]) -> WorkflowResult:
     input_config = config.get("input", {})
     raw_sequence = input_config.get("sequence")
     seq_path = input_config.get("sequence_path")
+    preserve_iupac = input_config.get("preserve_iupac", True)
+    input_type = input_config.get("type", "auto")
 
     try:
         if seq_path:
-            sequence = SequenceLoader.load(seq_path)
+            sequence = SequenceLoader.load(seq_path, preserve_iupac=preserve_iupac, input_type=input_type)
         elif raw_sequence:
-            sequence = SequenceLoader.load(raw_sequence)
+            sequence = SequenceLoader.load(raw_sequence, preserve_iupac=preserve_iupac, input_type=input_type)
         else:
             raise WorkflowError("No sequence provided.", "ERR_WORKFLOW_001")
     except Exception as e:

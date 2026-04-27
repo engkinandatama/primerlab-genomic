@@ -1,3 +1,4 @@
+import sys
 """
 Tests for tm-gradient CLI command.
 """
@@ -15,7 +16,7 @@ class TestTmGradientCLI:
     def test_help_output(self):
         """Verify tm-gradient --help shows all options."""
         result = subprocess.run(
-            ["python", "-m", "primerlab.cli.main", "tm-gradient", "--help"],
+            [sys.executable, "-m", "primerlab.cli.main", "tm-gradient", "--help"],
             capture_output=True,
             text=True,
             timeout=30
@@ -31,7 +32,7 @@ class TestTmGradientCLI:
     def test_missing_required_args(self):
         """Verify error when required args missing."""
         result = subprocess.run(
-            ["python", "-m", "primerlab.cli.main", "tm-gradient"],
+            [sys.executable, "-m", "primerlab.cli.main", "tm-gradient"],
             capture_output=True,
             text=True,
             timeout=30
@@ -62,7 +63,7 @@ class TestTmGradientIntegration:
         
         result = subprocess.run(
             [
-                "python", "-m", "primerlab.cli.main", "tm-gradient",
+                sys.executable, "-m", "primerlab.cli.main", "tm-gradient",
                 "--primers", sample_primers_json,
                 "--output", str(output_dir),
             ],
@@ -81,7 +82,7 @@ class TestTmGradientIntegration:
         
         subprocess.run(
             [
-                "python", "-m", "primerlab.cli.main", "tm-gradient",
+                sys.executable, "-m", "primerlab.cli.main", "tm-gradient",
                 "--primers", sample_primers_json,
                 "--output", str(output_dir),
             ],
@@ -103,7 +104,7 @@ class TestTmGradientIntegration:
         
         result = subprocess.run(
             [
-                "python", "-m", "primerlab.cli.main", "tm-gradient",
+                sys.executable, "-m", "primerlab.cli.main", "tm-gradient",
                 "--primers", sample_primers_json,
                 "--min-temp", "55",
                 "--max-temp", "68",

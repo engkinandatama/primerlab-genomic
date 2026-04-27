@@ -2,7 +2,12 @@
 Multi-Candidate Re-ranking Engine for v0.1.3+
 
 This module evaluates multiple primer candidates from Primer3,
-applies ViennaRNA QC thresholds, and selects the best candidate.
+applies Primer3 ThermoAnalysis QC thresholds, and selects the best candidate.
+
+Engine selection:
+- ThermocalcWrapper (Primer3 native): individual primer/probe QC
+  (hairpin, homodimer, heterodimer, end-stability)
+- ViennaRNA: amplicon secondary structure analysis only (separate module)
 
 v0.1.4: Added quality scoring and rationale tracking.
 """
@@ -11,7 +16,7 @@ import random
 from typing import Dict, Any, List, Tuple, Optional
 from dataclasses import dataclass
 from primerlab.core.models import Primer
-from primerlab.core.tools.vienna_wrapper import ViennaWrapper
+from primerlab.core.tools.thermocalc_wrapper import ThermocalcWrapper
 from primerlab.core.logger import get_logger
 from primerlab.core.scoring import calculate_quality_score, ScoringResult
 from primerlab.core.rationale import RationaleTracker
@@ -21,12 +26,13 @@ logger = get_logger()
 
 @dataclass
 class CandidateScore:
-    """Holds scoring data for a primer candidate."""
+    """Holds scoring data for a primer candidate set (FP+RP or FP+RP+Probe)."""
     index: int
     primer3_penalty: float
     hairpin_dg: float
     homodimer_dg: float
-    passes_qc: bool
+    end_stability_dg: float = 0.0
+    passes_qc: bool = True
     rejection_reason: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
@@ -36,6 +42,7 @@ class CandidateScore:
             "primer3_penalty": self.primer3_penalty,
             "hairpin_dg": self.hairpin_dg,
             "homodimer_dg": self.homodimer_dg,
+            "end_stability_dg": self.end_stability_dg,
             "passes_qc": self.passes_qc,
             "rejection_reason": self.rejection_reason
         }
@@ -43,15 +50,28 @@ class CandidateScore:
 
 class RerankingEngine:
     """
-    Evaluates multiple primer candidates and selects the best one
-    based on ViennaRNA thermodynamic analysis.
+    Evaluates multiple primer candidates (sets of FP+RP or FP+RP+Probe)
+    from Primer3 and selects the best set using Primer3 ThermoAnalysis.
+
+    Primer3 generates N ranked candidate SETS — each set already contains
+    a matched (FP, RP, Probe) combination. This engine re-evaluates those
+    sets using native thermodynamics and applies additional QC filters.
     """
 
     # Default QC thresholds
     DEFAULT_THRESHOLDS = {
-        "strict": {"hairpin_dg_max": -6.0, "homodimer_dg_max": -6.0, "heterodimer_dg_max": -6.0},
-        "standard": {"hairpin_dg_max": -9.0, "homodimer_dg_max": -9.0, "heterodimer_dg_max": -9.0},
-        "relaxed": {"hairpin_dg_max": -12.0, "homodimer_dg_max": -12.0, "heterodimer_dg_max": -12.0}
+        "strict": {
+            "hairpin_dg_max": -6.0, "homodimer_dg_max": -6.0, "heterodimer_dg_max": -6.0,
+            "end_stability_dg_min": -4.0, "end_stability_dg_max": -1.0
+        },
+        "standard": {
+            "hairpin_dg_max": -9.0, "homodimer_dg_max": -9.0, "heterodimer_dg_max": -9.0,
+            "end_stability_dg_min": -6.0, "end_stability_dg_max": -1.0
+        },
+        "relaxed": {
+            "hairpin_dg_max": -12.0, "homodimer_dg_max": -12.0, "heterodimer_dg_max": -12.0,
+            "end_stability_dg_min": -8.0, "end_stability_dg_max": -0.5
+        }
     }
 
     def __init__(self, config: Dict[str, Any]):
@@ -61,11 +81,19 @@ class RerankingEngine:
         Args:
             config: Full workflow configuration dict
         """
-        self.vienna = ViennaWrapper()
-
         params = config.get("parameters", {})
         qc_config = config.get("qc", {})
         advanced = config.get("advanced", {})
+        thermo_config = params.get("thermodynamics", {})
+        
+        self.thermo = ThermocalcWrapper(
+            mv_conc=thermo_config.get("salt_monovalent", 50.0),
+            dv_conc=thermo_config.get("salt_divalent", 1.5),
+            dntp_conc=thermo_config.get("dntp_conc", 0.6),
+            dna_conc=thermo_config.get("dna_conc", 50.0),
+            tm_method=thermo_config.get("tm_method", "santalucia"),
+            salt_corrections=thermo_config.get("salt_corrections", "santalucia")
+        )
 
         # Get QC mode preset or individual thresholds
         qc_mode = qc_config.get("mode", "standard")
@@ -74,6 +102,8 @@ class RerankingEngine:
         self.hairpin_dg_max = qc_config.get("hairpin_dg_max", preset["hairpin_dg_max"])
         self.homodimer_dg_max = qc_config.get("homodimer_dg_max", preset["homodimer_dg_max"])
         self.heterodimer_dg_max = qc_config.get("heterodimer_dg_max", preset["heterodimer_dg_max"])
+        self.end_stability_dg_min = qc_config.get("end_stability_dg_min", preset.get("end_stability_dg_min", -6.0))
+        self.end_stability_dg_max = qc_config.get("end_stability_dg_max", preset.get("end_stability_dg_max", -1.0))
 
         self.show_alternatives = params.get("show_alternatives", 5)
 
@@ -107,6 +137,8 @@ class RerankingEngine:
             "homodimer_fwd_dg": 0.0,
             "homodimer_rev_dg": 0.0,
             "heterodimer_dg": 0.0,
+            "end_stability_fwd_dg": 0.0,
+            "end_stability_rev_dg": 0.0,
             "gc_clamp_fwd": True,
             "gc_clamp_rev": True,
             "poly_x_fwd": True,
@@ -152,17 +184,12 @@ class RerankingEngine:
             details["passes_qc"] = False
             details["rejection_reasons"].append(f"Rev: {rev_poly_msg}")
 
-        # Skip ViennaRNA checks if not available
-        if not self.vienna.is_available:
-            logger.debug("ViennaRNA not available, skipping secondary structure checks")
-            return details["passes_qc"], details
+        # 1. Hairpin checks using ThermoAnalysis
+        fwd_hairpin_res = self.thermo.calc_hairpin(fwd_seq)
+        rev_hairpin_res = self.thermo.calc_hairpin(rev_seq)
 
-        # 1. Hairpin checks
-        fwd_fold = self.vienna.fold(fwd_seq)
-        rev_fold = self.vienna.fold(rev_seq)
-
-        fwd_hairpin_dg = fwd_fold.get("mfe", 0.0)
-        rev_hairpin_dg = rev_fold.get("mfe", 0.0)
+        fwd_hairpin_dg = fwd_hairpin_res.dg
+        rev_hairpin_dg = rev_hairpin_res.dg
 
         details["hairpin_fwd_dg"] = fwd_hairpin_dg
         details["hairpin_rev_dg"] = rev_hairpin_dg
@@ -175,12 +202,12 @@ class RerankingEngine:
             details["passes_qc"] = False
             details["rejection_reasons"].append(f"Rev hairpin too stable ({rev_hairpin_dg:.1f} < {self.hairpin_dg_max})")
 
-        # 2. Homodimer checks
-        fwd_homo = self.vienna.cofold(fwd_seq, fwd_seq)
-        rev_homo = self.vienna.cofold(rev_seq, rev_seq)
+        # 2. Homodimer checks using ThermoAnalysis
+        fwd_homo_res = self.thermo.calc_homodimer(fwd_seq)
+        rev_homo_res = self.thermo.calc_homodimer(rev_seq)
 
-        fwd_homo_dg = fwd_homo.get("mfe", 0.0)
-        rev_homo_dg = rev_homo.get("mfe", 0.0)
+        fwd_homo_dg = fwd_homo_res.dg
+        rev_homo_dg = rev_homo_res.dg
 
         details["homodimer_fwd_dg"] = fwd_homo_dg
         details["homodimer_rev_dg"] = rev_homo_dg
@@ -194,14 +221,50 @@ class RerankingEngine:
             details["rejection_reasons"].append(f"Rev homodimer too stable ({rev_homo_dg:.1f} < {self.homodimer_dg_max})")
 
         # 3. Heterodimer check
-        hetero = self.vienna.cofold(fwd_seq, rev_seq)
-        hetero_dg = hetero.get("mfe", 0.0)
+        hetero_res = self.thermo.calc_heterodimer(fwd_seq, rev_seq)
+        hetero_dg = hetero_res.dg
 
         details["heterodimer_dg"] = hetero_dg
 
         if hetero_dg < self.heterodimer_dg_max:
             details["passes_qc"] = False
             details["rejection_reasons"].append(f"Heterodimer too stable ({hetero_dg:.1f} < {self.heterodimer_dg_max})")
+
+        # 4. End Stability check (two-way: too stable = non-specific, too weak = no binding)
+        fwd_end_res = self.thermo.calc_end_stability(fwd_seq)
+        rev_end_res = self.thermo.calc_end_stability(rev_seq)
+        
+        fwd_end_dg = fwd_end_res.dg
+        rev_end_dg = rev_end_res.dg
+        
+        details["end_stability_fwd_dg"] = fwd_end_dg
+        details["end_stability_rev_dg"] = rev_end_dg
+        
+        if fwd_end_dg < self.end_stability_dg_min:
+            details["passes_qc"] = False
+            details["rejection_reasons"].append(
+                f"Fwd 3' end too stable ({fwd_end_dg:.1f} < {self.end_stability_dg_min}) "
+                f"— non-specific priming risk"
+            )
+        elif fwd_end_dg > self.end_stability_dg_max:
+            details["passes_qc"] = False
+            details["rejection_reasons"].append(
+                f"Fwd 3' end too weak ({fwd_end_dg:.1f} > {self.end_stability_dg_max}) "
+                f"— primer may not bind"
+            )
+            
+        if rev_end_dg < self.end_stability_dg_min:
+            details["passes_qc"] = False
+            details["rejection_reasons"].append(
+                f"Rev 3' end too stable ({rev_end_dg:.1f} < {self.end_stability_dg_min}) "
+                f"— non-specific priming risk"
+            )
+        elif rev_end_dg > self.end_stability_dg_max:
+            details["passes_qc"] = False
+            details["rejection_reasons"].append(
+                f"Rev 3' end too weak ({rev_end_dg:.1f} > {self.end_stability_dg_max}) "
+                f"— primer may not bind"
+            )
 
         return details["passes_qc"], details
 
@@ -262,6 +325,8 @@ class RerankingEngine:
                 homodimer_dg_fwd=details.get("homodimer_fwd_dg"),
                 homodimer_dg_rev=details.get("homodimer_rev_dg"),
                 heterodimer_dg=details.get("heterodimer_dg"),
+                end_stability_dg_fwd=details.get("end_stability_fwd_dg"),
+                end_stability_dg_rev=details.get("end_stability_rev_dg"),
                 gc_clamp_fwd=gc_clamp_fwd,
                 gc_clamp_rev=gc_clamp_rev,
                 poly_x_fwd=not details.get("poly_x_fwd", True),

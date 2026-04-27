@@ -30,13 +30,13 @@ def cached_calc_tm(
     sequence: str,
     mv_conc: float = 50.0,
     dv_conc: float = 1.5,
-    dntp_conc: float = 0.25,
+    dntp_conc: float = 0.6,
     dna_conc: float = 50.0
 ) -> float:
     """
     Calculate Tm with caching.
     
-    Uses primer3.calc_tm() with results cached for repeated sequences.
+    Uses ThermocalcWrapper with results cached for repeated sequences.
     
     Args:
         sequence: DNA sequence (uppercase)
@@ -53,17 +53,14 @@ def cached_calc_tm(
         >>> print(f"Tm: {tm:.1f}°C")
     """
     try:
-        import primer3
-        return primer3.calc_tm(
-            sequence.upper(),
+        from primerlab.core.tools.thermocalc_wrapper import ThermocalcWrapper
+        wrapper = ThermocalcWrapper(
             mv_conc=mv_conc,
             dv_conc=dv_conc,
             dntp_conc=dntp_conc,
             dna_conc=dna_conc
         )
-    except ImportError:
-        logger.warning("primer3 not installed, returning 0.0 for Tm")
-        return 0.0
+        return wrapper.calc_tm(sequence.upper())
     except Exception as e:
         logger.debug(f"Tm calculation failed: {e}")
         return 0.0

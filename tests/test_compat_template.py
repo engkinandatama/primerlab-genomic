@@ -1,3 +1,4 @@
+import sys
 """
 Integration tests for check-compat --template flag.
 
@@ -58,7 +59,7 @@ class TestCheckCompatTemplateFlag:
     def test_help_shows_template_flag(self):
         """Verify --template appears in check-compat help."""
         result = subprocess.run(
-            ["python", "-m", "primerlab.cli.main", "check-compat", "--help"],
+            [sys.executable, "-m", "primerlab.cli.main", "check-compat", "--help"],
             capture_output=True,
             text=True,
             timeout=30
@@ -71,7 +72,7 @@ class TestCheckCompatTemplateFlag:
         try:
             with tempfile.TemporaryDirectory() as tmpdir:
                 result = subprocess.run(
-                    ["python", "-m", "primerlab.cli.main", "check-compat",
+                    [sys.executable, "-m", "primerlab.cli.main", "check-compat",
                      "--primers", sample_primers_json,
                      "--template", sample_template_fasta,
                      "--output", tmpdir],
@@ -90,7 +91,7 @@ class TestCheckCompatTemplateFlag:
         try:
             with tempfile.TemporaryDirectory() as tmpdir:
                 result = subprocess.run(
-                    ["python", "-m", "primerlab.cli.main", "check-compat",
+                    [sys.executable, "-m", "primerlab.cli.main", "check-compat",
                      "--primers", sample_primers_json,
                      "--template", sample_template_fasta,
                      "--output", tmpdir],

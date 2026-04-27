@@ -5,6 +5,14 @@ input:
   sequence_path: null
 
 parameters:
+
+  thermodynamics:
+    salt_monovalent: 50.0
+    salt_divalent: 3.0
+    dntp_conc: 0.6
+    dna_conc: 50.0
+    tm_method: santalucia
+    salt_corrections: santalucia
   # qPCR Primers (usually shorter amplicon)
   primer_size:
     min: 18

@@ -3,7 +3,7 @@ Primer Quality Scoring Engine (v0.1.4)
 
 Calculates combined quality score from:
 - Primer3 penalty
-- ViennaRNA QC (hairpin, dimer)
+- Primer3 ThermoAnalysis QC (hairpin, dimer, end-stability)
 - Sequence QC (GC clamp, Poly-X)
 
 Scores are mode-specific (strict/standard/relaxed).
@@ -50,6 +50,8 @@ PENALTY_CONFIG = {
         "self_dimer_penalty": -20,
         "heterodimer_threshold": -5.0,
         "heterodimer_penalty": -15,
+        "end_stability_threshold": -4.0,
+        "end_stability_penalty": -20,
         "gc_clamp_weak_penalty": -20,
         "gc_clamp_strong_penalty": -10,
         "poly_x_penalty": -15,
@@ -63,6 +65,8 @@ PENALTY_CONFIG = {
         "self_dimer_penalty": -15,
         "heterodimer_threshold": -6.0,
         "heterodimer_penalty": -10,
+        "end_stability_threshold": -6.0,
+        "end_stability_penalty": -15,
         "gc_clamp_weak_penalty": -15,
         "gc_clamp_strong_penalty": -5,
         "poly_x_penalty": -10,
@@ -76,6 +80,8 @@ PENALTY_CONFIG = {
         "self_dimer_penalty": -10,
         "heterodimer_threshold": -9.0,
         "heterodimer_penalty": -5,
+        "end_stability_threshold": -8.0,
+        "end_stability_penalty": -10,
         "gc_clamp_weak_penalty": -10,
         "gc_clamp_strong_penalty": 0,
         "poly_x_penalty": -5,
@@ -106,6 +112,8 @@ def calculate_quality_score(
     homodimer_dg_fwd: Optional[float] = None,
     homodimer_dg_rev: Optional[float] = None,
     heterodimer_dg: Optional[float] = None,
+    end_stability_dg_fwd: Optional[float] = None,
+    end_stability_dg_rev: Optional[float] = None,
     gc_clamp_fwd: Optional[str] = None,  # "ok", "weak", "strong"
     gc_clamp_rev: Optional[str] = None,
     poly_x_fwd: bool = False,
@@ -117,9 +125,10 @@ def calculate_quality_score(
     
     Args:
         primer3_penalty: Primer3 pair penalty (lower = better)
-        hairpin_dg_*: Hairpin ΔG values from ViennaRNA
+        hairpin_dg_*: Hairpin ΔG values from Primer3 ThermoAnalysis
         homodimer_dg_*: Homodimer ΔG values
-        heterodimer_dg: Heterodimer ΔG value
+        heterodimer_dg: Heterodimer ΔG value (FP vs RP interaction)
+        end_stability_dg_*: 3' end ΔG values (negative = stable 3' end)
         gc_clamp_*: GC clamp status ("ok", "weak", "strong")
         poly_x_*: Poly-X detected flag
         qc_mode: QC mode (strict/standard/relaxed)
@@ -158,6 +167,15 @@ def calculate_quality_score(
     if heterodimer_dg is not None:
         if heterodimer_dg < config["heterodimer_threshold"]:
             penalties["heterodimer"] = config["heterodimer_penalty"]
+
+    # End stability penalties
+    if end_stability_dg_fwd is not None:
+        if end_stability_dg_fwd < config["end_stability_threshold"]:
+            penalties["end_stability_fwd"] = config["end_stability_penalty"]
+            
+    if end_stability_dg_rev is not None:
+        if end_stability_dg_rev < config["end_stability_threshold"]:
+            penalties["end_stability_rev"] = config["end_stability_penalty"]
 
     # GC clamp penalties
     if gc_clamp_fwd == "weak":
@@ -215,5 +233,7 @@ def score_from_qc_result(
         homodimer_dg_fwd=getattr(qc_result, 'homodimer_dg', None),
         homodimer_dg_rev=getattr(qc_result, 'homodimer_dg', None),
         heterodimer_dg=getattr(qc_result, 'heterodimer_dg', None),
+        end_stability_dg_fwd=getattr(qc_result, 'end_stability_dg', None),
+        end_stability_dg_rev=getattr(qc_result, 'end_stability_dg', None),
         qc_mode=qc_mode
     )

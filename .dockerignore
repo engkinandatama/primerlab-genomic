@@ -39,6 +39,7 @@ env/
 .dev/
 paper/
 scripts/
+archive/
 
 # Documentation (built separately)
 docs/

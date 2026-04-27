@@ -123,6 +123,7 @@ insilico_output/
 primerlab_api_out/
 *_output/
 *_out/
+archive/
 
 # Test output files
 test_output.txt
