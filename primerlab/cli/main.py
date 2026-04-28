@@ -10,7 +10,7 @@ from primerlab.core.tools.primer3_wrapper import Primer3Wrapper
 import json
 
 # Version definition
-__version__ = "0.8.0"
+__version__ = "1.1.0"
 
 
 def _run_health_check():

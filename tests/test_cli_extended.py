@@ -44,7 +44,7 @@ class TestCLICommands:
         """Version command should show version number."""
         result = run_cli("--version")
         assert result.returncode == 0
-        assert "0.8" in result.stdout
+        assert "1.1" in result.stdout
 
     def test_run_pcr_help(self):
         """run pcr --help should work."""
@@ -129,7 +129,7 @@ class TestCLIHealth:
         """health should show PrimerLab version."""
         result = run_cli("health")
         output = result.stdout + result.stderr
-        assert "PrimerLab" in output or "0.8" in output
+        assert "PrimerLab" in output or "1.1" in output
 
 
 class TestCLIInit:

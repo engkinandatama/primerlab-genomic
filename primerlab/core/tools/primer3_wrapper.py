@@ -242,16 +242,16 @@ class Primer3Wrapper:
         'SpeI':    'ACTAGT',
         'XbaI':    'TCTAGA',
         'XhoI':    'CTCGAG',
-        'XmaI':    'CCCGGG',
+        'SmaI':    'CCCGGG',   # isoschizomer of XmaI (blunt-end cutter)
         'KpnI':    'GGTACC',
         'SacI':    'GAGCTC',
         'PstI':    'CTGCAG',
-        'SmaI':    'CCCGGG',
         'SphI':    'GCATGC',
         'AvaI':    'CYCGRG',
         'ClaI':    'ATCGAT',
         'MluI':    'ACGCGT',
         'AgeI':    'ACCGGT',
+        'BspEI':   'TCCGGA',
     }
 
     # GC clamp added between restriction site and primer to ensure cutting efficiency
