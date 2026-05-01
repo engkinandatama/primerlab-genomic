@@ -132,3 +132,5 @@ error-CI.txt
 
 # Paper (private - not for GitHub)
 paper/
+
+.venv-wsl/
