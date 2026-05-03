@@ -3109,13 +3109,16 @@ qc:
         is_debug = getattr(args, "debug", False)
         is_verbose = getattr(args, "verbose", False)
         
-        # Initialize logging
-        setup_logger(level=logging.DEBUG if is_debug else logging.INFO)
-
         # Load base config
         config_path = args.config if args.config else "primerlab/config/raa_default.yaml"
         with open(config_path, "r") as f:
             config = yaml.safe_load(f)
+
+        # Merge debug settings: prioritize CLI flag, fallback to config
+        is_debug = getattr(args, "debug", False) or config.get("advanced", {}).get("debug", False)
+        
+        # Re-initialize logging with merged settings if needed
+        setup_logger(level=logging.DEBUG if is_debug else logging.INFO)
 
         # Override with CLI args
         if args.sequence:
