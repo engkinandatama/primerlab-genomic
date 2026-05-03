@@ -184,6 +184,8 @@ def main():
     raa_parser.add_argument("--config", "-c", type=str, help="Path to RAA config YAML")
     raa_parser.add_argument("--num-candidates", "-n", type=int, default=100, help="Number of candidates to rank (default: 100)")
     raa_parser.add_argument("--out", "-o", type=str, help="Output directory")
+    raa_parser.add_argument("--debug", action="store_true", help="Enable debug logging")
+    raa_parser.add_argument("--verbose", action="store_true", help="Show detailed progress")
 
     # --- CHECK-PRIMERS Command (Phase 4) ---
     check_parser = subparsers.add_parser("check-primers", help="Evaluate existing primers against a template (Phase 4)")
@@ -3103,8 +3105,12 @@ qc:
         import yaml
         from primerlab.core.sequence import SequenceLoader
         
+        # Safe attribute access
+        is_debug = getattr(args, "debug", False)
+        is_verbose = getattr(args, "verbose", False)
+        
         # Initialize logging
-        setup_logger(level=logging.DEBUG if args.debug else logging.INFO)
+        setup_logger(level=logging.DEBUG if is_debug else logging.INFO)
 
         # Load base config
         config_path = args.config if args.config else "primerlab/config/raa_default.yaml"
