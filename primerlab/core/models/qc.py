@@ -13,9 +13,9 @@ class QCResult:
     homodimer_dg: float
     heterodimer_dg: Optional[float]
     end_stability_dg: Optional[float]
-    cross_dimer_dg: Optional[float] = None # Added for RAA (v1.2.0)
 
     tm_diff: float
+    cross_dimer_dg: Optional[float] = None # Added for RAA (v1.2.0)
 
     # Quality score fields (v0.1.4)
     quality_score: Optional[int] = None  # 0-100
