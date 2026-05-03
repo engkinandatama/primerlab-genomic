@@ -27,41 +27,44 @@ parameters:
     dntp_conc: 0.8
     dna_conc: 480.0            # RAA uses high primer concentration
     tm_method: santalucia
-    salt_corrections: owczarzy # Best for high divalent cation
-
+    salt_corrections: owczarzy # Search Depth
+  num_candidates: 500      # Request many candidates for global re-ranking
+  
+  # Primer constraints (Standard RAA)
   primer_size:
     min: 30
     opt: 32
     max: 35
 
   tm:
-    min: 57.0
-    opt: 62.0
+    min: 54.0
+    opt: 60.0
     max: 67.0
 
   gc:
-    min: 35.0
-    max: 60.0
+    min: 30.0
+    opt: 50.0
+    max: 70.0
 
-  product_size_range: [[100, 250]]
+  product_size_range: [[100, 150]]
 
   max_poly_x: 4               # Strict: no AAAA runs
 
   # Exo-probe (optional, enabled via probe.enabled)
   probe:
-    enabled: false
+    enabled: true
     type: exo                  # exo | simple
     size:
       min: 46
-      opt: 49
+      opt: 48
       max: 52
     tm:
-      min: 48.0
-      opt: 52.0
-      max: 55.0
+      min: 54.0
+      opt: 60.0
+      max: 70.0
     gc:
-      min: 35.0
-      max: 60.0
+      min: 20.0
+      max: 80.0
     # Exo-probe structural constraints
     thf_upstream_min: 30       # Min nt 5' of THF site
     thf_downstream_min: 15     # Min nt 3' of THF site

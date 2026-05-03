@@ -50,11 +50,16 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
     p3_wrapper = Primer3Wrapper()
     
     # RAA typically requires long primers and specialized conditions
-    # We pass the config as-is since Primer3Wrapper handles the mapping from preset
     raw_results = p3_wrapper.design_primers(sequence, config)
 
     num_returned = raw_results.get('PRIMER_LEFT_NUM_RETURNED', 0)
     logger.info(f"Primer3 returned {num_returned} sets.")
+    
+    # Advanced: Evaluate target sequence accessibility
+    qc_engine = RAAQC(config)
+    target_qc = qc_engine.evaluate_target_structure(sequence)
+    if target_qc["warnings"]:
+        logger.warning(f"Target Structure Warning: {target_qc['warnings']}")
 
     # 3. Parse Results (returns List of triplets)
     candidates = parse_primer3_output(raw_results, config)

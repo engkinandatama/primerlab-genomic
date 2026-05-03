@@ -154,3 +154,30 @@ class RAAQC(BaseQC):
             "size": amplicon_size,
             "warnings": warnings
         }
+
+    def evaluate_target_structure(self, sequence: str) -> Dict[str, Any]:
+        """
+        Advanced QC: Evaluates the secondary structure of the target region itself.
+        If the target folds too strongly, enzymes may have accessibility issues.
+        """
+        # We use vienna_wrapper directly for the whole sequence
+        from primerlab.core.tools.vienna_wrapper import ViennaWrapper
+        vienna = ViennaWrapper()
+        
+        # Calculate structure for the whole 150-200bp zone
+        res = vienna.fold(sequence)
+        
+        # Heuristic: if dG per 100bp is lower than -20, it's quite stable
+        normalized_dg = (res.dg / len(sequence)) * 100
+        is_accessible = normalized_dg > -25.0 # Threshold for accessibility
+        
+        warnings = []
+        if not is_accessible:
+            warnings.append(f"Target region has high stability (normalized ΔG: {normalized_dg:.2f}). Possible accessibility issues for RAA enzymes.")
+            
+        return {
+            "accessible": is_accessible,
+            "dg": res.dg,
+            "normalized_dg": normalized_dg,
+            "warnings": warnings
+        }
