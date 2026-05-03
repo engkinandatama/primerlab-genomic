@@ -3,7 +3,7 @@ RAA Exo-Probe design logic module.
 Handles post-processing of Primer3 internal oligos to annotate THF abasic sites.
 """
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from primerlab.core.models import Primer
 from primerlab.core.logger import get_logger
 
