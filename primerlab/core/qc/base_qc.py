@@ -56,6 +56,14 @@ class BaseQC:
         self.vienna = ViennaWrapper()
         
         # Initialize ThermocalcWrapper using parameters.thermodynamics config
+        # NOTE on two-condition design:
+        # - self.thermo = actual reaction conditions → used for Tm calculations
+        # - self.screening_thermo = standard screening conditions → used for dimer/hairpin QC
+        #
+        # This is intentional: dimer/hairpin screening should always be performed
+        # under standard conditions (Mg 1.5mM) to allow cross-assay comparison.
+        # Extremely high Mg²⁺ (e.g., 14mM in RAA) will cause false extreme ΔG values
+        # (e.g., -300 kcal/mol) that don't reflect structural risk in a meaningful way.
         thermo_config = config.get("parameters", {}).get("thermodynamics", {})
         self.thermo = ThermocalcWrapper(
             mv_conc=thermo_config.get("salt_monovalent", 50.0),
@@ -64,6 +72,17 @@ class BaseQC:
             dna_conc=thermo_config.get("dna_conc", 50.0),
             tm_method=thermo_config.get("tm_method", "santalucia"),
             salt_corrections=thermo_config.get("salt_corrections", "santalucia")
+        )
+        
+        # Screening thermo: standard conditions for dimer/hairpin QC
+        # Fixed at typical PCR conditions regardless of workflow-specific buffer
+        self.screening_thermo = ThermocalcWrapper(
+            mv_conc=50.0,
+            dv_conc=1.5,
+            dntp_conc=0.6,
+            dna_conc=250.0,
+            tm_method="santalucia",
+            salt_corrections="santalucia"
         )
 
     def check_tm_balance(self, fwd: Primer, rev: Primer) -> Dict[str, Any]:
@@ -104,9 +123,10 @@ class BaseQC:
         """
         warnings = []
 
-        # Calculate MFE using ThermoAnalysis
-        fwd_res = self.thermo.calc_hairpin(fwd.sequence)
-        rev_res = self.thermo.calc_hairpin(rev.sequence)
+        # Use screening_thermo (standard conditions) for structural QC.
+        # Actual reaction conditions (self.thermo) are only used for Tm.
+        fwd_res = self.screening_thermo.calc_hairpin(fwd.sequence)
+        rev_res = self.screening_thermo.calc_hairpin(rev.sequence)
 
         fwd_dg = fwd_res.dg
         rev_dg = rev_res.dg
@@ -144,9 +164,9 @@ class BaseQC:
         """
         warnings = []
 
-        # Calculate homodimer MFE
-        fwd_res = self.thermo.calc_homodimer(fwd.sequence)
-        rev_res = self.thermo.calc_homodimer(rev.sequence)
+        # Use screening_thermo (standard conditions) for structural QC
+        fwd_res = self.screening_thermo.calc_homodimer(fwd.sequence)
+        rev_res = self.screening_thermo.calc_homodimer(rev.sequence)
 
         fwd_homo_dg = fwd_res.dg
         rev_homo_dg = rev_res.dg
@@ -185,8 +205,8 @@ class BaseQC:
         """
         warnings = []
 
-        # Calculate heterodimer MFE
-        hetero_res = self.thermo.calc_heterodimer(fwd.sequence, rev.sequence)
+        # Use screening_thermo (standard conditions) for structural QC
+        hetero_res = self.screening_thermo.calc_heterodimer(fwd.sequence, rev.sequence)
         hetero_dg = hetero_res.dg
 
         # Update Primer objects
@@ -221,6 +241,9 @@ class BaseQC:
         """
         warnings = []
         
+        # End stability uses actual reaction conditions (thermo), not screening.
+        # 3' end stability is reaction-temperature-dependent and directly
+        # affects binding in the specific assay buffer.
         fwd_res = self.thermo.calc_end_stability(fwd.sequence)
         rev_res = self.thermo.calc_end_stability(rev.sequence)
         

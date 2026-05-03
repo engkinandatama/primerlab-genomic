@@ -58,17 +58,18 @@ class RAAQC(BaseQC):
         
         warnings = base_result.warnings
         
-        # 1. RAA specific cross-dimer check
-        cross_dimer_res = self.thermo.calc_heterodimer(fwd.sequence, rev.sequence)
+        # RAA specific cross-dimer check
+        # Uses screening_thermo (standard buffer, Mg 1.5mM) — see BaseQC for rationale.
+        cross_dimer_res = self.screening_thermo.calc_heterodimer(fwd.sequence, rev.sequence)
         if cross_dimer_res.dg < self.cross_dimer_dg_min:
             warnings.append(f"Strong cross-dimer between FWD and REV: ΔG={cross_dimer_res.dg:.2f} (threshold: {self.cross_dimer_dg_min})")
             
         if probe:
-            fwd_probe_res = self.thermo.calc_heterodimer(fwd.sequence, probe.sequence)
+            fwd_probe_res = self.screening_thermo.calc_heterodimer(fwd.sequence, probe.sequence)
             if fwd_probe_res.dg < self.cross_dimer_dg_min:
                 warnings.append(f"Strong cross-dimer between FWD and PROBE: ΔG={fwd_probe_res.dg:.2f}")
                 
-            rev_probe_res = self.thermo.calc_heterodimer(rev.sequence, probe.sequence)
+            rev_probe_res = self.screening_thermo.calc_heterodimer(rev.sequence, probe.sequence)
             if rev_probe_res.dg < self.cross_dimer_dg_min:
                 warnings.append(f"Strong cross-dimer between REV and PROBE: ΔG={rev_probe_res.dg:.2f}")
                 
@@ -91,8 +92,8 @@ class RAAQC(BaseQC):
         """
         warnings = []
 
-        # 1. Probe Secondary Structure
-        probe_res = self.thermo.calc_hairpin(probe.sequence)
+        # Probe secondary structure — use screening_thermo
+        probe_res = self.screening_thermo.calc_hairpin(probe.sequence)
         probe_dg = probe_res.dg
 
         probe_hairpin_ok = probe_dg >= self.hairpin_dg_min

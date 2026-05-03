@@ -21,7 +21,7 @@ class TestCLIVersion:
             text=True
         )
         assert result.returncode == 0
-        assert "1.1.0" in result.stdout
+        assert "1.2.0" in result.stdout
     
     def test_version_subcommand(self):
         """Test version subcommand."""
@@ -31,7 +31,7 @@ class TestCLIVersion:
             text=True
         )
         assert result.returncode == 0
-        assert "1.1.0" in result.stdout
+        assert "1.2.0" in result.stdout
 
 
 class TestCLIHealth:
