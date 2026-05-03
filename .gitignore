@@ -134,3 +134,4 @@ error-CI.txt
 paper/
 
 .venv-wsl/
+*.ps
