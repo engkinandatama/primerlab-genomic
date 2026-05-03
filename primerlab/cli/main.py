@@ -177,6 +177,14 @@ def main():
     run_parser.add_argument("--add-sites", type=str, default=None,
                            help="Comma-separated restriction sites to add to 5' ends (e.g. EcoRI,BamHI) (Phase 4)")
 
+    # --- RAA Command (v1.2.0) ---
+    raa_parser = subparsers.add_parser("raa", help="Run RAA diagnostic workflow (v1.2.0)")
+    raa_parser.add_argument("--sequence", "-s", type=str, help="Template DNA sequence")
+    raa_parser.add_argument("--sequence-path", "-sp", type=str, help="Path to template FASTA file")
+    raa_parser.add_argument("--config", "-c", type=str, help="Path to RAA config YAML")
+    raa_parser.add_argument("--num-candidates", "-n", type=int, default=100, help="Number of candidates to rank (default: 100)")
+    raa_parser.add_argument("--out", "-o", type=str, help="Output directory")
+
     # --- CHECK-PRIMERS Command (Phase 4) ---
     check_parser = subparsers.add_parser("check-primers", help="Evaluate existing primers against a template (Phase 4)")
     check_parser.add_argument("--forward", type=str, required=True, help="Forward primer sequence")
@@ -3089,6 +3097,57 @@ qc:
             print(f"Error designing probe: {e}")
             sys.exit(1)
         sys.exit(0)
+
+    if args.command == "raa":
+        from primerlab.workflows.raa.workflow import run_raa_workflow
+        import yaml
+        from primerlab.core.sequence import SequenceLoader
+
+        # Load base config
+        config_path = args.config if args.config else "primerlab/config/raa_default.yaml"
+        with open(config_path, "r") as f:
+            config = yaml.safe_load(f)
+
+        # Override with CLI args
+        if args.sequence:
+            config["input"] = {"sequence": args.sequence, "type": "dna"}
+        elif args.sequence_path:
+            seq = SequenceLoader.load(args.sequence_path)
+            config["input"] = {"sequence": seq, "type": "dna"}
+        
+        if args.num_candidates:
+            if "parameters" not in config: config["parameters"] = {}
+            config["parameters"]["num_candidates"] = args.num_candidates
+        
+        if args.out:
+            if "output" not in config: config["output"] = {}
+            config["output"]["directory"] = args.out
+
+        try:
+            result = run_raa_workflow(config)
+            
+            # Print minimal summary
+            print("\n" + "="*50)
+            print(f"🚀 RAA DESIGN COMPLETE (v{__version__})")
+            print("="*50)
+            if result.primers:
+                fwd = result.primers["forward"]
+                rev = result.primers["reverse"]
+                prb = result.primers.get("probe")
+                print(f"FWD: {fwd.sequence} (Tm: {fwd.tm:.1f}C)")
+                print(f"REV: {rev.sequence} (Tm: {rev.tm:.1f}C)")
+                if prb:
+                    print(f"PRB: {prb.sequence} (Tm: {prb.tm:.1f}C)")
+                print(f"Amplicon: {result.amplicons[0].length} bp")
+                print(f"Cross-Dimer dG: {result.qc.cross_dimer_dg:.2f} kcal/mol")
+                print(f"Final Score: {result.score:.2f}")
+                print(f"Results saved to: {config.get('output', {}).get('directory', 'results')}")
+            else:
+                print("❌ No valid primer/probe candidates found.")
+            sys.exit(0)
+        except Exception as e:
+            print(f"❌ Error running RAA workflow: {e}")
+            sys.exit(1)
 
 if __name__ == "__main__":
     main()
