@@ -13,6 +13,7 @@ class WorkflowResult:
     metadata: RunMetadata
 
     qc: Optional[QCResult] = None
+    score: Optional[float] = None # Added for Reranking (v1.2.0)
 
     warnings: List[str] = field(default_factory=list)
     errors: List[str] = field(default_factory=list)
@@ -29,6 +30,7 @@ class WorkflowResult:
             "primers": {k: v.to_dict() for k, v in self.primers.items()},
             "amplicons": [a.to_dict() for a in self.amplicons],
             "qc": self.qc.to_dict() if self.qc else None,
+            "score": self.score,
             "metadata": self.metadata.to_dict(),
             "warnings": self.warnings,
             "errors": self.errors,

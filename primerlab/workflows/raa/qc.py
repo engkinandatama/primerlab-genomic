@@ -60,19 +60,22 @@ class RAAQC(BaseQC):
         
         # RAA specific cross-dimer check
         cross_dimer_res = self.screening_thermo.calc_heterodimer(fwd.sequence, rev.sequence)
-        base_result.cross_dimer_dg = cross_dimer_res.dg
+        dg_kcal = cross_dimer_res.dg / 1000.0
+        base_result.cross_dimer_dg = dg_kcal
         
-        if cross_dimer_res.dg < self.cross_dimer_dg_min:
-            warnings.append(f"Strong cross-dimer between FWD and REV: ΔG={cross_dimer_res.dg:.2f} (threshold: {self.cross_dimer_dg_min})")
+        if dg_kcal < self.cross_dimer_dg_min:
+            warnings.append(f"Strong cross-dimer between FWD and REV: ΔG={dg_kcal:.2f} kcal/mol (threshold: {self.cross_dimer_dg_min})")
             
         if probe:
             fwd_probe_res = self.screening_thermo.calc_heterodimer(fwd.sequence, probe.sequence)
-            if fwd_probe_res.dg < self.cross_dimer_dg_min:
-                warnings.append(f"Strong cross-dimer between FWD and PROBE: ΔG={fwd_probe_res.dg:.2f}")
+            dg_fwd_prb = fwd_probe_res.dg / 1000.0
+            if dg_fwd_prb < self.cross_dimer_dg_min:
+                warnings.append(f"Strong cross-dimer between FWD and PROBE: ΔG={dg_fwd_prb:.2f} kcal/mol")
                 
             rev_probe_res = self.screening_thermo.calc_heterodimer(rev.sequence, probe.sequence)
-            if rev_probe_res.dg < self.cross_dimer_dg_min:
-                warnings.append(f"Strong cross-dimer between REV and PROBE: ΔG={rev_probe_res.dg:.2f}")
+            dg_rev_prb = rev_probe_res.dg / 1000.0
+            if dg_rev_prb < self.cross_dimer_dg_min:
+                warnings.append(f"Strong cross-dimer between REV and PROBE: ΔG={dg_rev_prb:.2f} kcal/mol")
                 
         # 2. GC Clamp Check at 3' end
         if self.qc_config.get("gc_clamp", True):

@@ -147,6 +147,7 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
         amplicons=amplicons,
         metadata=metadata,
         qc=qc_result,
+        score=top_res.get("score") if evaluated_results else None,
         raw=raw_results
     )
 
