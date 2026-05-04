@@ -256,7 +256,8 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
         top_res = evaluated_results[0]
         primers = top_res["primers"]
         qc_result = top_res["qc"]
-        amplicons = [res["amplicon"] for res in evaluated_results]
+        # Only include the TOP amplicon in the main list to avoid confusion
+        amplicons = [top_res["amplicon"]]
         logger.info(f"Top candidate selected (Global Score: {top_res['score']:.2f})")
     else:
         primers = {}
@@ -281,6 +282,10 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
             "fwd_tm": res["primers"].get("forward").tm if res["primers"].get("forward") else 0,
             "rev_tm": res["primers"].get("reverse").tm if res["primers"].get("reverse") else 0,
             "product_size": res["amplicon"].length,
+            "amplicon_sequence": res["amplicon"].sequence,
+            "fwd_seq": res["primers"].get("forward").sequence if res["primers"].get("forward") else None,
+            "rev_seq": res["primers"].get("reverse").sequence if res["primers"].get("reverse") else None,
+            "prb_seq": res["primers"].get("probe").sequence if res["primers"].get("probe") else None,
             "cross_dimer_dg": res["qc"].cross_dimer_dg,
             "has_probe": "Yes" if res["primers"].get("probe") else "No"
         }
