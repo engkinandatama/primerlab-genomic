@@ -3177,6 +3177,11 @@ qc:
                     print(f"PRB: {seq_str} (Tm: {prb.tm:.1f}C)")
                 print(f"Amplicon: {result.amplicons[0].length} bp")
                 
+                # Visual Map (v1.2.0 enhancement)
+                vmap = result.metadata.parameters.get("visual_map")
+                if vmap:
+                    print(f"MAP:      {vmap}")
+                
                 if result.qc and result.qc.cross_dimer_dg is not None:
                     print(f"Cross-Dimer dG: {result.qc.cross_dimer_dg:.2f} kcal/mol")
                 
