@@ -1,4 +1,5 @@
 from typing import Dict, Any
+import os
 from datetime import datetime, timezone
 from primerlab.core.models import WorkflowResult, Amplicon, RunMetadata
 from primerlab.core.tools.primer3_wrapper import Primer3Wrapper
@@ -62,6 +63,7 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
         temp_max = int(req_cores)
 
     windows = []
+    slice_start = 0  # Global offset; updated if Smart Slicing is active
     params = config.get("parameters", {})
     target = params.get("target_region")
     
@@ -70,7 +72,7 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
         t_start = target.get("start", 0)
         t_len = target.get("length", 150)
         
-        buffer = 300 # Sufficient for flanking primers
+        buffer = 300  # Sufficient for flanking primers
         slice_start = max(0, t_start - buffer)
         slice_end = min(input_len, t_start + t_len + buffer)
         
@@ -155,10 +157,13 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
     qc_engine = RAAQC(config)
     evaluated_results = []
 
-    for i, primers_triplet in enumerate(candidates):
+    for primers_triplet in candidates:
         fwd = primers_triplet["forward"]
         rev = primers_triplet["reverse"]
         probe = primers_triplet.get("probe")
+        
+        # Extract original index from fwd ID (e.g. "forward_5" -> 5)
+        orig_i = int(fwd.id.split("_")[1])
         
         # RAA-specific pair QC
         qcr = qc_engine.evaluate_pair_extended(fwd, rev, probe)
@@ -171,7 +176,7 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
                 qcr.tm_balance_ok = False
 
         # Scoring logic
-        p3_penalty = raw_results.get(f'PRIMER_PAIR_{i}_PENALTY', 100.0)
+        p3_penalty = raw_results.get(f'PRIMER_PAIR_{orig_i}_PENALTY', 100.0)
         qc_penalty = len(qcr.warnings) * 10.0
         dimer_penalty = 0
         if qcr.cross_dimer_dg < -8.0:

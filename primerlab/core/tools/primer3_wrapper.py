@@ -400,7 +400,7 @@ class Primer3Wrapper:
 
         # Probe Design (qPCR)
         probe_params = params.get('probe')
-        if probe_params:
+        if probe_params and probe_params.get('enabled', True):
             if 'PRIMER_PICK_INTERNAL_OLIGO' not in p3_settings or p3_settings['PRIMER_PICK_INTERNAL_OLIGO'] != 0:
                 p3_settings.update({
                     'PRIMER_PICK_INTERNAL_OLIGO':   1,
@@ -467,46 +467,42 @@ class Primer3Wrapper:
 
         # Check result
         if data:
+            # Check if any primers were actually returned
+            num_returned = data.get('PRIMER_LEFT_NUM_RETURNED', 0)
+            if num_returned == 0:
+                # Extract explanations
+                left_explain = data.get('PRIMER_LEFT_EXPLAIN', 'N/A')
+                right_explain = data.get('PRIMER_RIGHT_EXPLAIN', 'N/A')
+                pair_explain = data.get('PRIMER_PAIR_EXPLAIN', 'N/A')
 
-                # Check if any primers were actually returned
-                num_returned = data.get('PRIMER_LEFT_NUM_RETURNED', 0)
-                if num_returned == 0:
-                    # Extract explanations
-                    left_explain = data.get('PRIMER_LEFT_EXPLAIN', 'N/A')
-                    right_explain = data.get('PRIMER_RIGHT_EXPLAIN', 'N/A')
-                    pair_explain = data.get('PRIMER_PAIR_EXPLAIN', 'N/A')
+                error_msg = (
+                    "Primer3 failed to find any primers.\n"
+                    "Reasons:\n"
+                    f"- Left Primer: {left_explain}\n"
+                    f"- Right Primer: {right_explain}\n"
+                    f"- Pair: {pair_explain}\n\n"
+                    "Suggestion: Try relaxing constraints (e.g., wider Tm range, lower GC content) or using a different region."
+                )
 
-                    error_msg = (
-                        "Primer3 failed to find any primers.\n"
-                        "Reasons:\n"
-                        f"- Left Primer: {left_explain}\n"
-                        f"- Right Primer: {right_explain}\n"
-                        f"- Pair: {pair_explain}\n\n"
-                        "Suggestion: Try relaxing constraints (e.g., wider Tm range, lower GC content) or using a different region."
-                    )
+                # v0.1.5: Include structured details for Auto Parameter Suggestion
+                raise ToolExecutionError(
+                    error_msg, 
+                    "ERR_TOOL_P3_NO_PRIMERS",
+                    details={
+                        "left_explain": left_explain,
+                        "right_explain": right_explain,
+                        "pair_explain": pair_explain,
+                        "config_params": p3_settings
+                    }
+                )
 
-                    # v0.1.5: Include structured details for Auto Parameter Suggestion
-                    raise ToolExecutionError(
-                        error_msg, 
-                        "ERR_TOOL_P3_NO_PRIMERS",
-                        details={
-                            "left_explain": left_explain,
-                            "right_explain": right_explain,
-                            "pair_explain": pair_explain,
-                            "config_params": p3_settings
-                        }
-                    )
+            logger.info(f"Primer3 returned {num_returned} pairs.")
 
-                logger.info(f"Primer3 returned {num_returned} pairs.")
+            # Task 4.10 — Restriction site overhang addition (cloning)
+            add_sites = params.get('add_sites', [])
+            if add_sites:
+                data = self._apply_restriction_overhangs(data, add_sites, num_returned)
 
-                # Task 4.10 — Restriction site overhang addition (cloning)
-                add_sites = params.get('add_sites', [])
-                if add_sites:
-                    data = self._apply_restriction_overhangs(data, add_sites, num_returned)
-
-                return data
-            else:
-                raise ToolExecutionError(f"Primer3 failed: {result_wrapper['error']}", "ERR_TOOL_P3_001")
+            return data
         else:
-            # Should not happen if process exited cleanly without putting to queue
-            raise ToolExecutionError("Primer3 process exited without returning result.", "ERR_TOOL_P3_CRASH")
+            raise ToolExecutionError("Primer3 returned no data.", "ERR_TOOL_P3_NO_DATA")

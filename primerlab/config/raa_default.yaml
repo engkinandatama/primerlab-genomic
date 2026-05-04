@@ -52,14 +52,18 @@ parameters:
     opt: 50.0
     max: 70.0
 
-  product_size_range: [[80, 200]]
+  product_size_range: [[80, 250]]
 
   max_poly_x: 4               # Strict: no AAAA runs
 
   # Exo-probe (optional, enabled via probe.enabled)
+  # ⚠️ NOTE: Enabling probe tripling the Primer3 search load.
+  # Geometric constraint: product_size >= primer_size.min*2 + probe.size.min
+  #   i.e. 250 >= 30*2 + 46 = 106  → OK with product_size_range [[80,250]]
+  # Only enable if you specifically need triplet (primer+probe) design.
   probe:
-    enabled: true
-    type: exo                  # exo | simple
+    enabled: false               # Set to true for Exo-probe triplet design
+    type: exo                    # exo | simple
     size:
       min: 46
       opt: 48
@@ -72,8 +76,8 @@ parameters:
       min: 20.0
       max: 80.0
     # Exo-probe structural constraints
-    thf_upstream_min: 30       # Min nt 5' of THF site
-    thf_downstream_min: 15     # Min nt 3' of THF site
+    thf_upstream_min: 30         # Min nt 5' of THF site
+    thf_downstream_min: 15       # Min nt 3' of THF site
     labels:
       fluorophore: "FAM"
       quencher: "BHQ1"
