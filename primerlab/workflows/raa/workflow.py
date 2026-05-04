@@ -7,7 +7,7 @@ from primerlab.core.sequence import SequenceLoader
 from primerlab.core.logger import get_logger
 from primerlab.core.exceptions import WorkflowError
 from primerlab.workflows.raa.qc import RAAQC
-from primerlab.workflows.raa.probe import parse_primer3_output
+from primerlab.workflows.raa.probe import parse_primer3_output, find_exo_probe, annotate_exo_probe
 
 logger = get_logger()
 
@@ -169,11 +169,25 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
         
         # Extract original index from fwd ID (e.g. "forward_5" -> 5)
         orig_i = int(fwd.id.split("_")[1])
+
+        # Extract amplicon sequence for this candidate
+        from primerlab.core.models import Amplicon
+        product_size = raw_results.get(f'PRIMER_PAIR_{orig_i}_PRODUCT_SIZE', 0)
+        amp_seq = sequence[fwd.start : rev.start + 1]
         
         # RAA-specific pair QC
         qcr = qc_engine.evaluate_pair_extended(fwd, rev, probe)
         
-        # Probe-specific QC
+        # Probe-specific logic
+        if not probe and config.get("parameters", {}).get("probe", {}).get("enabled"):
+            # Try manual fallback for long RAA probes
+            probe = find_exo_probe(amp_seq, fwd.length, rev.length, config)
+            if probe:
+                # Add annotation
+                ann = annotate_exo_probe(probe)
+                probe.labeled_sequence = ann["annotated_sequence"]
+                primers_triplet["probe"] = probe
+        
         if probe:
             probe_qc = qc_engine.evaluate_probe(probe, fwd, rev)
             qcr.warnings.extend(probe_qc["warnings"])
@@ -188,11 +202,6 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
             dimer_penalty += abs(qcr.cross_dimer_dg) * 2.0
             
         total_score = p3_penalty + qc_penalty + dimer_penalty
-        
-        from primerlab.core.models import Amplicon
-        product_size = raw_results.get(f'PRIMER_PAIR_{orig_i}_PRODUCT_SIZE', 0)
-        # Extract amplicon sequence for this candidate
-        amp_seq = sequence[fwd.start : rev.start + 1]
         
         amplicon = Amplicon(
             start=fwd.start, end=rev.start, length=product_size,

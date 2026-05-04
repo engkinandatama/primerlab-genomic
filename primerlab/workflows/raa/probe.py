@@ -72,6 +72,51 @@ def annotate_exo_probe(probe_primer: Primer, thf_upstream_min: int = 30, thf_dow
         "blocker": "C3-spacer"
     }
 
+def find_exo_probe(amplicon_seq: str, fwd_len: int, rev_len: int, config: Dict[str, Any]) -> Optional[Primer]:
+    """
+    Manually scans the amplicon for a suitable Exo-probe.
+    Used when Primer3's internal oligo engine hits size limits (>36nt).
+    """
+    probe_cfg = config.get("parameters", {}).get("probe", {})
+    min_size = probe_cfg.get("size", {}).get("min", 46)
+    max_size = probe_cfg.get("size", {}).get("max", 52)
+    
+    # Amplicon sequence is FWD ... (Target) ... REV_RC
+    # We want probe between FWD and REV
+    inner_seq = amplicon_seq[fwd_len : -rev_len]
+    inner_len = len(inner_seq)
+    
+    if inner_len < min_size:
+        return None
+        
+    # Pick a candidate window. For simplicity, we'll try to center it 
+    # or pick the first one that fits.
+    # Standard RAA: Probe is usually close to one of the primers or centered.
+    
+    # Try multiple sizes from max to min
+    for size in range(max_size, min_size - 1, -1):
+        if inner_len >= size:
+            # Simple centering logic
+            start_off = (inner_len - size) // 2
+            probe_seq = inner_seq[start_off : start_off + size]
+            
+            # Create Primer object
+            from primerlab.core.qc.thermo import calculate_tm
+            tm = calculate_tm(probe_seq)
+            
+            # Check if Tm is acceptable (RAA 39C needs stable probes)
+            tm_min = probe_cfg.get("tm", {}).get("min", 54.0)
+            if tm >= tm_min:
+                return Primer(
+                    id="manual_probe",
+                    sequence=probe_seq,
+                    tm=tm,
+                    gc=(probe_seq.count('G') + probe_seq.count('C')) / len(probe_seq) * 100,
+                    length=len(probe_seq)
+                )
+    
+    return None
+
 def parse_primer3_output(raw_results: Dict[str, Any], config: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
     Parses Primer3 output and extracts multiple primer/probe triplets.
