@@ -32,10 +32,16 @@ def annotate_probe(probe_primer: Primer, config: Dict[str, Any]) -> Dict[str, An
     elif p_type == "fpg":
         f = labels.get("fluorophore", "FAM")
         q = labels.get("quencher", "BHQ1")
+        a = labels.get("abasic", "dR-Biotin")
+        b = labels.get("blocker", "C3-spacer")
+        # FPG probes are often shorter, but we use a similar internal site logic
+        mid = len(seq) // 2
+        left = seq[:mid]
+        right = seq[mid+1:]
         return {
             "type": "fpg",
-            "annotated_sequence": f"[{f}]{seq}[{q}]",
-            "metadata": {"fluorophore": f, "quencher": q}
+            "annotated_sequence": f"{left}[{f}-dT][{a}][{q}-dT]{right}[{b}]",
+            "metadata": {"fluorophore": f, "quencher": q, "abasic": a}
         }
 
     # Default: 'exo'

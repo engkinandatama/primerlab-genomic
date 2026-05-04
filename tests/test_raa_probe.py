@@ -65,6 +65,15 @@ def test_annotate_probe_taqman(mock_config):
     assert ann["type"] == "taqman"
     assert ann["annotated_sequence"] == "[FAM]ATGCT[BHQ1]"
 
+def test_annotate_probe_fpg(mock_config):
+    mock_config["parameters"]["probe"]["type"] = "fpg"
+    mock_config["parameters"]["probe"]["labels"]["abasic"] = "dR-Biotin"
+    probe = Primer(id="p1", sequence="A" * 10, tm=60.0, gc=0.0, length=10)
+    ann = annotate_probe(probe, mock_config)
+    
+    assert ann["type"] == "fpg"
+    assert "[dR-Biotin]" in ann["annotated_sequence"]
+
 def test_amplicon_map():
     fwd = Primer(id="f", sequence="AAA", tm=60.0, gc=0.0, length=3)
     rev = Primer(id="r", sequence="TTT", tm=60.0, gc=0.0, length=3)
