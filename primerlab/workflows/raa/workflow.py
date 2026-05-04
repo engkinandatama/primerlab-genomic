@@ -156,6 +156,7 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
     # 4. Evaluate and Score all candidates
     qc_engine = RAAQC(config)
     evaluated_results = []
+    probe = None  # Initialize to prevent UnboundLocalError later
 
     for primers_triplet in candidates:
         fwd = primers_triplet["forward"]
@@ -185,7 +186,7 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
         total_score = p3_penalty + qc_penalty + dimer_penalty
         
         from primerlab.core.models import Amplicon
-        product_size = raw_results.get(f'PRIMER_PAIR_{i}_PRODUCT_SIZE', 0)
+        product_size = raw_results.get(f'PRIMER_PAIR_{orig_i}_PRODUCT_SIZE', 0)
         amplicon = Amplicon(
             start=fwd.start, end=rev.start, length=product_size,
             sequence="N/A", gc=0.0, tm_forward=fwd.tm, tm_reverse=rev.tm
