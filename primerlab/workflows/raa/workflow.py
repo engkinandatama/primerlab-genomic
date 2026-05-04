@@ -187,9 +187,12 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
         
         from primerlab.core.models import Amplicon
         product_size = raw_results.get(f'PRIMER_PAIR_{orig_i}_PRODUCT_SIZE', 0)
+        # Extract amplicon sequence for this candidate
+        amp_seq = sequence[fwd.start : rev.start + 1]
+        
         amplicon = Amplicon(
             start=fwd.start, end=rev.start, length=product_size,
-            sequence="N/A", gc=0.0, tm_forward=fwd.tm, tm_reverse=rev.tm
+            sequence=amp_seq, gc=0.0, tm_forward=fwd.tm, tm_reverse=rev.tm
         )
         
         evaluated_results.append({

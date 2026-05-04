@@ -26,7 +26,7 @@ parameters:
     salt_corrections: owczarzy # Koreksi garam (owczarzy | schildkraut)
 
   # 2. SEARCH STRATEGY & REGIONS
-  num_candidates: 100        # Jumlah pasang kandidat yang dicari Primer3
+  num_candidates: 1000       # Jumlah pasang kandidat yang dicari Primer3
   
   # a. Included Region: Batasi pencarian HANYA di area ini
   included_region: null      # Contoh: {start: 0, length: 150}

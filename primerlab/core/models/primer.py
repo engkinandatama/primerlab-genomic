@@ -24,6 +24,9 @@ class Primer:
     degeneracy_multiplier: int = 1
     possible_sequences: List[str] = field(default_factory=list)
 
+    # Optional field for special labeling (e.g., RAA exo-probes)
+    labeled_sequence: Optional[str] = None
+
     # Internal use only (Primer3 raw output)
     raw: Optional[Dict[str, Any]] = field(default=None, repr=False)
 
@@ -56,6 +59,7 @@ class Primer:
         return {
             "id": self.id,
             "sequence": self.sequence,
+            "labeled_sequence": self.labeled_sequence,
             "tm": round(self.tm, 2),
             "gc": round(self.gc, 2),
             "length": self.length,
