@@ -455,43 +455,18 @@ class Primer3Wrapper:
 
         logger.info(f"Calling Primer3 binding with {len(p3_settings)} settings...")
 
-        # Use multiprocessing to enforce timeout and allow killing stuck processes
-        import multiprocessing
-
-        timeout_seconds = config.get("advanced", {}).get("timeout", 30)
-
-        # Create a Queue to get results
-        queue = multiprocessing.Queue()
-
-        # Create and start the process
-        p = multiprocessing.Process(
-            target=_run_p3_process, 
-            args=(seq_args, p3_settings, queue)
-        )
-        p.start()
-
-        # Wait for the process with timeout
-        p.join(timeout_seconds)
-
-        if p.is_alive():
-            # If still alive after timeout, kill it!
-            logger.error(f"Primer3 process timed out ({timeout_seconds}s). Terminating...")
-            p.terminate()
-            p.join() # Clean up
-
-            raise ToolExecutionError(
-                f"Primer3 execution timed out after {timeout_seconds} seconds. "
-                "This usually means the constraint combination is too strict for your sequence. "
-                "Try: (1) Using a longer target sequence, (2) Relaxing probe Tm constraints "
-                "(e.g., min: 65.0 instead of 68.0), or (3) Increasing timeout in config (advanced.timeout).", 
-                "ERR_TOOL_P3_TIMEOUT"
-            )
+        # Synchronous call (direct) to avoid IPC deadlocks in HPC
+        import primer3
+        
+        logger.info(f"Executing Primer3 directly...")
+        try:
+            data = primer3.bindings.design_primers(seq_args, p3_settings)
+        except Exception as e:
+            logger.error(f"Primer3 execution failed: {str(e)}")
+            raise ToolExecutionError(f"Primer3 failed: {str(e)}", "ERR_TOOL_P3_FAILED")
 
         # Check result
-        if not queue.empty():
-            result_wrapper = queue.get()
-            if result_wrapper["success"]:
-                data = result_wrapper["data"]
+        if data:
 
                 # Check if any primers were actually returned
                 num_returned = data.get('PRIMER_LEFT_NUM_RETURNED', 0)

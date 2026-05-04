@@ -49,6 +49,7 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
 
     # 2. Run Search (Parallel Windowing for Long Sequences)
     input_len = len(sequence)
+    slice_start = 0
     window_size = config.get("advanced", {}).get("window_size", 350)
     overlap = config.get("advanced", {}).get("overlap", 200)
     
@@ -61,9 +62,27 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
         temp_max = int(req_cores)
 
     windows = []
-    has_target = config.get("parameters", {}).get("target_region") is not None
+    params = config.get("parameters", {})
+    target = params.get("target_region")
     
-    if input_len > 600 and not has_target:
+    if target:
+        # Smart Slicing: Crop sequence around the target to speed up Primer3
+        t_start = target.get("start", 0)
+        t_len = target.get("length", 150)
+        
+        buffer = 300 # Sufficient for flanking primers
+        slice_start = max(0, t_start - buffer)
+        slice_end = min(input_len, t_start + t_len + buffer)
+        
+        logger.info(f"Target detected. Slicing sequence: {slice_start}-{slice_end} (Buffer: {buffer}bp)")
+        sequence = sequence[slice_start:slice_end]
+        
+        # Translate target to relative coordinates for the slice
+        params["target_region"]["start"] = t_start - slice_start
+        
+        # Single window for the slice
+        windows = [(0, len(sequence))]
+    elif input_len > 600:
         # Auto-balance overlap if needed
         if temp_max > 1 and config.get("advanced", {}).get("overlap") is None:
             step = max(1, (input_len - window_size) // (temp_max - 1))
@@ -86,7 +105,7 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
         sub_seq = sequence[start:end]
         try:
             res = p3_wrapper.design_primers(sub_seq, config)
-            all_raw_data.append((res, start))
+            all_raw_data.append((res, start + slice_start))
         except Exception as e:
             logger.warning(f"⚠️ Window {(start, end)} failed: {e}")
 
