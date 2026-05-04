@@ -228,8 +228,9 @@ class Primer3Wrapper:
             'existing_reverse':  'SEQUENCE_PRIMER_REVCOMP',
         }
         for cfg_key, p3_key in forced_map.items():
-            if cfg_key in params:
-                seq_args[p3_key] = params[cfg_key]
+            val = params.get(cfg_key)
+            if val is not None:
+                seq_args[p3_key] = val
 
         return seq_args
 
