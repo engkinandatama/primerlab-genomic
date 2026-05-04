@@ -1,105 +1,108 @@
+# ==============================================================================
+# PRIMERLAB MASTER CONFIGURATION: RT-RAA WORKFLOW
+# ==============================================================================
+# File ini mencakup semua parameter yang didukung oleh PrimerLab v1.2.x.
+# Gunakan template ini untuk kontrol presisi tinggi pada desain primer/probe.
+
 workflow: raa
 preset: raa
 
+# --- INPUT SETTINGS ---
 input:
-  sequence: null
-  sequence_path: null
-  preserve_iupac: true
-  type: auto
+  sequence: null             # String sekuens DNA (jika tidak pakai file)
+  sequence_path: null        # Path ke file .fasta atau .gb
+  preserve_iupac: true       # true: pertahankan kode IUPAC | false: ganti N
+  type: auto                 # Tipe input: auto, fasta, genbank, raw
 
+# --- DESIGN PARAMETERS ---
 parameters:
-  # --- THERMODYNAMIC CONDITIONS ---
-  # Two-condition design (see docs/raa_thermodynamic_rationale.md):
-  #
-  # These values (salt_divalent: 14.0, dna_conc: 480.0) are used ONLY for:
-  #   1. Tm calculation  → primers must work at 39-42°C in actual RAA buffer
-  #   2. 3' end stability → binding affinity under actual reaction conditions
-  #
-  # Dimer/hairpin screening uses STANDARD conditions (Mg 1.5mM) — NOT these values.
-  # Rationale: In RAA, RecA/UvsX enzyme coats primers into nucleoprotein filaments
-  # before strand invasion. Free primer dimer formation is kinetically disfavored.
-  # High Mg2+ optimizes RecA ATPase activity, not dimer stability.
-  # Reference: Cui et al. 2023 (Frontiers Microbiol, DOI:10.3389/fcimb.2022.1071288)
-  #            Boyle et al. 2013 (mBio, DOI:10.1128/mBio.00135-13)
+  # 1. THERMODYNAMIC CONDITIONS (RAA Specific)
   thermodynamics:
-    salt_monovalent: 50.0
-    salt_divalent: 14.0        # RAA buffer: high Mg2+ (optimizes RecA ATPase)
-    dntp_conc: 0.8
-    dna_conc: 480.0            # RAA uses high primer concentration
-    tm_method: santalucia
-    salt_corrections: owczarzy # Search Depth
-  num_candidates: 100      # Reduced to prevent combinatorial explosion in probe design
-  
-  # Target Region Optimization (Crucial for 1000bp sequences)
-  # Set this to your 150bp conserved zone coordinates to prevent timeouts
-  target_region:
-    start: 400
-    length: 150
+    salt_monovalent: 50.0    # Konsentrasi K+ / Na+ (mM)
+    salt_divalent: 14.0      # Konsentrasi Mg2+ (RAA butuh tinggi, ~14mM)
+    dntp_conc: 0.8           # Konsentrasi dNTP (mM)
+    dna_conc: 480.0          # Konsentrasi primer (nM) - RAA sangat pekat
+    tm_method: santalucia    # Algoritma Tm (santalucia | breslauer)
+    salt_corrections: owczarzy # Koreksi garam (owczarzy | schildkraut)
 
-  # Primer constraints (Standard RAA)
+  # 2. SEARCH STRATEGY & REGIONS
+  num_candidates: 100        # Jumlah pasang kandidat yang dicari Primer3
+  
+  # a. Included Region: Batasi pencarian HANYA di area ini
+  included_region: null      # Contoh: {start: 0, length: 150}
+  
+  # b. Target Region: Daerah yang WAJIB DIAPIT oleh primer (di tengah)
+  target_region: null        # Contoh: {start: 400, length: 150}
+  
+  # c. Excluded Regions: Daerah yang HARUS DIHINDARI (seleksi episodik/mutasi)
+  excluded_regions: []       # Contoh: [{start: 50, length: 5}, {start: 120, length: 1}]
+  
+  # d. Forced Positions: Paksa posisi spesifik (untuk ujung 3' konservatif)
+  force_left_start: null     # Paksa Forward mulai di index X
+  force_left_end: null       # Paksa Forward berakhir (3') di index X
+  force_right_start: null    # Paksa Reverse mulai di index X
+  force_right_end: null      # Paksa Reverse berakhir (3') di index X
+
+  # 3. PRIMER CONSTRAINTS
   primer_size:
     min: 30
     opt: 32
     max: 35
-
+  
   tm:
     min: 54.0
     opt: 60.0
     max: 75.0
-
+    
   gc:
     min: 30.0
     opt: 50.0
     max: 70.0
 
-  product_size_range: [[80, 250]]
+  product_size_range: [[80, 250]] # Rentang panjang amplikon yang diinginkan
+  max_poly_x: 4                   # Maksimal repetisi basa yang sama (AAAA, dsb)
 
-  max_poly_x: 4               # Strict: no AAAA runs
-
-  # Exo-probe (optional, enabled via probe.enabled)
-  # ⚠️ NOTE: Enabling probe tripling the Primer3 search load.
-  # Geometric constraint: product_size >= primer_size.min*2 + probe.size.min
-  #   i.e. 250 >= 30*2 + 46 = 106  → OK with product_size_range [[80,250]]
-  # Only enable if you specifically need triplet (primer+probe) design.
+  # 4. PROBE SETTINGS (Exo-Probe / qPCR)
   probe:
-    enabled: false               # Set to true for Exo-probe triplet design
-    type: exo                    # exo | simple
-    size:
-      min: 46
-      opt: 48
-      max: 52
-    tm:
-      min: 54.0
-      opt: 65.0
-      max: 85.0
-    gc:
-      min: 20.0
-      max: 80.0
-    # Exo-probe structural constraints
-    thf_upstream_min: 30         # Min nt 5' of THF site
-    thf_downstream_min: 15       # Min nt 3' of THF site
+    enabled: false               # true: desain triplet (F+R+Probe) | false: primer saja
+    type: exo                    # exo (untuk RAA) | simple (standard qPCR)
+    size: { min: 46, opt: 48, max: 52 }
+    tm:   { min: 54.0, opt: 65.0, max: 85.0 }
+    gc:   { min: 20.0, max: 80.0 }
+    # Structural (Exo-specific)
+    thf_upstream_min: 30         # Min basa di sisi 5' dari titik THF
+    thf_downstream_min: 15       # Min basa di sisi 3' dari titik THF
     labels:
       fluorophore: "FAM"
       quencher: "BHQ1"
       blocker: "C3-spacer"
 
+  # 5. CLONING / OVERHANGS
+  add_sites: []              # Tambah restriksi di ujung 5' (Contoh: ["EcoRI", "BamHI"])
+
+# --- QUALITY CONTROL (QC) SETTINGS ---
 qc:
-  mode: strict
-  tm_diff_max: 3.0
-  hairpin_dg_min: -2.0         # Stricter for long primers
-  dimer_dg_min: -6.0           # Long primers = more dimer risk
-  cross_dimer_dg_min: -7.0     # Reject cross-dimer between FWD/REV and Probe
-  end_3prime_check: true       # RAA-critical: check 3' end stability
-  max_3prime_entropy: 0.15     # Max entropy at last 5bp of 3' end
-  gc_clamp: true               # Require strong GC clamp at 3' end
-  probe_end_check: true        # Prevent >3 G/C at probe 5' end (quenches fluorophore)
+  mode: strict               # strict | relaxed
+  vienna_ranking_limit: 50   # Jumlah top kandidat yang akan di-crosscheck pakai ViennaRNA
+  tm_diff_max: 3.0           # Maksimal selisih Tm antara FWD dan REV
+  hairpin_dg_min: -2.0       # Batas minimal dG hairpin (semakin negatif semakin buruk)
+  dimer_dg_min: -6.0         # Batas minimal dG homodimer
+  cross_dimer_dg_min: -7.0   # Batas minimal dG cross-dimer (F/R/P)
+  end_3prime_check: true     # Wajib cek stabilitas ujung 3' (kritis untuk RAA)
+  max_3prime_entropy: 0.15   # Filter kompleksitas rendah di ujung 3'
+  gc_clamp: true             # Wajib ada GC di ujung 3' (GC Clamp)
+  probe_end_check: true      # Cegah G/C berlebih di ujung 5' probe (fluorescence quenching)
 
+# --- OUTPUT SETTINGS ---
 output:
-  directory: "primerlab_out"
+  directory: "primerlab_out" # Folder hasil
+  format: json               # Format database hasil (json | csv)
 
+# --- ADVANCED / HPC SETTINGS ---
 advanced:
-  debug: false
-  timeout: 600                  # Increased to 10 mins for complex RAA triplets
+  debug: false               # true: tampilkan log teknis Primer3
+  timeout: 600               # Waktu tunggu maksimal (detik)
   assay_type: "RT-RAA"
-  reaction_temperature: 39.0   # Isothermal reaction temp (°C)
-  cores: 4                     # Default parallel cores (v1.2.1)
+  reaction_temperature: 39.0  # Suhu inkubasi (°C)
+  cores: 4                   # Jumlah core CPU yang digunakan
+  overlap: 200               # Overlap antar window jika sekuens sangat panjang (>1000bp)

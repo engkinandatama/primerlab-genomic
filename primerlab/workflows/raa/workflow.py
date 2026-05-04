@@ -201,7 +201,35 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
     
     # 5. Rerank based on total_score (Lowest is Best)
     evaluated_results.sort(key=lambda x: x["score"])
-    
+
+    # 5.1 ViennaRNA Tiering (Advanced QC for RAA accessibility)
+    vienna_limit = config.get("qc", {}).get("vienna_ranking_limit", 20)
+    if vienna_limit > 0 and qc_engine.vienna.is_available:
+        count = min(len(evaluated_results), vienna_limit)
+        logger.info(f"Refining Top {count} candidates with ViennaRNA folding...")
+        for res in evaluated_results[:count]:
+            # Extract amplicon sequence
+            amp = res["amplicon"]
+            # Coordinates from Primer3: start is 5' of FWD, end is 3' of REV
+            amp_seq = sequence[amp.start : amp.end + 1]
+            
+            # Run ViennaRNA folding
+            v_res = qc_engine.evaluate_target_structure(amp_seq)
+            
+            # Add accessibility penalty: more stable structure = higher score (worse)
+            if not v_res["accessible"]:
+                # Penalty based on stability (normalized dG)
+                penalty = abs(v_res["normalized_dg"]) / 5.0
+                res["score"] += penalty
+                res["qc"].warnings.append(f"Amplicon secondary structure stable (normalized ΔG: {v_res['normalized_dg']:.2f}). Penalty applied.")
+            
+            # Store vienna data in result for transparency
+            res["amplicon"].sequence = amp_seq
+            res["qc"].additional_metrics = {"vienna_dg": v_res["dg"], "normalized_dg": v_res["normalized_dg"]}
+        
+        # Final rerank after ViennaRNA penalties
+        evaluated_results.sort(key=lambda x: x["score"])
+
     # 6. Select Top Result and prepare Output
     if evaluated_results:
         top_res = evaluated_results[0]

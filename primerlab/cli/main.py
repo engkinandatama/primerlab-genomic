@@ -86,7 +86,7 @@ def _run_health_check():
     print("📡 Checking for updates...")
     try:
         import urllib.request
-        import json
+
 
         url = "https://api.github.com/repos/engkinandatama/primerlab-genomic/releases/latest"
         req = urllib.request.Request(url, headers={"User-Agent": "PrimerLab"})
@@ -608,7 +608,7 @@ def main():
 
     # --- STATS Command Handler (v0.1.6) ---
     if args.command == "stats":
-        import json
+
         from pathlib import Path
 
         seq_input = args.sequence
@@ -697,7 +697,7 @@ def main():
     # --- INSILICO Command Handler (v0.2.0) ---
     if args.command == "insilico":
         from pathlib import Path
-        import json
+
         from primerlab.core.insilico import run_insilico_pcr
         from primerlab.core.sequence import SequenceLoader
 
@@ -1300,7 +1300,7 @@ def main():
     # ===== TM-GRADIENT Command Handler (v0.4.3) =====
     if args.command == "tm-gradient":
         try:
-            import json
+
             from pathlib import Path as PathLib
             from primerlab.core.tm_gradient import (
                 TmGradientConfig,
@@ -1832,7 +1832,7 @@ def main():
 
         try:
             from pathlib import Path
-            import json
+
             from primerlab.core.batch_summary import (
                 generate_batch_summary,
                 format_batch_summary_cli,
@@ -2076,7 +2076,7 @@ def main():
 
         try:
             from pathlib import Path
-            import json
+
             from primerlab.core.visualization import plot_gc_profile
             from primerlab.core.sequence import SequenceLoader
 
@@ -2154,7 +2154,6 @@ def main():
 
         try:
             from primerlab.core.database import PrimerDatabase, format_history_table
-            import json
 
             db = PrimerDatabase()
 
@@ -2365,7 +2364,7 @@ qc:
 
     # --- PROBE-CHECK Command Handler (v0.6.0) ---
     if args.command == "probe-check":
-        import json
+
         from primerlab.api import simulate_probe_binding_api
 
         probe = args.probe.upper()
@@ -2412,7 +2411,7 @@ qc:
 
     # --- MELT-CURVE Command Handler (v0.6.0) ---
     if args.command == "melt-curve":
-        import json
+
         from pathlib import Path
         from primerlab.core.qpcr.melt_curve import predict_melt_curve
         from primerlab.core.qpcr.melt_plot import generate_melt_svg, generate_melt_png
@@ -2487,7 +2486,7 @@ qc:
 
     # --- AMPLICON-QC Command Handler (v0.6.0) ---
     if args.command == "amplicon-qc":
-        import json
+
         from pathlib import Path
         from primerlab.api import validate_qpcr_amplicon_api
 
@@ -2550,7 +2549,7 @@ qc:
     if args.command == "nested-design":
         from primerlab.core.sequence import SequenceLoader
         from primerlab.core.variants import design_nested_primers
-        import json
+
 
         # Load sequence
         sequence = args.sequence
@@ -2665,7 +2664,7 @@ qc:
     if args.command == "seminested-design":
         from primerlab.core.sequence import SequenceLoader
         from primerlab.core.variants import design_seminested_primers
-        import json
+
 
         # Load sequence
         sequence = args.sequence
@@ -2768,7 +2767,7 @@ qc:
             DimerMatrixAnalyzer,
             analyze_dimer_matrix,
         )
-        import json
+
 
         # Load primers from JSON
         with open(args.primers, 'r') as f:
@@ -2826,7 +2825,7 @@ qc:
     # --- COMPARE-BATCH Command Handler (v0.7.1) ---
     if args.command == "compare-batch":
         from primerlab.core.analysis.batch_compare import compare_batch
-        import json
+
 
         # Compare results
         result = compare_batch(args.results)
@@ -2896,7 +2895,7 @@ qc:
     # --- COVERAGE-MAP Command Handler (v0.7.2) ---
     if args.command == "coverage-map":
         from primerlab.core.visualization import CoverageMapGenerator, create_coverage_map
-        import json
+
 
         # Load result file
         with open(args.result, 'r') as f:
@@ -2965,7 +2964,7 @@ qc:
             calculate_efficiency,
             predict_primer_efficiency,
         )
-        import json
+
         import primer3
 
         if args.eff_action == "calculate":
