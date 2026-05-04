@@ -312,6 +312,7 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
         metadata=metadata,
         qc=qc_result,
         score=top_res.get("score") if evaluated_results else None,
+        visual_map=metadata.parameters.get("visual_map"),
         alternatives=alternatives_data,
         raw=raw_results
     )

@@ -14,6 +14,7 @@ class WorkflowResult:
 
     qc: Optional[QCResult] = None
     score: Optional[float] = None # Added for Reranking (v1.2.0)
+    visual_map: Optional[str] = None # Quick access (v1.2.0)
 
     warnings: List[str] = field(default_factory=list)
     errors: List[str] = field(default_factory=list)
@@ -31,6 +32,7 @@ class WorkflowResult:
             "amplicons": [a.to_dict() for a in self.amplicons],
             "qc": self.qc.to_dict() if self.qc else None,
             "score": self.score,
+            "visual_map": self.visual_map,
             "metadata": self.metadata.to_dict(),
             "warnings": self.warnings,
             "errors": self.errors,
