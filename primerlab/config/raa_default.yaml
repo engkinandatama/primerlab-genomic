@@ -28,7 +28,7 @@ parameters:
     dna_conc: 480.0            # RAA uses high primer concentration
     tm_method: santalucia
     salt_corrections: owczarzy # Search Depth
-  num_candidates: 500      # Request many candidates for global re-ranking
+  num_candidates: 100      # Reduced to prevent combinatorial explosion in probe design
   
   # Primer constraints (Standard RAA)
   primer_size:
@@ -88,8 +88,14 @@ output:
   directory: "primerlab_out"
 
 advanced:
+  # Target Region Optimization (Crucial for 1000bp sequences)
+  # Set this to your 150bp conserved zone coordinates to prevent timeouts
+  # target_region: 
+  #   start: 400
+  #   length: 150
+
   debug: false
-  timeout: 300                  # Increased for HPC long sequences
+  timeout: 600                  # Increased to 10 mins for complex RAA triplets
   assay_type: "RT-RAA"
   reaction_temperature: 39.0   # Isothermal reaction temp (°C)
   cores: 4                     # Default parallel cores (v1.2.1)
