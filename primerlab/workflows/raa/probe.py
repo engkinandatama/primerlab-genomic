@@ -80,60 +80,68 @@ def annotate_probe(probe_primer: Primer, config: Dict[str, Any]) -> Dict[str, An
         "metadata": {"fluorophore": f, "quencher": q, "abasic": a, "blocker": b}
     }
 
-def find_exo_probe(amplicon_seq: str, fwd_len: int, rev_len: int, config: Dict[str, Any]) -> Optional[Primer]:
+def find_exo_probe(amplicon_seq: str, fwd_len: int, rev_len: int, config: Dict[str, Any], fwd_start: int = 0) -> Optional[Primer]:
     """
-    Manually scans the amplicon for a suitable Exo-probe.
-    Used when Primer3's internal oligo engine hits size limits (>36nt).
+    Finds the best internal oligo (probe) within an amplicon for Exo-RAA.
     """
-    probe_cfg = config.get("parameters", {}).get("probe", {})
-    min_size = probe_cfg.get("size", {}).get("min", 46)
-    max_size = probe_cfg.get("size", {}).get("max", 52)
+    import primer3
+    p_cfg = config.get("parameters", {}).get("probe", {})
+    p_len_min = p_cfg.get("min_size", 46)
+    p_len_max = p_cfg.get("max_size", 52)
+    p_tm_min = p_cfg.get("min_tm", 57.0)
+    p_tm_max = p_cfg.get("max_tm", 80.0)
     
-    # Amplicon sequence is FWD ... (Target) ... REV_RC
-    # We want probe between FWD and REV
-    inner_seq = amplicon_seq[fwd_len : -rev_len]
-    inner_len = len(inner_seq)
+    # RAA specific: probe must be between primers with some gap
+    # inner_seq = amplicon_seq[fwd_len + 1 : -rev_len - 1]
+    # We use a bit more flexible search
+    amp_len = len(amplicon_seq)
     
-    if inner_len < min_size:
+    candidates = []
+    
+    # Sliding window for probe selection
+    for p_len in range(p_len_min, p_len_max + 1):
+        for i in range(fwd_len + 1, amp_len - rev_len - p_len):
+            p_seq = amplicon_seq[i : i + p_len]
+            
+            # Simple GC and Tm filter
+            tm = primer3.calc_tm(p_seq)
+            gc = sum(1 for b in p_seq if b in "GC") / p_len * 100
+            
+            if p_tm_min <= tm <= p_tm_max:
+                # Basic Score: Higher Tm is better for RAA probes
+                score = tm
+                candidates.append({
+                    "sequence": p_seq,
+                    "tm": tm,
+                    "gc": gc,
+                    "score": score,
+                    "local_start": i
+                })
+                
+    if not candidates:
         return None
         
-    # Pick a candidate window.
-    # Try multiple sizes from max to min
+    # Sort by score descending
+    candidates.sort(key=lambda x: x["score"], reverse=True)
+    best = candidates[0]
     
-    # Get buffer conditions for accurate Tm calculation
-    thermo_cfg = config.get("parameters", {}).get("thermodynamics", {})
-    ta = ThermocalcWrapper(
-        mv_conc=thermo_cfg.get("salt_monovalent", 50.0),
-        dv_conc=thermo_cfg.get("salt_divalent", 1.5),
-        dntp_conc=thermo_cfg.get("dntp_conc", 0.6),
-        dna_conc=thermo_cfg.get("dna_conc", 50.0),
-        tm_method=thermo_cfg.get("tm_method", 'santalucia'),
-        salt_corrections=thermo_cfg.get("salt_corrections", 'santalucia')
+    # Run full thermo QC for the best candidate (v1.2.0)
+    hairpin = primer3.calc_hairpin(best["sequence"]).dg / 1000.0 # cal to kcal
+    homodimer = primer3.calc_homodimer(best["sequence"]).dg / 1000.0
+    
+    probe = Primer(
+        id="manual_probe",
+        sequence=best["sequence"],
+        tm=best["tm"],
+        gc=best["gc"],
+        length=len(best["sequence"]),
+        start=fwd_start + best["local_start"],
+        end=fwd_start + best["local_start"] + len(best["sequence"]) - 1,
+        hairpin_dg=hairpin,
+        homodimer_dg=homodimer
     )
     
-    for size in range(max_size, min_size - 1, -1):
-        if inner_len >= size:
-            # Simple centering logic
-            start_off = (inner_len - size) // 2
-            probe_seq = inner_seq[start_off : start_off + size]
-            
-            # Calculate Tm
-            tm = ta.calc_tm(probe_seq)
-            
-            # Check if Tm is acceptable (RAA 39C needs stable probes)
-            tm_min = probe_cfg.get("tm", {}).get("min", 54.0)
-            if tm >= tm_min:
-                logger.debug(f"Found manual probe: {probe_seq[:10]}... Tm: {tm:.1f}")
-                return Primer(
-                    id="manual_probe",
-                    sequence=probe_seq,
-                    tm=tm,
-                    gc=(probe_seq.count('G') + probe_seq.count('C')) / len(probe_seq) * 100,
-                    length=size
-                )
-    
-    logger.debug(f"No suitable probe found in {inner_len}bp inner region (min_size={min_size}, min_tm={probe_cfg.get('tm', {}).get('min', 54.0)})")
-    return None
+    return probe
 
 def parse_primer3_output(raw_results: Dict[str, Any], config: Dict[str, Any]) -> List[Dict[str, Any]]:
     """

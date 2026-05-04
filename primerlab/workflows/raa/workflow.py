@@ -180,7 +180,7 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
         
         # Probe-specific logic
         if not probe and config.get("parameters", {}).get("probe", {}).get("enabled"):
-            probe = find_exo_probe(amp_seq, fwd.length, rev.length, config)
+            probe = find_exo_probe(amp_seq, fwd.length, rev.length, config, fwd_start=fwd.start)
             if probe:
                 logger.debug(f"Manual fallback found probe for triplet {orig_i}")
                 # Add annotation
