@@ -248,6 +248,28 @@ class ReportGenerator:
         """Generate JSON report."""
         return json.dumps(self.report.to_dict(), indent=2, default=str)
 
+    def to_pdf(self, output_path: str, metadata: Optional[Dict[str, Any]] = None):
+        """
+        Generate PDF report.
+        
+        Args:
+            output_path: Path to save the PDF
+            metadata: Additional metadata for the report
+        """
+        from primerlab.core.report.engine import ReportEngine
+        from datetime import datetime
+        
+        engine = ReportEngine()
+        context = {
+            "report": self.report,
+            "version": __version__,
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "metadata": metadata or {}
+        }
+        
+        html_content = engine.render("report_pdf.html.j2", context)
+        engine.generate_pdf(html_content, output_path)
+
     def save(self, path: str, format: ReportFormat = ReportFormat.MARKDOWN):
         """
         Save report to file.
@@ -260,13 +282,16 @@ class ReportGenerator:
 
         if format == ReportFormat.MARKDOWN:
             content = self.to_markdown()
+            Path(path).write_text(content, encoding="utf-8")
         elif format == ReportFormat.JSON:
             content = self.to_json()
+            Path(path).write_text(content, encoding="utf-8")
         elif format == ReportFormat.HTML:
             # TODO: Implement in Phase 3
             content = f"<html><body><pre>{self.to_markdown()}</pre></body></html>"
-
-        Path(path).write_text(content, encoding="utf-8")
+            Path(path).write_text(content, encoding="utf-8")
+        elif format == ReportFormat.PDF:
+            self.to_pdf(path)
 
 
 def generate_report(workflow_result: Any) -> PrimerReport:

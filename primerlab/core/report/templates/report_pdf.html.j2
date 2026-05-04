@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PrimerLab Analysis Report</title>
+    <style>
+        @page {
+            size: a4 portrait;
+            @frame header_frame {
+                -pdf-frame-content: header_content;
+                left: 50pt; width: 512pt; top: 50pt; height: 40pt;
+            }
+            @frame content_frame {
+                left: 50pt; width: 512pt; top: 90pt; height: 632pt;
+            }
+            @frame footer_frame {
+                -pdf-frame-content: footer_content;
+                left: 50pt; width: 512pt; top: 772pt; height: 20pt;
+            }
+        }
+
+        body {
+            font-family: Helvetica;
+            font-size: 10pt;
+            color: #333333;
+        }
+
+        .header-title {
+            font-size: 24pt;
+            font-weight: bold;
+            color: #2c3e50;
+            border-bottom: 2px solid #2c3e50;
+        }
+
+        .section-title {
+            background-color: #f8f9fa;
+            border-left: 5pt solid #2c3e50;
+            padding: 5pt;
+            font-weight: bold;
+            font-size: 12pt;
+            margin-top: 15pt;
+            margin-bottom: 10pt;
+        }
+
+        table {
+            width: 100%;
+            border: 0.5pt solid #cccccc;
+        }
+
+        th {
+            background-color: #eeeeee;
+            font-weight: bold;
+            padding: 5pt;
+            border: 0.5pt solid #cccccc;
+        }
+
+        td {
+            padding: 5pt;
+            border: 0.5pt solid #cccccc;
+        }
+
+        .grade-box {
+            text-align: right;
+            font-size: 20pt;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .sequence {
+            font-family: Courier;
+            background-color: #f4f4f4;
+        }
+
+        .status-pass { color: #27ae60; }
+        .status-fail { color: #c0392b; }
+
+        #header_content {
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 8pt;
+        }
+
+        #footer_content {
+            text-align: center;
+            color: #95a5a6;
+            font-size: 8pt;
+        }
+    </style>
+</head>
+<body>
+    <div id="header_content">
+        PrimerLab Analysis Report | Page <pdf:pagenumber> of <pdf:pagecount>
+    </div>
+
+    <div id="footer_content">
+        PrimerLab v{{ version }} | {{ timestamp }} | &copy; 2025-2026 PrimerLab Project
+    </div>
+
+    <div class="header">
+        <table style="border: none;">
+            <tr>
+                <td style="border: none;">
+                    <div class="header-title">Analysis Report</div>
+                    <div style="font-size: 9pt; color: #7f8c8d; margin-top: 5pt;">
+                        Project: {{ metadata.project_name|default('Untitled Project') }}<br>
+                        Run ID: {{ metadata.run_id|default('N/A') }}<br>
+                        Generated: {{ timestamp }}
+                    </div>
+                </td>
+                <td style="border: none; text-align: right; vertical-align: top;" width="150pt">
+                    <div class="grade-box">
+                        <div style="font-size: 8pt; color: #7f8c8d; text-transform: uppercase;">Overall Grade</div>
+                        <div style="font-size: 28pt;">{{ report.overall_grade }}</div>
+                        <div style="font-size: 9pt;">{{ report.overall_score|round(1) }}/100</div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <div class="section-title">1. Design Summary</div>
+        <table>
+            <thead>
+                <tr>
+                    <th width="15%">Primer</th>
+                    <th width="50%">Sequence (5' &rarr; 3')</th>
+                    <th width="10%">Len</th>
+                    <th width="12%">Tm (°C)</th>
+                    <th width="13%">GC (%)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if report.design.forward_primer %}
+                <tr>
+                    <td>Forward</td>
+                    <td><span class="sequence">{{ report.design.forward_primer.sequence }}</span></td>
+                    <td>{{ report.design.forward_primer.length }}</td>
+                    <td>{{ report.design.forward_primer.tm|round(1) }}</td>
+                    <td>{{ report.design.forward_primer.gc_percent|round(1) }}</td>
+                </tr>
+                {% endif %}
+                {% if report.design.reverse_primer %}
+                <tr>
+                    <td>Reverse</td>
+                    <td><span class="sequence">{{ report.design.reverse_primer.sequence }}</span></td>
+                    <td>{{ report.design.reverse_primer.length }}</td>
+                    <td>{{ report.design.reverse_primer.tm|round(1) }}</td>
+                    <td>{{ report.design.reverse_primer.gc_percent|round(1) }}</td>
+                </tr>
+                {% endif %}
+                {% if report.design.probe %}
+                <tr>
+                    <td>Probe</td>
+                    <td><span class="sequence">{{ report.design.probe.sequence }}</span></td>
+                    <td>{{ report.design.probe.length }}</td>
+                    <td>{{ report.design.probe.tm|round(1) }}</td>
+                    <td>{{ report.design.probe.gc_percent|round(1) }}</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+        {% if report.design.product_size %}
+        <p style="margin-top: 5pt;"><strong>Predicted Product Size:</strong> {{ report.design.product_size }} bp</p>
+        {% endif %}
+    </div>
+
+    {% if report.validation.validated %}
+    <div class="section">
+        <div class="section-title">2. In-silico Validation</div>
+        <table>
+            <tr>
+                <td width="40%">Total Amplicons Predicted</td>
+                <td>{{ report.validation.amplicons_predicted }}</td>
+            </tr>
+            <tr>
+                <td>Primary Product Length</td>
+                <td>{{ report.validation.primary_product_size }} bp</td>
+            </tr>
+            <tr>
+                <td>PCR Success Probability</td>
+                <td>
+                    <span class="{% if report.validation.pcr_success_probability > 0.8 %}status-pass{% else %}status-fail{% endif %}">
+                        {{ (report.validation.pcr_success_probability * 100)|round(0) }}%
+                    </span>
+                </td>
+            </tr>
+        </table>
+    </div>
+    {% endif %}
+
+    {% if report.offtarget.checked %}
+    <div class="section">
+        <div class="section-title">3. Off-target Specificity</div>
+        <p style="margin-bottom: 5pt;">Database: <em>{{ report.offtarget.database|default('Default NCBI') }}</em></p>
+        <table>
+            <tr>
+                <th width="33%">Forward Hits</th>
+                <th width="33%">Reverse Hits</th>
+                <th width="33%">Specificity Grade</th>
+            </tr>
+            <tr>
+                <td>{{ report.offtarget.forward_hits }}</td>
+                <td>{{ report.offtarget.reverse_hits }}</td>
+                <td class="{% if report.offtarget.combined_grade in ['A', 'B'] %}status-pass{% else %}status-fail{% endif %}">
+                    {{ report.offtarget.combined_grade }}
+                </td>
+            </tr>
+        </table>
+    </div>
+    {% endif %}
+
+    {% if report.warnings %}
+    <div class="section">
+        <div class="section-title">4. Quality Warnings</div>
+        <ul style="color: #e67e22;">
+            {% for warning in report.warnings %}
+            <li>{{ warning }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% if report.recommendations %}
+    <div class="section">
+        <div class="section-title">5. Recommendations</div>
+        <ul>
+            {% for rec in report.recommendations %}
+            <li>{{ rec }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+</body>
+</html>

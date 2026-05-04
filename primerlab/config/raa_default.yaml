@@ -39,14 +39,14 @@ parameters:
   tm:
     min: 54.0
     opt: 60.0
-    max: 67.0
+    max: 75.0
 
   gc:
     min: 30.0
     opt: 50.0
     max: 70.0
 
-  product_size_range: [[100, 150]]
+  product_size_range: [[80, 200]]
 
   max_poly_x: 4               # Strict: no AAAA runs
 
@@ -60,8 +60,8 @@ parameters:
       max: 52
     tm:
       min: 54.0
-      opt: 60.0
-      max: 70.0
+      opt: 65.0
+      max: 85.0
     gc:
       min: 20.0
       max: 80.0

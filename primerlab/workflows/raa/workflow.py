@@ -62,14 +62,10 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
 
     windows = []
     if input_len > 600:
-        logger.info(f"🚀 Long sequence detected ({input_len}bp). Enabling Multi-core Parallel Search...")
-        
-        # Auto-balance overlap to match requested cores
+        # Auto-balance overlap if needed
         if temp_max > 1 and config.get("advanced", {}).get("overlap") is None:
-            # step = (input_len - window_size) / (temp_max - 1)
             step = max(1, (input_len - window_size) // (temp_max - 1))
             overlap = max(150, window_size - step)
-            logger.info(f"⚖️ Auto-balancing: using {temp_max} cores (step={step}bp, overlap={overlap}bp)")
 
         for i in range(0, input_len - window_size + 1, window_size - overlap):
             start = i
@@ -83,29 +79,15 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
         windows = [(0, input_len)]
 
     all_raw_data = []
-    from concurrent.futures import ProcessPoolExecutor
-    
-    # Final worker count based on actual windows generated
-    max_workers = min(len(windows), temp_max)
     p3_wrapper = Primer3Wrapper()
-    
-    if max_workers > 1:
-        logger.info(f"📡 Dispatching searches across {max_workers} CPU cores...")
-        with ProcessPoolExecutor(max_workers=max_workers) as executor:
-            futures = []
-            for start, end in windows:
-                sub_seq = sequence[start:end]
-                futures.append(executor.submit(p3_wrapper.design_primers, sub_seq, config))
-            
-            for i, future in enumerate(futures):
-                try:
-                    res = future.result(timeout=config.get("advanced", {}).get("timeout", 300))
-                    all_raw_data.append((res, windows[i][0]))
-                except Exception as e:
-                    logger.warning(f"⚠️ Window {windows[i]} failed: {e}")
-    else:
-        raw_results = p3_wrapper.design_primers(sequence, config)
-        all_raw_data = [(raw_results, 0)]
+    for start, end in windows:
+        sub_seq = sequence[start:end]
+        try:
+            res = p3_wrapper.design_primers(sub_seq, config)
+            all_raw_data.append((res, start))
+        except Exception as e:
+            logger.warning(f"⚠️ Window {(start, end)} failed: {e}")
+
 
     # 3. Merge and Deduplicate Results
     raw_results = {}
@@ -148,14 +130,11 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
     candidates = parse_primer3_output(raw_results, config)
     logger.info(f"Processing {len(candidates)} candidate sets for deep QC...")
 
-    # 4. Evaluate and Score all candidates (Parallelized in v1.2.4)
-    logger.info(f"🔬 Deep QC: Evaluating {len(candidates)} candidates using {max_workers} cores...")
-    
-    def _evaluate_single_candidate(args_tuple):
-        idx, primers_triplet, sequence, config, raw_results = args_tuple
-        from primerlab.workflows.raa.qc import RAAQC
-        qc_engine = RAAQC(config)
-        
+    # 4. Evaluate and Score all candidates
+    qc_engine = RAAQC(config)
+    evaluated_results = []
+
+    for i, primers_triplet in enumerate(candidates):
         fwd = primers_triplet["forward"]
         rev = primers_triplet["reverse"]
         probe = primers_triplet.get("probe")
@@ -171,7 +150,7 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
                 qcr.tm_balance_ok = False
 
         # Scoring logic
-        p3_penalty = raw_results.get(f'PRIMER_PAIR_{idx}_PENALTY', 100.0)
+        p3_penalty = raw_results.get(f'PRIMER_PAIR_{i}_PENALTY', 100.0)
         qc_penalty = len(qcr.warnings) * 10.0
         dimer_penalty = 0
         if qcr.cross_dimer_dg < -8.0:
@@ -179,26 +158,19 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
             
         total_score = p3_penalty + qc_penalty + dimer_penalty
         
-        product_size = raw_results.get(f'PRIMER_PAIR_{idx}_PRODUCT_SIZE', 0)
         from primerlab.core.models import Amplicon
+        product_size = raw_results.get(f'PRIMER_PAIR_{i}_PRODUCT_SIZE', 0)
         amplicon = Amplicon(
             start=fwd.start, end=rev.start, length=product_size,
             sequence="N/A", gc=0.0, tm_forward=fwd.tm, tm_reverse=rev.tm
         )
         
-        return {
+        evaluated_results.append({
             "primers": primers_triplet,
             "amplicon": amplicon,
             "qc": qcr,
             "score": total_score
-        }
-
-    evaluated_results = []
-    # Prepare task arguments
-    tasks = [(i, c, sequence, config, raw_results) for i, c in enumerate(candidates)]
-    
-    with ProcessPoolExecutor(max_workers=max_workers) as executor:
-        evaluated_results = list(executor.map(_evaluate_single_candidate, tasks))
+        })
     
     # 5. Rerank based on total_score (Lowest is Best)
     evaluated_results.sort(key=lambda x: x["score"])
