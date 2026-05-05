@@ -3203,8 +3203,10 @@ qc:
                 # 8. Save Results to Disk
                 base_out_dir = config.get("output", {}).get("directory", "results")
                 
-                # Use project_name from config, fallback to a default if not found
-                project_name = config.get("metadata", {}).get("project_name", "primerlab_project")
+                # Use project_name from config, fallback to m07_metadata or a default
+                project_name = config.get("metadata", {}).get("project_name")
+                if not project_name:
+                    project_name = config.get("m07_metadata", {}).get("region_id", "primerlab_project")
                 
                 # Create a project-specific directory
                 out_dir = os.path.join(base_out_dir, project_name)
