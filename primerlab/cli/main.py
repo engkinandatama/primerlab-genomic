@@ -3193,11 +3193,24 @@ qc:
                     for i, alt in enumerate(alternatives[:5]):
                         rank = i + 1
                         s = alt.get("score", 0)
-                        dg = alt.get("cross_dimer_dg", 0)
-                        tm_f = alt.get("fwd_tm", 0)
-                        tm_r = alt.get("rev_tm", 0)
-                        prb_found = alt.get("has_probe", "No")
-                        sz = alt.get("product_size", 0)
+                        
+                        # Extract from new nested structure
+                        qc = alt.get("qc", {})
+                        dg_raw = qc.get("cross_dimer_dg", 0)
+                        dg = float(dg_raw.split()[0]) if isinstance(dg_raw, str) else dg_raw
+                        
+                        primers = alt.get("primers", {})
+                        fwd = primers.get("forward", {})
+                        rev = primers.get("reverse", {})
+                        
+                        tm_f_raw = fwd.get("tm", "0.0")
+                        tm_r_raw = rev.get("tm", "0.0")
+                        tm_f = float(str(tm_f_raw).split()[0])
+                        tm_r = float(str(tm_r_raw).split()[0])
+                        
+                        prb_found = "Yes" if "probe" in primers else "No"
+                        sz = alt.get("amplicon", {}).get("length", 0)
+                        
                         print(f"{rank:<5} {s:<8.2f} {dg:<10.2f} {tm_f:>4.1f}/{tm_r:<4.1f} {prb_found:<6} {sz:<5}")
                 
                 # 8. Save Results to Disk
