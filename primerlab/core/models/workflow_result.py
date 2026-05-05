@@ -22,6 +22,9 @@ class WorkflowResult:
     # v0.1.3: Alternative primer candidates
     alternatives: List[Dict[str, Any]] = field(default_factory=list)
 
+    # Transparency logs (v1.2.5)
+    ranking_details: List[Dict[str, Any]] = field(default_factory=list)
+
     # Internal diagnostics
     raw: Dict[str, Any] = field(default_factory=dict, repr=False)
 
@@ -36,5 +39,6 @@ class WorkflowResult:
             "metadata": self.metadata.to_dict(),
             "warnings": self.warnings,
             "errors": self.errors,
-            "alternatives": self.alternatives
+            "alternatives": self.alternatives,
+            "ranking_details": self.ranking_details
         }

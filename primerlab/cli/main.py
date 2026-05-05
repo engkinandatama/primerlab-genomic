@@ -3216,13 +3216,12 @@ qc:
                 
                 # Split the JSON into readable components
                 with open(os.path.join(out_dir, "summary.json"), "w") as f:
-                    summary = {
+                    json.dump({
                         "workflow": res_dict.get("workflow"),
-                        "status": res_dict.get("status"),
+                        "status": "success",
                         "score": res_dict.get("score"),
-                        "created_at": res_dict.get("created_at")
-                    }
-                    json.dump(summary, f, indent=2)
+                        "created_at": res_dict.get("metadata", {}).get("timestamp")
+                    }, f, indent=2)
 
                 with open(os.path.join(out_dir, "metadata.json"), "w") as f:
                     json.dump(res_dict.get("metadata", {}), f, indent=2)
@@ -3238,14 +3237,26 @@ qc:
                     
                 with open(os.path.join(out_dir, "qc_metrics.json"), "w") as f:
                     json.dump(res_dict.get("qc", {}), f, indent=2)
-                
+
+                # g. Ranking Details (CSV Export for Transparency)
+                ranking_data = res_dict.get("ranking_details", [])
+                if ranking_data:
+                    import csv
+                    csv_path = os.path.join(out_dir, "ranking_details.csv")
+                    with open(csv_path, "w", newline="") as f:
+                        writer = csv.DictWriter(f, fieldnames=ranking_data[0].keys())
+                        writer.writeheader()
+                        writer.writerows(ranking_data)
+
                 print(f"\n📂 Project results saved to: {out_dir}")
                 print(f"   ├─ summary.json")
                 print(f"   ├─ metadata.json")
                 print(f"   ├─ best_primers.json")
                 print(f"   ├─ amplicons.json")
                 print(f"   ├─ alternatives.json")
-                print(f"   └─ qc_metrics.json")
+                print(f"   ├─ qc_metrics.json")
+                if ranking_data:
+                    print(f"   └─ ranking_details.csv (Transparency Log)")
             else:
                 print("\n❌ No valid primer/probe candidates found.")
             sys.exit(0)

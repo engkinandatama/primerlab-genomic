@@ -293,7 +293,44 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
         amplicons = []
         logger.warning("No valid candidates found.")
 
-    # 6. Metadata & Result
+    # 6.1 Build Ranking Details (for CSV export)
+    ranking_details = []
+    for i, res in enumerate(evaluated_results[:vienna_limit]):
+        row = {
+            "rank": i + 1,
+            "score": round(res["score"], 3),
+            "fwd_tm": res["primers"]["forward"].tm if res["primers"].get("forward") else None,
+            "rev_tm": res["primers"]["reverse"].tm if res["primers"].get("reverse") else None,
+            "prb_tm": res["primers"]["probe"].tm if res["primers"].get("probe") else None,
+            "product_size": res["amplicon"].length,
+            "fwd_seq": res["primers"]["forward"].sequence if res["primers"].get("forward") else None,
+            "rev_seq": res["primers"]["reverse"].sequence if res["primers"].get("reverse") else None,
+            "prb_seq": res["primers"]["probe"].sequence if res["primers"].get("probe") else None,
+            "cross_dimer_dg": res["qc"].cross_dimer_dg,
+            "vienna_dg": res["qc"].additional_metrics.get("vienna_dg") if res["qc"].additional_metrics else None,
+            "normalized_dg": res["qc"].additional_metrics.get("normalized_dg") if res["qc"].additional_metrics else None,
+        }
+        ranking_details.append(row)
+
+    # 6.2 Prepare Detailed Alternatives (Full JSON Data)
+    num_alt_export = config.get("output", {}).get("num_results_to_export", 10)
+    alternatives_data = []
+    for res in evaluated_results[:num_alt_export]:
+        alt = {
+            "score": round(res["score"], 3),
+            "primers": {k: v.to_dict() for k, v in res["primers"].items()},
+            "amplicon": res["amplicon"].to_dict(),
+            "qc": res["qc"].to_dict(),
+            "visual_map": create_amplicon_map(
+                res["amplicon"].sequence,
+                res["primers"].get("forward"),
+                res["primers"].get("reverse"),
+                res["primers"].get("probe")
+            )
+        }
+        alternatives_data.append(alt)
+
+    # 7. Metadata & Result
     from primerlab import __version__
     metadata = RunMetadata(
         workflow="raa",
@@ -301,34 +338,6 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
         version=__version__,
         parameters=config.get("parameters", {})
     )
-
-    # Prepare alternatives for transparency (Top 10)
-    alternatives_data = []
-    for res in evaluated_results[:10]:
-        alt = {
-            "score": res["score"],
-            "fwd_tm": res["primers"].get("forward").tm if res["primers"].get("forward") else 0,
-            "rev_tm": res["primers"].get("reverse").tm if res["primers"].get("reverse") else 0,
-            "product_size": res["amplicon"].length,
-            "amplicon_sequence": res["amplicon"].sequence,
-            "fwd_seq": res["primers"].get("forward").sequence if res["primers"].get("forward") else None,
-            "rev_seq": res["primers"].get("reverse").sequence if res["primers"].get("reverse") else None,
-            "prb_seq": res["primers"].get("probe").sequence if res["primers"].get("probe") else None,
-            "cross_dimer_dg": res["qc"].cross_dimer_dg,
-            "has_probe": "Yes" if res["primers"].get("probe") else "No"
-        }
-        alternatives_data.append(alt)
-
-    # 7. Metadata and Result Construction
-    # Add amplicon maps to alternatives
-    for i, alt in enumerate(alternatives_data):
-        res = evaluated_results[i]
-        alt["visual_map"] = create_amplicon_map(
-            res["amplicon"].sequence,
-            res["primers"].get("forward"),
-            res["primers"].get("reverse"),
-            res["primers"].get("probe")
-        )
 
     # Add map to top candidate metadata if candidates exist
     if amplicons:
@@ -348,6 +357,7 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
         score=top_res.get("score") if evaluated_results else None,
         visual_map=metadata.parameters.get("visual_map"),
         alternatives=alternatives_data,
+        ranking_details=ranking_details,
         raw=raw_results
     )
 
