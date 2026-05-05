@@ -105,12 +105,40 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
     else:
         windows = [(0, input_len)]
 
+    import copy
     all_raw_data = []
     p3_wrapper = Primer3Wrapper()
     for start, end in windows:
         sub_seq = sequence[start:end]
+        
+        # Localize config to prevent modifying the global dict and to adjust coordinates
+        local_config = copy.deepcopy(config)
+        global_excluded = config.get("parameters", {}).get("excluded_regions", [])
+        
+        if global_excluded:
+            local_excluded = []
+            for r in global_excluded:
+                if isinstance(r, (list, tuple)):
+                    r_start, r_len = r[0], r[1]
+                elif isinstance(r, dict):
+                    r_start, r_len = r['start'], r['length']
+                else:
+                    continue
+                
+                r_end = r_start + r_len
+                # Check overlap with current window
+                if r_start < end and r_end > start:
+                    local_r_start = max(0, r_start - start)
+                    local_r_end = min(end - start, r_end - start)
+                    if local_r_end > local_r_start:
+                        local_excluded.append([local_r_start, local_r_end - local_r_start])
+            
+            if "parameters" not in local_config:
+                local_config["parameters"] = {}
+            local_config["parameters"]["excluded_regions"] = local_excluded
+            
         try:
-            res = p3_wrapper.design_primers(sub_seq, config)
+            res = p3_wrapper.design_primers(sub_seq, local_config)
             all_raw_data.append((res, start + slice_start))
         except Exception as e:
             logger.warning(f"⚠️ Window {(start, end)} failed: {e}")
@@ -302,13 +330,14 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
             res["primers"].get("probe")
         )
 
-    # Add map to top candidate metadata
-    metadata.parameters["visual_map"] = create_amplicon_map(
-        amplicons[0].sequence,
-        primers.get("forward"),
-        primers.get("reverse"),
-        primers.get("probe")
-    )
+    # Add map to top candidate metadata if candidates exist
+    if amplicons:
+        metadata.parameters["visual_map"] = create_amplicon_map(
+            amplicons[0].sequence,
+            primers.get("forward"),
+            primers.get("reverse"),
+            primers.get("probe")
+        )
 
     result = WorkflowResult(
         workflow="raa",
