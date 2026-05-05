@@ -222,15 +222,26 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
             if not probe_qc["probe_tm_ok"]:
                 qcr.tm_balance_ok = False
 
-        # Scoring logic
+        # 6. Scoring logic (Calibrated for RAA)
+        # RAA penalties are naturally higher; we scale p3_penalty more leniently
         p3_penalty = raw_results.get(f'PRIMER_PAIR_{orig_i}_PENALTY', 100.0)
-        qc_penalty = len(qcr.warnings) * 10.0
+        p3_deduction = min(30, int(p3_penalty * 0.5)) 
+        
+        qc_penalty = len(qcr.warnings) * 5.0 # More lenient warning penalty
         dimer_penalty = 0
         if qcr.cross_dimer_dg < -8.0:
-            dimer_penalty += abs(qcr.cross_dimer_dg) * 2.0
+            dimer_penalty += abs(qcr.cross_dimer_dg) * 1.5
             
-        total_score = p3_penalty + qc_penalty + dimer_penalty
-        quality_score = max(0, min(100, 100 - total_score))
+        # Total Penalty
+        total_penalty = p3_deduction + qc_penalty + dimer_penalty
+        
+        # Base Quality (Starts at 90 if probe is found, 80 otherwise)
+        base_quality = 90 if probe else 80
+        quality_score = max(0, min(100, base_quality - total_penalty))
+        
+        # Add a small bonus for excellent thermal stability
+        if qcr.tm_balance_ok:
+            quality_score = min(100, quality_score + 5)
         
         amplicon = Amplicon(
             start=fwd.start, end=rev.start, length=product_size,
@@ -241,7 +252,7 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
             "primers": primers_triplet,
             "amplicon": amplicon,
             "qc": qcr,
-            "score": total_score,
+            "score": total_penalty,
             "quality_score": quality_score
         })
     
