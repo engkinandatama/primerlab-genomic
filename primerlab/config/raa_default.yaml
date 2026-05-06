@@ -115,4 +115,6 @@ advanced:
   assay_type: "RT-RAA"
   reaction_temperature: 39.0  # Suhu inkubasi (°C)
   cores: 4                   # Jumlah core CPU yang digunakan
-  overlap: 200               # Overlap antar window jika sekuens sangat panjang (>1000bp)
+  # window_size: 350         # [OPT-IN] Aktifkan windowing dengan uncomment baris ini.
+  #                          # Default (tanpa baris ini): seluruh sekuens diproses sekaligus.
+  # overlap: 200             # [OPT-IN] Overlap antar window (bp). Hanya aktif jika window_size diset.

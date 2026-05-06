@@ -96,13 +96,20 @@ class RAAQC(BaseQC):
         """
         warnings = []
 
-        # Probe secondary structure — use screening_thermo
+        # Probe hairpin structure — use screening_thermo
         probe_res = self.screening_thermo.calc_hairpin(probe.sequence)
         probe_dg = probe_res.dg / 1000.0
 
         probe_hairpin_ok = probe_dg >= self.hairpin_dg_min
         if not probe_hairpin_ok:
             warnings.append(f"Probe hairpin ΔG ({probe_dg:.2f} kcal/mol) too stable (threshold: {self.hairpin_dg_min})")
+
+        # Probe homodimer structure — use screening_thermo
+        probe_homo_res = self.screening_thermo.calc_homodimer(probe.sequence)
+        probe_homo_dg = probe_homo_res.dg / 1000.0
+        probe_homo_ok = probe_homo_dg >= self.dimer_dg_min
+        if not probe_homo_ok:
+            warnings.append(f"Probe homodimer ΔG ({probe_homo_dg:.2f} kcal/mol) too stable (threshold: {self.dimer_dg_min})")
 
         # 2. Probe End Check (Fluorophore Quenching)
         if self.qc_config.get("probe_end_check", True):
@@ -136,7 +143,9 @@ class RAAQC(BaseQC):
         return {
             "probe_tm_ok": probe_tm_ok,
             "probe_hairpin_ok": probe_hairpin_ok,
+            "probe_homodimer_ok": probe_homo_ok,
             "probe_dg": probe_dg,
+            "probe_homo_dg": probe_homo_dg,
             "warnings": warnings
         }
 

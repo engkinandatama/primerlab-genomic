@@ -52,16 +52,17 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
             config["parameters"]["probe"] = {}
         config["parameters"]["probe"]["enabled"] = True
 
-    # 2. Run Search (Parallel Windowing for Long Sequences)
+    # 2. Run Search
+    # Default: pass the entire sequence to Primer3 in a single call (no windowing).
+    # Windowing is opt-in: only activates when the user explicitly sets
+    # 'advanced.window_size' in the config. This avoids silently truncating the
+    # search space without the user knowing.
     input_len = len(sequence)
     slice_start = 0
-    window_size = config.get("advanced", {}).get("window_size", 350)
-    overlap = config.get("advanced", {}).get("overlap", 200)
-    
+
     # Pre-calculate max_workers for auto-balancing (v1.2.3)
     req_cores = config.get("advanced", {}).get("cores")
     if req_cores is None:
-        # Default behavior: use up to 8 cores for windowing if not specified
         temp_max = min(8, os.cpu_count() or 1)
     else:
         temp_max = int(req_cores)
@@ -70,6 +71,9 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
     slice_start = 0  # Global offset; updated if Smart Slicing is active
     params = config.get("parameters", {})
     target = params.get("target_region")
+
+    # Explicit window_size from user → opt-in windowing mode
+    user_window_size = config.get("advanced", {}).get("window_size")
     
     if target:
         # Smart Slicing: Crop sequence around the target to speed up Primer3
@@ -88,7 +92,13 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
         
         # Single window for the slice
         windows = [(0, len(sequence))]
-    elif input_len > 600:
+
+    elif user_window_size is not None:
+        # User explicitly requested windowed search
+        window_size = int(user_window_size)
+        overlap = config.get("advanced", {}).get("overlap", 200)
+        logger.info(f"Windowed search enabled (window={window_size}bp, overlap={overlap}bp)")
+
         # Auto-balance overlap if needed
         if temp_max > 1 and config.get("advanced", {}).get("overlap") is None:
             step = max(1, (input_len - window_size) // (temp_max - 1))
@@ -102,7 +112,10 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
             
         if windows and windows[-1][1] < input_len:
             windows.append((input_len - window_size, input_len))
+
     else:
+        # Default: full sequence in one Primer3 call — no windowing
+        logger.info(f"Full-sequence search mode (no windowing, {input_len}bp)")
         windows = [(0, input_len)]
 
     import copy
@@ -221,6 +234,16 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
             qcr.warnings.extend(probe_qc["warnings"])
             if not probe_qc["probe_tm_ok"]:
                 qcr.tm_balance_ok = False
+            if not probe_qc.get("probe_hairpin_ok", True):
+                qcr.hairpin_ok = False
+            if not probe_qc.get("probe_homodimer_ok", True):
+                qcr.homodimer_ok = False
+            
+            # Incorporate probe ΔG into worst-case triplet metrics
+            if probe_qc.get("probe_dg") is not None and qcr.hairpin_dg is not None:
+                qcr.hairpin_dg = min(qcr.hairpin_dg, probe_qc["probe_dg"])
+            if probe_qc.get("probe_homo_dg") is not None and qcr.homodimer_dg is not None:
+                qcr.homodimer_dg = min(qcr.homodimer_dg, probe_qc["probe_homo_dg"])
 
         # 6. Ranking Score = Pure Primer3 Penalty (Objective)
         # Lower penalty = closer to ideal thermodynamic parameters.
