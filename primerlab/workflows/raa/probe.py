@@ -83,6 +83,9 @@ def annotate_probe(probe_primer: Primer, config: Dict[str, Any]) -> Dict[str, An
 def find_exo_probe(amplicon_seq: str, fwd_len: int, rev_len: int, config: Dict[str, Any], fwd_start: int = 0) -> Optional[Primer]:
     """
     Finds the best internal oligo (probe) within an amplicon for Exo-RAA.
+    
+    Enforces a minimum physical gap between the probe and both the forward
+    and reverse primers to prevent probe-primer overlap.
     """
     import primer3
     p_cfg = config.get("parameters", {}).get("probe", {})
@@ -90,17 +93,29 @@ def find_exo_probe(amplicon_seq: str, fwd_len: int, rev_len: int, config: Dict[s
     p_len_max = p_cfg.get("size", {}).get("max", p_cfg.get("max_size", 52))
     p_tm_min = p_cfg.get("tm", {}).get("min", p_cfg.get("min_tm", 57.0))
     p_tm_max = p_cfg.get("tm", {}).get("max", p_cfg.get("max_tm", 80.0))
+
+    # Minimum physical gap (bp) between probe ends and primer ends.
+    # Prevents probe from overlapping or sitting immediately adjacent to a primer.
+    # TwistDx/Agdia recommend at least 3-5bp separation.
+    min_gap_fwd = p_cfg.get("min_gap_fwd", 5)
+    min_gap_rev = p_cfg.get("min_gap_rev", 5)
     
-    # RAA specific: probe must be between primers with some gap
-    # inner_seq = amplicon_seq[fwd_len + 1 : -rev_len - 1]
-    # We use a bit more flexible search
     amp_len = len(amplicon_seq)
+
+    # Probe search bounds with enforced gaps:
+    #   start >= fwd_len + min_gap_fwd
+    #   end   <= amp_len - rev_len - min_gap_rev  → start <= amp_len - rev_len - min_gap_rev - p_len
+    probe_start_min = fwd_len + min_gap_fwd
     
     candidates = []
-    
+
     # Sliding window for probe selection
     for p_len in range(p_len_min, p_len_max + 1):
-        for i in range(fwd_len + 1, amp_len - rev_len - p_len):
+        probe_start_max = amp_len - rev_len - min_gap_rev - p_len
+        if probe_start_max < probe_start_min:
+            # Amplicon too short to fit this probe length with required gaps
+            continue
+        for i in range(probe_start_min, probe_start_max + 1):
             p_seq = amplicon_seq[i : i + p_len]
             
             # Simple GC and Tm filter
@@ -108,21 +123,23 @@ def find_exo_probe(amplicon_seq: str, fwd_len: int, rev_len: int, config: Dict[s
             gc = sum(1 for b in p_seq if b in "GC") / p_len * 100
             
             if p_tm_min <= tm <= p_tm_max:
-                # Basic Score: Higher Tm is better for RAA probes
-                score = tm
                 candidates.append({
                     "sequence": p_seq,
                     "tm": tm,
                     "gc": gc,
-                    "score": score,
                     "local_start": i
                 })
                 
     if not candidates:
         return None
-        
-    # Sort by score descending
-    candidates.sort(key=lambda x: x["score"], reverse=True)
+
+    # Rank candidates: compute homodimer dG for each and sort by:
+    #   1. Highest homodimer dG (least negative = least self-dimerization)
+    #   2. Highest Tm as tiebreaker
+    for c in candidates:
+        c["homodimer_dg"] = primer3.calc_homodimer(c["sequence"]).dg / 1000.0
+
+    candidates.sort(key=lambda x: (-x["homodimer_dg"], -x["tm"]))
     best = candidates[0]
     
     # Run full thermo QC for the best candidate (v1.2.0)
