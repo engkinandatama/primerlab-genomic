@@ -279,25 +279,21 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
                                     c = cand_list[0]
                                     
                                     # RAA: Primer3 doesn't pick probes (size limit ~36nt).
-                                    # Find the probe manually in the inner amplicon region.
+                                    # find_exo_probe expects the FULL amplicon (including primers).
+                                    # It uses fwd_len and rev_len to enforce the probe-primer gap.
                                     if probe_enabled and not c.get("probe"):
                                         fwd = c["forward"]
                                         rev = c["reverse"]
-                                        amp_start = fwd.start + fwd.length
-                                        amp_end = rev.start
-                                        amp_inner = sub_seq[amp_start:amp_end]
-                                        p_min_size = config.get("parameters", {}).get("probe", {}).get("size", {}).get("min", 46)
-                                        if len(amp_inner) >= p_min_size:
-                                            # Pass actual primer lengths so find_exo_probe enforces the correct gap
-                                            found_probe = find_exo_probe(
-                                                amp_inner,
-                                                fwd_len=fwd.length,
-                                                rev_len=rev.length,
-                                                config=config,
-                                                fwd_start=amp_start + start
-                                            )
-                                            if found_probe:
-                                                c["probe"] = found_probe
+                                        amp_full = sub_seq[fwd.start : rev.start + rev.length]
+                                        found_probe = find_exo_probe(
+                                            amp_full,
+                                            fwd_len=fwd.length,
+                                            rev_len=rev.length,
+                                            config=config,
+                                            fwd_start=fwd.start + start
+                                        )
+                                        if found_probe:
+                                            c["probe"] = found_probe
                                     
                                     # --- STRICT OVERLAP CHECK ---
                                     if c.get("probe"):
