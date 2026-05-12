@@ -88,6 +88,8 @@ def find_exo_probe(amplicon_seq: str, fwd_len: int, rev_len: int, config: Dict[s
     and reverse primers to prevent probe-primer overlap.
     """
     import primer3
+    from primerlab.core.tools.thermocalc_wrapper import ThermocalcWrapper
+    
     p_cfg = config.get("parameters", {}).get("probe", {})
     p_len_min = p_cfg.get("size", {}).get("min", p_cfg.get("min_size", 46))
     p_len_max = p_cfg.get("size", {}).get("max", p_cfg.get("max_size", 52))
@@ -99,6 +101,19 @@ def find_exo_probe(amplicon_seq: str, fwd_len: int, rev_len: int, config: Dict[s
     # TwistDx/Agdia recommend at least 3-5bp separation.
     min_gap_fwd = p_cfg.get("min_gap_fwd", 5)
     min_gap_rev = p_cfg.get("min_gap_rev", 5)
+    
+    # Initialize ThermocalcWrapper with RAA-specific thermodynamic conditions.
+    # This is critical: default primer3.calc_tm() uses 0mM Mg2+ while RAA
+    # operates at ~14mM Mg2+, which drastically affects Tm of long probes.
+    thermo_cfg = config.get("parameters", {}).get("thermodynamics", {})
+    thermo = ThermocalcWrapper(
+        mv_conc=thermo_cfg.get("salt_monovalent", 50.0),
+        dv_conc=thermo_cfg.get("salt_divalent", 1.5),
+        dntp_conc=thermo_cfg.get("dntp_conc", 0.6),
+        dna_conc=thermo_cfg.get("dna_conc", 50.0),
+        tm_method=thermo_cfg.get("tm_method", "santalucia"),
+        salt_corrections=thermo_cfg.get("salt_corrections", "santalucia"),
+    )
     
     amp_len = len(amplicon_seq)
 
@@ -118,8 +133,8 @@ def find_exo_probe(amplicon_seq: str, fwd_len: int, rev_len: int, config: Dict[s
         for i in range(probe_start_min, probe_start_max + 1):
             p_seq = amplicon_seq[i : i + p_len]
             
-            # Simple GC and Tm filter
-            tm = primer3.calc_tm(p_seq)
+            # Use RAA-aware Tm calculation (accounts for Mg2+, DNA conc)
+            tm = thermo.calc_tm(p_seq)
             gc = sum(1 for b in p_seq if b in "GC") / p_len * 100
             
             if p_tm_min <= tm <= p_tm_max:
