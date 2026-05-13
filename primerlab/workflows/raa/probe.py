@@ -280,7 +280,7 @@ def parse_primer3_output(raw_results: Dict[str, Any], config: Dict[str, Any], ab
                 
     return all_candidates
 
-def create_amplicon_map(amplicon_seq: str, fwd: Primer, rev: Primer, probe: Optional[Primer] = None) -> str:
+def create_amplicon_map(amplicon_seq: str, fwd: Primer, rev: Primer, probe: Optional[Primer] = None, amp_start: Optional[int] = None) -> str:
     """
     Creates a visual text map of the amplicon.
     Uses absolute coordinates to ensure alignment with the provided amplicon_seq.
@@ -289,11 +289,9 @@ def create_amplicon_map(amplicon_seq: str, fwd: Primer, rev: Primer, probe: Opti
     map_list = ["-"] * amp_len
     
     # The amplicon_seq provided corresponds to [amp_start, amp_end]
-    # We need to know where it starts in absolute terms to align fwd/rev/probe.
-    # Usually, for RAA, the amplicon_seq starts exactly at fwd.start.
-    # However, let's be robust and use the primer/probe absolute coordinates.
-    
-    amp_start = fwd.start # Default assumption for RAA amplicons
+    # We use the provided amp_start to align fwd/rev/probe absolute coordinates.
+    if amp_start is None:
+        amp_start = fwd.start 
     
     f_idx = fwd.start - amp_start
     f_len = fwd.length

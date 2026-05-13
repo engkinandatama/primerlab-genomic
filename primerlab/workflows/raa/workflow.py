@@ -526,7 +526,8 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
                 res["amplicon"].sequence,
                 res["primers"].get("forward"),
                 res["primers"].get("reverse"),
-                res["primers"].get("probe")
+                res["primers"].get("probe"),
+                amp_start=res["amplicon"].start
             )
         }
         alternatives_data.append(alt)
@@ -558,7 +559,8 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
             amplicons[0].sequence,
             primers.get("forward"),
             primers.get("reverse"),
-            primers.get("probe")
+            primers.get("probe"),
+            amp_start=amplicons[0].start
         )
 
     result = WorkflowResult(
