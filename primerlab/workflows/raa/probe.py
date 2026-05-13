@@ -59,8 +59,21 @@ def annotate_probe(probe_primer: Primer, config: Dict[str, Any]) -> Dict[str, An
     if (seq_len - thf_index - 1) < thf_down:
         thf_index = seq_len - thf_down - 1
 
-    left = seq[:thf_index]
-    right = seq[thf_index+1:]
+    # Boundary check to ensure we have space for the 3-base sandwich [F][A][Q]
+    if thf_index < 1:
+        thf_index = 1
+    if thf_index > seq_len - 2:
+        thf_index = seq_len - 2
+
+    # In RAA, the label complex [F-dT][Abasic][Q-dT] typically replaces 3 bases
+    # We've anchored thf_index to the Abasic site.
+    # So we take:
+    #   left = everything before the sandwich
+    #   sandwich = replaces seq[thf_index-1], seq[thf_index], seq[thf_index+1]
+    #   right = everything after the sandwich
+    
+    left = seq[:thf_index-1]
+    right = seq[thf_index+2:]
     annotated = f"{left}[{f}-dT][{a}][{q}-dT]{right}[{b}]"
     
     return {
