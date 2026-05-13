@@ -303,11 +303,10 @@ def create_amplicon_map(amplicon_seq: str, fwd: Primer, rev: Primer, probe: Opti
             
     # 3. Mark Probe (Overlay with priority)
     if probe:
-        p_seq = probe.sequence
-        # Handle case where probe sequence might have labels in its object but we need raw
-        p_idx = amplicon_seq.find(p_seq)
-        if p_idx != -1:
-            p_len = len(p_seq)
+        # Use coordinate offsets instead of .find() to prevent false matches or offset errors
+        p_idx = probe.start - fwd.start
+        if 0 <= p_idx < amp_len:
+            p_len = probe.length
             for i in range(p_idx, min(p_idx + p_len, amp_len)):
                 # If it hits a primer, it's an overlap! We mark it with 'X'
                 if map_list[i] in [">", "<"]:
