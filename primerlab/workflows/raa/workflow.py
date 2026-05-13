@@ -329,7 +329,9 @@ def run_raa_workflow(config: Dict[str, Any]) -> WorkflowResult:
                                 
                                 min_gap = 5
                                 if (p_start < f_end + min_gap) or (p_end > r_start - min_gap):
-                                    # print(f"DEBUG: Overlap! f_end={f_end}, r_start={r_start}, p_start={p_start}, p_end={p_end}")
+                                    print(f"\n[DEBUG] Overlap Detected! Window Start: {start}")
+                                    print(f"      F_END: {f_end} | R_START: {r_start}")
+                                    print(f"      P_START: {p_start} | P_END: {p_end}")
                                     logger.warning(f"Candidate dropped due to probe overlap! f_end={f_end}, p_start={p_start}, p_end={p_end}, r_start={r_start}")
                                     continue  # DISCARD THE ENTIRE CANDIDATE
 
