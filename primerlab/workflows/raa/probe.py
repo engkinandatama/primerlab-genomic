@@ -121,16 +121,16 @@ def find_exo_probe(amplicon_seq: str, fwd_len: int, rev_len: int, config: Dict[s
     # Probe search bounds with enforced gaps:
     #   start >= fwd_len + min_gap_fwd
     #   end   <= amp_len - rev_len - min_gap_rev  → start <= amp_len - rev_len - min_gap_rev - p_len
-    probe_start_min = fwd_len + min_gap_fwd
-    
     candidates = []
 
     # Sliding window for probe selection
     for p_len in range(p_len_min, p_len_max + 1):
+        probe_start_min = fwd_len + min_gap_fwd
         probe_start_max = amp_len - rev_len - min_gap_rev - p_len
+        
         if probe_start_max < probe_start_min:
-            # Amplicon too short to fit this probe length with required gaps
             continue
+            
         for i in range(probe_start_min, probe_start_max + 1):
             p_seq = amplicon_seq[i : i + p_len]
             
