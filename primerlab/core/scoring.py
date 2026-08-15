@@ -8,11 +8,31 @@ Calculates combined quality score from:
 
 Scores are mode-specific (strict/standard/relaxed).
 
-Scientific References:
-1. Benchling (2024). "PCR Primer Design Guidelines"
-2. IDT (2024). "Primer & Probe Design Guidelines"
-3. DeGenPrime (2023). Nucleic Acids Research
-4. SantaLucia J. (1998). PNAS 95:1460-1465
+The penalty thresholds applied in this module are grounded in both
+peer-reviewed thermodynamic literature and widely-adopted empirical
+guidelines from the oligonucleotide design community:
+
+Peer-reviewed Literature:
+1. SantaLucia J Jr. (1998). A unified view of polymer, dumbbell, and
+   oligonucleotide DNA nearest-neighbor thermodynamics. PNAS 95:1460-1465.
+   [Basis for nearest-neighbor ΔH/ΔS parameters used in ΔG calculations]
+2. SantaLucia J Jr & Hicks D. (2004). The thermodynamics of DNA structural
+   motifs. Annual Review of Biophysics 33:415-440.
+   [Basis for hairpin and self-complementarity ΔG thresholds]
+3. Owczarzy R et al. (2004). Effects of sodium ions on DNA duplex
+   oligomers: improved predictions of melting temperatures. Biochemistry
+   43(12):3537-3554.
+4. Untergasser A et al. (2012). Primer3 — new capabilities and interfaces.
+   Nucleic Acids Research 40(15):e115.
+   [Primer3 penalty model and thermodynamic analysis framework]
+5. Rychlik W & Rhoads RE. (1989). A computer program for choosing optimal
+   oligonucleotides for filter hybridization, sequencing and in vitro
+   amplification of DNA. Nucleic Acids Research 17(21):8543-8551.
+   [Early empirical basis for GC clamp and end-stability design rules]
+
+Vendor/Empirical Guidelines (supplementary):
+6. IDT (2024). Primer & Probe Design Guidelines.
+7. Benchling (2024). PCR Primer Design Guidelines.
 """
 
 from dataclasses import dataclass

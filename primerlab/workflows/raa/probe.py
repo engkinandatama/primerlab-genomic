@@ -1,6 +1,31 @@
 """
 RAA Exo-Probe design logic module.
 Handles post-processing of Primer3 internal oligos to annotate THF abasic sites.
+
+The THF abasic-site placement constraints implemented here (≥30 nt upstream,
+≥15 nt downstream, dT-flanked F/Q labels) are derived from the following sources:
+
+Primary Design Manual (authoritative):
+- TwistDx Ltd. (2022). TwistAmp Assay Design Manual, §3.1.1-§3.1.2.
+  [Hard rules for THF placement, dT-fluorophore/quencher coupling, and fallback
+   mismatch tolerance for RAA Exo probes]
+
+Peer-reviewed RAA/RPA Literature:
+- Piepenburg O et al. (2006). DNA Detection Using Recombination Proteins.
+  PLoS Biology 4(7):e204.
+  [Original RPA methodology — foundational basis for probe design rationale]
+- Abd El Wahed A et al. (2013). Recombinase Polymerase Amplification Assay
+  for Rapid Diagnostics of Dengue Infection. PLoS ONE 8(11):e71753.
+  [Demonstrated probe Tm and THF placement constraints in practice]
+- Euler M et al. (2012). Development of a Panel of Recombinase Polymerase
+  Amplification Assays for Detection of Biothreat Agents.
+  Journal of Clinical Microbiology 50(4):1352-1354.
+  [Empirical validation of probe design rules for pathogen detection]
+
+Thermodynamic Model for Isothermal Conditions:
+- Owczarzy R et al. (2008). Predicting stability of DNA duplexes in solutions
+  containing magnesium and monovalent cations. Biochemistry 47(19):5336-5353.
+  [Basis for Mg2+-aware Tm calculation used in RAA probe Tm assessment]
 """
 
 from typing import Dict, Any, Optional, List

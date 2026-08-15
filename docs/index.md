@@ -1,4 +1,4 @@
-﻿---
+---
 title: "PrimerLab Documentation"
 description: "Modular bioinformatics framework for automated primer and probe design"
 ---
@@ -82,7 +82,7 @@ Learn more: [System Architecture](/docs/concepts/architecture)
 
 ## Version
 
-Current version: **v1.0.1**
+Current version: **v1.2.0**
 
 See [Changelog](/docs/changelog) for version history.
 

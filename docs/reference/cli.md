@@ -3,7 +3,7 @@ title: "CLI Reference"
 description: "Command-line interface reference for PrimerLab"
 ---
 
-Complete command-line reference for PrimerLab Genomic v1.0.1.
+Complete command-line reference for PrimerLab Genomic v1.2.0.
 
 ## Installation Check
 

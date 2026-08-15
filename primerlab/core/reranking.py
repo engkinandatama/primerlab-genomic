@@ -184,12 +184,12 @@ class RerankingEngine:
             details["passes_qc"] = False
             details["rejection_reasons"].append(f"Rev: {rev_poly_msg}")
 
-        # 1. Hairpin checks using ThermoAnalysis
+        # 1. Hairpin checks using ThermoAnalysis (convert cal/mol to kcal/mol)
         fwd_hairpin_res = self.thermo.calc_hairpin(fwd_seq)
         rev_hairpin_res = self.thermo.calc_hairpin(rev_seq)
 
-        fwd_hairpin_dg = fwd_hairpin_res.dg
-        rev_hairpin_dg = rev_hairpin_res.dg
+        fwd_hairpin_dg = fwd_hairpin_res.dg / 1000.0 if fwd_hairpin_res.structure_found else 0.0
+        rev_hairpin_dg = rev_hairpin_res.dg / 1000.0 if rev_hairpin_res.structure_found else 0.0
 
         details["hairpin_fwd_dg"] = fwd_hairpin_dg
         details["hairpin_rev_dg"] = rev_hairpin_dg
@@ -202,12 +202,12 @@ class RerankingEngine:
             details["passes_qc"] = False
             details["rejection_reasons"].append(f"Rev hairpin too stable ({rev_hairpin_dg:.1f} < {self.hairpin_dg_max})")
 
-        # 2. Homodimer checks using ThermoAnalysis
+        # 2. Homodimer checks using ThermoAnalysis (convert cal/mol to kcal/mol)
         fwd_homo_res = self.thermo.calc_homodimer(fwd_seq)
         rev_homo_res = self.thermo.calc_homodimer(rev_seq)
 
-        fwd_homo_dg = fwd_homo_res.dg
-        rev_homo_dg = rev_homo_res.dg
+        fwd_homo_dg = fwd_homo_res.dg / 1000.0 if fwd_homo_res.structure_found else 0.0
+        rev_homo_dg = rev_homo_res.dg / 1000.0 if rev_homo_res.structure_found else 0.0
 
         details["homodimer_fwd_dg"] = fwd_homo_dg
         details["homodimer_rev_dg"] = rev_homo_dg
@@ -220,9 +220,9 @@ class RerankingEngine:
             details["passes_qc"] = False
             details["rejection_reasons"].append(f"Rev homodimer too stable ({rev_homo_dg:.1f} < {self.homodimer_dg_max})")
 
-        # 3. Heterodimer check
+        # 3. Heterodimer check (convert cal/mol to kcal/mol)
         hetero_res = self.thermo.calc_heterodimer(fwd_seq, rev_seq)
-        hetero_dg = hetero_res.dg
+        hetero_dg = hetero_res.dg / 1000.0 if hetero_res.structure_found else 0.0
 
         details["heterodimer_dg"] = hetero_dg
 
@@ -234,8 +234,8 @@ class RerankingEngine:
         fwd_end_res = self.thermo.calc_end_stability(fwd_seq)
         rev_end_res = self.thermo.calc_end_stability(rev_seq)
         
-        fwd_end_dg = fwd_end_res.dg
-        rev_end_dg = rev_end_res.dg
+        fwd_end_dg = fwd_end_res.dg / 1000.0 if fwd_end_res.structure_found else 0.0
+        rev_end_dg = rev_end_res.dg / 1000.0 if rev_end_res.structure_found else 0.0
         
         details["end_stability_fwd_dg"] = fwd_end_dg
         details["end_stability_rev_dg"] = rev_end_dg

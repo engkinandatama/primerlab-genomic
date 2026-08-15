@@ -134,11 +134,17 @@ class RAAQC(BaseQC):
         if len(probe.sequence) < min_required_len:
             warnings.append(f"Probe is too short ({len(probe.sequence)}bp) to accommodate THF constraints (needs {min_required_len}bp).")
 
-        # RAA probe Tm is typically around 50°C (lower than primers usually, as the reaction is at 39°C)
-        probe_tm_ok = probe.tm >= 45.0  # Just a basic sanity check for isothermal
+        # Probe Tm floor check at isothermal reaction temperature.
+        # RAA runs at ~37-42°C (typically 39°C). This default floor (45°C)
+        # provides a minimum buffer above reaction temperature. For more
+        # stringent assays, this should be tuned upward (≥50°C recommended)
+        # via qc.probe_tm_min in the workflow config. The pandemic preparedness
+        # and other production workflows are expected to override this default.
+        probe_tm_min = self.qc_config.get("probe_tm_min", 45.0)
+        probe_tm_ok = probe.tm >= probe_tm_min
 
         if not probe_tm_ok:
-            warnings.append(f"Probe Tm ({probe.tm:.2f}°C) is too low for 39°C reaction.")
+            warnings.append(f"Probe Tm ({probe.tm:.2f}°C) is below minimum threshold ({probe_tm_min}°C) for isothermal reaction.")
 
         return {
             "probe_tm_ok": probe_tm_ok,

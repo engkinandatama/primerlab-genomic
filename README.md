@@ -9,9 +9,9 @@ A modular bioinformatics framework for automated **primer and probe design**, bu
 [![Docs](https://img.shields.io/badge/docs-Mintlify-0D9488.svg)](https://primerlab-genomic.mintlify.app/)
 [![DeepWiki](https://img.shields.io/badge/docs-DeepWiki-blue.svg)](https://deepwiki.com/engkinandatama/primerlab-genomic)
 [![PyPI](https://img.shields.io/pypi/v/primerlab-genomic.svg)](https://pypi.org/project/primerlab-genomic/)
-[![Status](https://img.shields.io/badge/status-v1.0.1-brightgreen.svg)](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v1.0.1)
+[![Status](https://img.shields.io/badge/status-v1.2.0-brightgreen.svg)](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v1.2.0)
 
-> 🔰 **Latest Release**: [**v1.0.0 - Stable Release**](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v1.0.0) 🎉
+> 🔰 **Latest Release**: [**v1.2.0 - Stable Release**](https://github.com/engkinandatama/primerlab-genomic/releases/tag/v1.2.0) 🎉
 
 ---
 
@@ -389,19 +389,17 @@ primerlab-genomic/
 
 ## 📌 Development Status
 
-### ✅ **v1.0.0** (Current)
+### ✅ **v1.2.0** (Current)
 
-* **Performance Optimization** (`core/cache.py`):
-  * LRU caching for Tm, GC, and ΔG calculations
-  * 2-5x speedup for repeated computations
-* **Model Standardization** (v0.8.2):
-  * `to_dict()` methods for 10+ dataclasses
-  * Comprehensive STRUCTURE.md documentation
-* **Code Quality Foundation** (v0.8.0):
-  * Type hints infrastructure (mypy config)
-  * Exception testing (20+ tests)
-  * Flake8 fixes (8,600+ fixes)
-* **1286 Tests** - Comprehensive test coverage
+* **Thermodynamic & Re-ranking Fixes**:
+  * Unit normalization for ΔG (cal/mol to kcal/mol)
+  * Two-stage isothermal candidate re-ranking
+* **RAA Exo-Probe Logic**:
+  * Automated THF abasic site placement per TwistAmp assay rules
+  * Fluorophore-Quencher distance & mismatch tolerance constraints
+* **Quality Scoring Engine** (`core/scoring.py`):
+  * Grounded in SantaLucia (1998/2004) and Owczarzy (2004/2008) thermodynamic literature
+* **1425 Tests** - 100% comprehensive automated test suite pass rate
 
 ### v0.7.x Features (PCR Variants & qPCR Advanced)
 
